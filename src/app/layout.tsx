@@ -1,0 +1,38 @@
+import type { Metadata, Viewport } from "next";
+import type { ReactNode } from "react";
+import "@fontsource-variable/fredoka";
+import "@fontsource/bagel-fat-one/latin-400.css";
+import "./globals.css";
+import { Providers } from "./providers";
+
+export const metadata: Metadata = {
+  title: "MUSE | AI Music Companion",
+  description: "Discover music, build playlists, and explore your taste through conversation.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '48x48' },
+    ],
+    apple: [
+      { url: '/favicon-180.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/site.webmanifest',
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0B0B0C",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" className="dark">
+      <body className="font-ui antialiased bg-background text-text-primary selection:bg-accent selection:text-background">
+        <Providers>{children}</Providers>
+      </body>
+    </html>
+  );
+}

@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0B0B0C;
+  --color-surface: #111113;
+  --color-border-subtle: #232326;
+  --color-border-strong: #34343A;
+  --color-text-primary: #F2F1ED;
+  --color-text-secondary: #A1A1A8;
+  --color-text-muted: #6B6B73;
+  --color-accent: #A8E85C;
+
+  --font-ui: "Fredoka Variable", system-ui, sans-serif;
+  --font-display: "Bagel Fat One", system-ui, sans-serif;
+  --font-sans: var(--font-ui);
+
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --duration-instant: 90ms;
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 360ms;
+  --duration-scene: 600ms;
+
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  *, ::before, ::after {
+    border-color: var(--color-border-subtle);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-text-primary);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
+  }
+
+  /* Utility for display text */
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-synthesis: none;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  .type-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-synthesis: none;
+    -webkit-font-synthesis: none;
+    letter-spacing: 0.005em;
+    line-height: 1.1;
+    text-transform: none;
+    color: var(--color-text-primary);
+  }
+
+  .type-page-title {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-synthesis: none;
+    -webkit-font-synthesis: none;
+    font-size: clamp(32px, 5vw, 44px);
+    letter-spacing: 0.005em;
+    line-height: 1.15;
+    color: var(--color-text-primary);
+  }
+
+  .type-section-label {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-variation-settings: "wght" 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+  }
+
+  .type-body {
+    font-family: var(--font-ui);
+    font-weight: 400;
+    font-variation-settings: "wght" 400;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .type-caption {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-variation-settings: "wght" 500;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+  }
+
+  /* Fixed width tabular numbers fix for fonts that don't support tabular figures */
+  .tabular-nums {
+    display: inline-block;
+    min-width: 1.5ch;
+    text-align: right;
+  }
+}
+
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .focus-ring {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
+  }
+}
+
