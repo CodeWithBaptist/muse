@@ -11,7 +11,7 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/ui/Logo';
 
@@ -24,12 +24,8 @@ const NAV_ITEMS = [
 
 export function MobileNav() {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  // Close menu when pathname changes
-  React.useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
+  const [openPathname, setOpenPathname] = React.useState<string | null>(null);
+  const isOpen = openPathname === pathname;
 
   return (
     <>
@@ -38,7 +34,7 @@ export function MobileNav() {
           <Logo variant="wordmark" size={80} />
         </Link>
         <button 
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => setOpenPathname((prev) => (prev === pathname ? null : pathname))}
           className="p-2 -mr-2 text-text-secondary hover:text-text-primary"
         >
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -58,6 +54,7 @@ export function MobileNav() {
                 <Link
                   key={item.name}
                   href={item.href}
+                  onClick={() => setOpenPathname(null)}
                   className={cn(
                     'flex items-center gap-4 text-2xl font-medium transition-colors',
                     pathname === item.href ? 'text-accent' : 'text-text-primary'

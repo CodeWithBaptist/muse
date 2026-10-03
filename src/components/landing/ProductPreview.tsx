@@ -1,9 +1,9 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'motion/react';
 import { useState, useEffect } from 'react';
 import { Surface } from '@/components/ui/Surface';
-import { transitions, fadeInUp, staggerContainer } from '@/lib/motion';
+import { fadeInUp, staggerContainer } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/ui/Logo';
 
@@ -89,7 +89,7 @@ export function ProductPreview() {
               {step >= 3 && (
                 <motion.div variants={fadeInUp} initial="initial" animate="animate" className="space-y-6">
                   <p className="text-sm text-text-secondary leading-relaxed">
-                    Understood. Focus on that smooth, late-night R&B texture with a bit more warmth. Here's what I found:
+                    Understood. Focus on that smooth, late-night R&amp;B texture with a bit more warmth. Here&apos;s what I found:
                   </p>
                   
                   <motion.div variants={staggerContainer(0.05)} className="space-y-1">
@@ -115,7 +115,7 @@ export function ProductPreview() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="p-4 rounded-lg bg-surface border border-border-strong flex items-center justify-between"
                     >
-                      <div className="text-sm font-medium">Create "Late Night Vibe" playlist?</div>
+                      <div className="text-sm font-medium">Create &quot;Late Night Vibe&quot; playlist?</div>
                       <motion.button
                         disabled={step === 5}
                         className={cn(
