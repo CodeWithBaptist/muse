@@ -49,6 +49,16 @@ export function isAINotConnectedError(error: unknown): boolean {
   return false;
 }
 
+export function sanitizePromptInput(input: string, maxLength = 1000): string {
+  return input
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ')
+    .replace(/<\|im_start\|>|<\|im_end\|>|<\|endoftext\|>/gi, '')
+    .replace(/<\/?(system|user_message|spotify_context|developer|assistant)>/gi, '')
+    .replace(/\b(ignore\s+(all\s+)?(previous|prior|above)\s+instructions)\b/gi, '[filtered]')
+    .trim()
+    .slice(0, maxLength);
+}
+
 let _openai: OpenAI | null = null;
 let _cachedKey: string | null = null;
 
@@ -71,6 +81,18 @@ export type Message = {
   role: 'user' | 'assistant' | 'system';
   content: string;
 };
+
+interface ZodLikeSchema<T> {
+  parse: (data: unknown) => T;
+}
+
+function isZodSchema<T>(schema: unknown): schema is ZodLikeSchema<T> {
+  return Boolean(
+    schema &&
+      typeof schema === 'object' &&
+      typeof (schema as ZodLikeSchema<T>).parse === 'function'
+  );
+}
 
 export async function chatCompletion(messages: Message[], stream = false) {
   const openai = getOpenAI();
@@ -101,6 +123,10 @@ export async function structuredCompletion<T>(
 
   const content = response.choices[0].message.content;
   if (!content) throw new Error('AI failed to generate content');
-  
-  return JSON.parse(content) as T;
+
+  const parsed: unknown = JSON.parse(content);
+  if (isZodSchema<T>(schema)) {
+    return schema.parse(parsed);
+  }
+  return parsed as T;
 }

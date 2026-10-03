@@ -11,6 +11,11 @@ interface Message {
   isPlaylistSuggestion?: boolean;
 }
 
+interface PersistedRecommendation {
+  spotifyTrackId: string;
+  reason?: string | null;
+}
+
 interface ChatError extends Error {
   code?: string;
   status?: number;
@@ -58,8 +63,29 @@ export function useChat(conversationId?: string) {
   });
 
   const messages = React.useMemo<Message[]>(() => {
-    const base: Message[] = Array.isArray(history?.messages) ? history.messages : [];
-    return [...base, ...localMessages];
+    const rawMessages: Message[] = Array.isArray(history?.messages) ? history.messages : [];
+    const recs: PersistedRecommendation[] = Array.isArray(history?.recommendations)
+      ? history.recommendations
+      : [];
+    const reasonByTrackId = new Map<string, string>();
+    for (const rec of recs) {
+      if (rec.spotifyTrackId && rec.reason) {
+        reasonByTrackId.set(rec.spotifyTrackId, rec.reason);
+      }
+    }
+
+    const hydratedBase = rawMessages.map((msg) => {
+      if (!msg.tracks || msg.tracks.length === 0) return msg;
+      return {
+        ...msg,
+        tracks: msg.tracks.map((track) => ({
+          ...track,
+          reason: track.reason || reasonByTrackId.get(track.id),
+        })),
+      };
+    });
+
+    return [...hydratedBase, ...localMessages];
   }, [history, localMessages]);
 
   const chatMutation = useMutation({
