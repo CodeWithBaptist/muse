@@ -106,6 +106,25 @@ export async function chatCompletion(messages: Message[], stream = false) {
   return response;
 }
 
+export async function* chatCompletionStream(
+  messages: Message[]
+): AsyncGenerator<string, void, unknown> {
+  const openai = getOpenAI();
+  const stream = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages,
+    stream: true,
+    temperature: 0.7,
+  });
+
+  for await (const chunk of stream) {
+    const delta = chunk.choices?.[0]?.delta?.content;
+    if (delta) {
+      yield delta;
+    }
+  }
+}
+
 export async function structuredCompletion<T>(
   prompt: string,
   schema: unknown,
