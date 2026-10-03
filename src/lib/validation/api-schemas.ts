@@ -69,7 +69,16 @@ export const MusicSearchQueryInputSchema = z.object({
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });
 
+export const PlaylistTrackMetaSchema = z.object({
+  id: z.string().trim().min(1).max(120),
+  title: z.string().trim().min(1).max(200),
+  artist: z.string().trim().min(1).max(200),
+  albumArtUrl: z.string().trim().max(500).nullable().optional(),
+  durationMs: z.number().int().min(0).max(3_600_000).default(180_000),
+});
+
 export const PlaylistExportInputSchema = z.object({
+  playlistId: z.string().uuid().optional(),
   name: z
     .string()
     .trim()
@@ -89,11 +98,58 @@ export const PlaylistExportInputSchema = z.object({
     )
     .min(1, 'At least one track URI is required')
     .max(100, 'Maximum 100 tracks per export'),
+  tracks: z.array(PlaylistTrackMetaSchema).max(100).optional(),
+});
+
+export const PlaylistCreateDraftInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Playlist name is required')
+    .max(100, 'Playlist name is too long'),
+  description: z
+    .string()
+    .trim()
+    .max(300, 'Description is too long')
+    .optional(),
+  tracks: z.array(PlaylistTrackMetaSchema).max(100).default([]),
+});
+
+export const PlaylistIdParamSchema = z.object({
+  id: z.string().uuid('Invalid playlist ID'),
+});
+
+export const PlaylistUpdateInputSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Playlist name cannot be empty')
+    .max(100, 'Playlist name is too long')
+    .optional(),
+  description: z
+    .string()
+    .trim()
+    .max(300, 'Description is too long')
+    .optional(),
+  removeTrackId: z.string().trim().min(1).max(120).optional(),
+});
+
+export const UserPreferencesInputSchema = z.object({
+  discoveryStyle: z
+    .enum(['balanced', 'deep_cuts', 'familiar'])
+    .default('balanced'),
+  playlistLength: z.enum(['10', '15', '20']).default('15'),
+  explicitContent: z.enum(['allow', 'clean']).default('allow'),
+  favoriteGenres: z.string().trim().max(200).default(''),
+});
+
+export const UserPreferencesResponseSchema = UserPreferencesInputSchema.extend({
+  updatedAt: z.string().nullable().optional(),
 });
 
 export const SpotifyCallbackQuerySchema = z.object({
   code: z.string().min(1).optional(),
-  state: z.string().min(1).optional(),
+  state: z.string().optional(),
   error: z.string().optional(),
 });
 
@@ -155,7 +211,17 @@ export const ProfileInsightsResponseSchema = z.object({
     habit: z.string(),
     recommendation: z.string(),
   }),
+  preferences: z
+    .array(
+      z.object({
+        key: z.string(),
+        value: z.string(),
+        source: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export type DiscoverSectionData = z.infer<typeof DiscoverSectionSchema>;
 export type ProfileInsightsData = z.infer<typeof ProfileInsightsResponseSchema>;
+export type UserPreferencesData = z.infer<typeof UserPreferencesResponseSchema>;

@@ -1,7 +1,10 @@
 import { getSession } from '@/lib/session';
 import { spotifyService } from '@/lib/spotify-service';
 import { db } from '@/db';
-import { playlists as playlistsTable } from '@/db/schema';
+import {
+  playlists as playlistsTable,
+  playlistTracks as playlistTracksTable,
+} from '@/db/schema';
 import { verifySameOrigin } from '@/lib/security/csrf';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
 import {
@@ -11,6 +14,7 @@ import {
   SPOTIFY_RECONNECT_MESSAGE,
 } from '@/lib/spotify-tokens';
 import { PlaylistExportInputSchema } from '@/lib/validation/api-schemas';
+import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -47,7 +51,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { name, description, trackUris } = parsed.data;
+  const { playlistId, name, description, trackUris, tracks } = parsed.data;
 
   try {
     const token = await getValidAccessToken(session.userId);
@@ -90,16 +94,63 @@ export async function POST(request: Request) {
       throw new Error(`Spotify playlist track addition failed with status ${addRes.status}`);
     }
 
-    await db.insert(playlistsTable).values({
-      userId: session.userId,
-      spotifyPlaylistId: spotifyPlaylist.id,
-      name,
-      description,
-    }).returning();
+    let savedPlaylistId = playlistId;
+    if (playlistId) {
+      const updated = await db
+        .update(playlistsTable)
+        .set({
+          spotifyPlaylistId: spotifyPlaylist.id,
+          name,
+          description,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(playlistsTable.id, playlistId),
+            eq(playlistsTable.userId, session.userId)
+          )
+        )
+        .returning({ id: playlistsTable.id });
+
+      if (updated.length === 0) {
+        savedPlaylistId = undefined;
+      }
+    }
+
+    if (!savedPlaylistId) {
+      const [inserted] = await db
+        .insert(playlistsTable)
+        .values({
+          userId: session.userId,
+          spotifyPlaylistId: spotifyPlaylist.id,
+          name,
+          description,
+        })
+        .returning({ id: playlistsTable.id });
+
+      savedPlaylistId = inserted?.id;
+
+      if (savedPlaylistId && tracks && tracks.length > 0) {
+        await db.insert(playlistTracksTable).values(
+          tracks.map((track, index) => ({
+            playlistId: savedPlaylistId!,
+            spotifyTrackId: track.id.replace(/^spotify:track:/, ''),
+            position: index,
+            title: track.title,
+            artist: track.artist,
+            albumArtUrl: track.albumArtUrl ?? null,
+            durationMs: track.durationMs,
+          }))
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,
-      spotifyUrl: spotifyPlaylist.external_urls?.spotify ?? null,
+      playlistId: savedPlaylistId ?? null,
+      spotifyUrl:
+        spotifyPlaylist.external_urls?.spotify ??
+        `https://open.spotify.com/playlist/${spotifyPlaylist.id}`,
     });
   } catch (error: unknown) {
     if (isSpotifyReconnectError(error)) {

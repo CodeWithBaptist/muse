@@ -445,3 +445,35 @@ export async function GET() {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  const csrfError = verifySameOrigin(request);
+  if (csrfError) return csrfError;
+
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const rateLimited = await enforceRateLimit(request, {
+    scope: 'chat:clear',
+    limit: 10,
+    windowMs: 60_000,
+    identifier: `user:${session.userId}`,
+  });
+  if (rateLimited) return rateLimited;
+
+  try {
+    await db
+      .delete(conversations)
+      .where(eq(conversations.userId, session.userId));
+    return NextResponse.json({ success: true });
+  } catch (error: unknown) {
+    console.error('Chat clear API Error:', error);
+    return NextResponse.json(
+      { error: 'Unable to clear conversation history.' },
+      { status: 500 }
+    );
+  }
+}
+

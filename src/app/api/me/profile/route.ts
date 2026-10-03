@@ -1,4 +1,6 @@
 import { getSession } from '@/lib/session';
+import { db } from '@/db';
+import { preferences as preferencesTable } from '@/db/schema';
 import { orchestrateProfileInsights } from '@/lib/ai/profile-engine';
 import {
   AI_NOT_CONNECTED_CODE,
@@ -13,6 +15,7 @@ import {
   SPOTIFY_RECONNECT_MESSAGE,
 } from '@/lib/spotify-tokens';
 import { ProfileInsightsResponseSchema } from '@/lib/validation/api-schemas';
+import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -44,8 +47,25 @@ export async function GET(request?: Request) {
   }
 
   try {
-    const data = await orchestrateProfileInsights(session.userId);
-    const validated = ProfileInsightsResponseSchema.parse(data);
+    const [data, savedPrefs] = await Promise.all([
+      orchestrateProfileInsights(session.userId),
+      db
+        .select()
+        .from(preferencesTable)
+        .where(eq(preferencesTable.userId, session.userId))
+        .catch(() => []),
+    ]);
+
+    const validated = ProfileInsightsResponseSchema.parse({
+      ...data,
+      preferences: savedPrefs
+        .filter((p) => p.value.trim().length > 0)
+        .map((p) => ({
+          key: p.key,
+          value: p.value,
+          source: p.source,
+        })),
+    });
     return NextResponse.json(validated);
   } catch (error: unknown) {
     if (isAINotConnectedError(error)) {

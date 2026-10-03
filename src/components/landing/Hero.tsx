@@ -9,6 +9,14 @@ import Link from 'next/link';
 
 export function Hero() {
   const { authenticated } = useAuth();
+
+  const scrollToHowItWorks = () => {
+    const el = document.getElementById('how-it-works');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="relative pt-32 pb-20 px-6 overflow-hidden">
       <motion.div
@@ -42,14 +50,18 @@ export function Hero() {
               <Button variant="primary">Go to Chat</Button>
             </Link>
           ) : (
-            <Button 
-              onClick={() => window.location.href = '/api/auth/spotify'}
+            <Button
+              onClick={() => {
+                window.location.href = '/api/auth/spotify';
+              }}
               variant="primary"
             >
               Connect Spotify
             </Button>
           )}
-          <Button variant="outline">See how it works</Button>
+          <Button variant="outline" onClick={scrollToHowItWorks}>
+            See how it works
+          </Button>
         </motion.div>
       </motion.div>
     </section>
