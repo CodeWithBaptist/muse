@@ -20,10 +20,7 @@ export const Surface = React.forwardRef<HTMLDivElement, SurfaceProps>(
     return (
       <motion.div
         ref={ref}
-        transition={{
-          duration: transitions.standard.duration,
-          ease: transitions.standard.ease as any,
-        }}
+        transition={transitions.standard}
         className={cn('rounded-md', variants[variant], className)}
         {...props}
       />

@@ -7,6 +7,7 @@ import { Surface } from '@/components/ui/Surface';
 import { isAiNotConnectedMessage } from '@/hooks/use-chat';
 import { motion } from 'motion/react';
 import { staggerContainer } from '@/lib/motion';
+import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 import { Sparkles } from 'lucide-react';
 
 interface ApiError extends Error {
@@ -92,14 +93,19 @@ export default function DiscoverPage() {
         animate="animate"
         className="space-y-16"
       >
-        {data?.sections?.map((section: any, i: number) => (
-          <DiscoverSection 
-            key={i} 
-            title={section.title} 
-            description={section.description} 
-            tracks={section.tracks} 
-          />
-        ))}
+        {data?.sections?.map(
+          (
+            section: { title: string; description: string; tracks: SpotifyTrackItem[] },
+            i: number
+          ) => (
+            <DiscoverSection
+              key={i}
+              title={section.title}
+              description={section.description}
+              tracks={section.tracks}
+            />
+          )
+        )}
       </motion.div>
     </div>
   );

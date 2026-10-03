@@ -6,10 +6,12 @@ import { fadeInUp, staggerContainer } from '@/lib/motion';
 import { Disc, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
+
 interface DiscoverSectionProps {
   title: string;
   description: string;
-  tracks: any[];
+  tracks: SpotifyTrackItem[];
 }
 
 export function DiscoverSection({ title, description, tracks }: DiscoverSectionProps) {

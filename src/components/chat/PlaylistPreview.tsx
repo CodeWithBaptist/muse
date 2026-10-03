@@ -12,9 +12,9 @@ import { transitions, fadeInUp, staggerContainer } from '@/lib/motion';
 interface Track {
   id: string;
   name: string;
-  artists: any;
-  uri: string;
-  album?: any;
+  artists: { name: string }[] | string;
+  uri?: string;
+  album?: { images?: { url: string }[] };
 }
 
 interface PlaylistPreviewProps {
@@ -44,7 +44,7 @@ export function PlaylistPreview({
         body: JSON.stringify({
           name,
           description,
-          trackUris: tracks.map(t => t.uri),
+          trackUris: tracks.map((t) => t.uri).filter((u): u is string => Boolean(u)),
         }),
       });
 

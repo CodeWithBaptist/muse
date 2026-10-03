@@ -2,11 +2,12 @@
 
 import * as React from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  tracks?: any[];
+  tracks?: SpotifyTrackItem[];
   isPlaylistSuggestion?: boolean;
 }
 

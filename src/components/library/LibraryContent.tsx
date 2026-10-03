@@ -3,16 +3,30 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { TrackRow } from '@/components/chat/TrackRow';
-import { Surface } from '@/components/ui/Surface';
 import { motion } from 'motion/react';
 import { staggerContainer, fadeInUp } from '@/lib/motion';
-import { Music, User, Disc, ListMusic, History } from 'lucide-react';
+import { Music, User, Disc } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 
 type LibraryType = 'recent' | 'top-tracks' | 'top-artists' | 'saved-tracks' | 'saved-albums' | 'playlists';
 
 interface LibraryContentProps {
   type: LibraryType;
+}
+
+interface LibraryEntity {
+  id?: string;
+  name: string;
+  artists?: Array<{ name: string }>;
+  tracks?: { total: number };
+  images?: Array<{ url: string }>;
+  album?: { images?: Array<{ url: string }> };
+}
+
+interface LibraryWrapperItem extends LibraryEntity {
+  track?: SpotifyTrackItem & LibraryEntity;
+  album?: LibraryEntity;
 }
 
 export function LibraryContent({ type }: LibraryContentProps) {
@@ -48,7 +62,7 @@ export function LibraryContent({ type }: LibraryContentProps) {
     );
   }
 
-  const items = data?.items || [];
+  const items: LibraryWrapperItem[] = data?.items || [];
 
   if (items.length === 0) {
     return (
@@ -62,19 +76,20 @@ export function LibraryContent({ type }: LibraryContentProps) {
     );
   }
 
-  // Render list for tracks and recently played
   if (type === 'recent' || type === 'top-tracks' || type === 'saved-tracks') {
-    const tracks = type === 'recent' ? items.map((i: any) => i.track) : items.map((i: any) => i.track || i);
+    const tracks: SpotifyTrackItem[] =
+      type === 'recent'
+        ? items.map((i) => i.track).filter((t): t is SpotifyTrackItem & LibraryEntity => Boolean(t))
+        : items.map((i) => (i.track || i) as unknown as SpotifyTrackItem);
     return (
       <motion.div variants={staggerContainer(0.02)} initial="initial" animate="animate" className="space-y-1">
-        {tracks.map((track: any, i: number) => (
+        {tracks.map((track, i) => (
           <TrackRow key={`${track.id}-${i}`} track={track} index={i} />
         ))}
       </motion.div>
     );
   }
 
-  // Render grid for artists, albums, playlists
   return (
     <motion.div 
       variants={staggerContainer(0.04)} 
@@ -82,10 +97,12 @@ export function LibraryContent({ type }: LibraryContentProps) {
       animate="animate"
       className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-6 gap-y-8"
     >
-      {items.map((item: any, i: number) => {
-        const entity = item.track || item.album || item;
+      {items.map((item, i) => {
+        const entity: LibraryEntity = item.track || item.album || item;
         const name = entity.name;
-        const sub = entity.artists?.[0]?.name || (type === 'playlists' ? `${entity.tracks.total} tracks` : '');
+        const sub =
+          entity.artists?.[0]?.name ||
+          (type === 'playlists' && entity.tracks ? `${entity.tracks.total} tracks` : '');
         const image = entity.images?.[0]?.url || entity.album?.images?.[0]?.url;
         const isArtist = type === 'top-artists';
 

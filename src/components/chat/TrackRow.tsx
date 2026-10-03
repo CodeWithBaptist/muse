@@ -10,7 +10,7 @@ interface Track {
   id: string;
   name: string;
   artists: { name: string }[] | string;
-  album?: { images: { url: string }[] };
+  album?: { images?: { url: string }[] };
   albumArtUrl?: string;
   duration_ms?: number;
   reason?: string;

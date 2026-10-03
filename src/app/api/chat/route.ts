@@ -9,24 +9,41 @@ import {
   isAIConfigured,
   isAINotConnectedError,
 } from '@/lib/ai/provider';
-import { eq, desc } from 'drizzle-orm';
+import { verifySameOrigin } from '@/lib/security/csrf';
+import { enforceRateLimit } from '@/lib/security/rate-limit';
+import { ChatPostInputSchema } from '@/lib/validation/api-schemas';
+import { and, eq, desc } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
-  let body: { content?: string; conversationId?: string } = {};
+  const csrfError = verifySameOrigin(request);
+  if (csrfError) return csrfError;
+
+  const rateLimited = await enforceRateLimit(request, {
+    scope: 'ai:chat',
+    limit: 15,
+    windowMs: 60_000,
+  });
+  if (rateLimited) return rateLimited;
+
+  let rawBody: unknown;
   try {
-    body = await request.json();
+    rawBody = await request.json();
   } catch {
     return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { content, conversationId } = body;
-
-  if (!content) {
-    return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+  const parsedInput = ChatPostInputSchema.safeParse(rawBody);
+  if (!parsedInput.success) {
+    return NextResponse.json(
+      { error: 'Content is required and must be valid.' },
+      { status: 400 }
+    );
   }
+
+  const { content, conversationId } = parsedInput.data;
 
   if (!isAIConfigured()) {
     return NextResponse.json(
@@ -47,12 +64,28 @@ export async function POST(request: Request) {
   try {
     let activeConversationId = conversationId;
 
-    // 1. Get or create conversation
-    if (!activeConversationId) {
-      const [newConv] = await db.insert(conversations).values({
-        userId: session.userId,
-        title: content.slice(0, 50),
-      }).returning();
+    // 1. Verify ownership if conversationId was provided, or create a new conversation
+    if (activeConversationId) {
+      const [existingConv] = await db
+        .select()
+        .from(conversations)
+        .where(
+          and(
+            eq(conversations.id, activeConversationId),
+            eq(conversations.userId, session.userId)
+          )
+        );
+      if (!existingConv) {
+        return NextResponse.json({ error: 'Conversation not found.' }, { status: 404 });
+      }
+    } else {
+      const [newConv] = await db
+        .insert(conversations)
+        .values({
+          userId: session.userId,
+          title: content.slice(0, 50),
+        })
+        .returning();
       activeConversationId = newConv.id;
     }
 
@@ -79,7 +112,7 @@ export async function POST(request: Request) {
 
       // Save recommendations for Why This and Library
       if (result.tracks.length > 0) {
-        const recs = result.tracks.map((track: any) => ({
+        const recs = result.tracks.map((track) => ({
           userId: session.userId,
           conversationId: activeConversationId,
           spotifyTrackId: track.id,
@@ -113,7 +146,8 @@ export async function POST(request: Request) {
         ...chatMessages
       ]);
 
-      const museContent = (response as any).choices[0].message.content;
+      const choices = (response as { choices?: Array<{ message?: { content?: string | null } }> }).choices;
+      const museContent = choices?.[0]?.message?.content ?? '';
 
       await db.insert(messages).values({
         conversationId: activeConversationId,

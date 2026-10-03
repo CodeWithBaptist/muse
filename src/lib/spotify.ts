@@ -1,8 +1,5 @@
-import { nanoid } from 'nanoid';
 import crypto from 'crypto';
 
-const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID || '';
-const REDIRECT_URI = process.env.SPOTIFY_REDIRECT_URI || '';
 const SCOPES = [
   'user-read-private',
   'user-read-email',
@@ -16,11 +13,29 @@ const SCOPES = [
   'user-modify-playback-state'
 ].join(' ');
 
+export interface SpotifyTokenResponse {
+  access_token: string;
+  token_type: string;
+  scope: string;
+  expires_in: number;
+  refresh_token: string;
+}
+
+export interface SpotifyUserProfileResponse {
+  id: string;
+  display_name: string;
+  email: string;
+  images?: Array<{ url: string }>;
+}
+
 export function generateSpotifyAuthUrl(state: string, codeChallenge: string) {
+  const clientId = process.env.SPOTIFY_CLIENT_ID || '';
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || '';
+
   const params = new URLSearchParams({
-    client_id: CLIENT_ID,
+    client_id: clientId,
     response_type: 'code',
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     state,
     scope: SCOPES,
     code_challenge_method: 'S256',
@@ -37,13 +52,20 @@ export function generateCodeChallenge(codeVerifier: string) {
     .digest('base64url');
 }
 
-export async function exchangeCodeForTokens(code: string, codeVerifier: string) {
+export async function exchangeCodeForTokens(
+  code: string,
+  codeVerifier: string
+): Promise<SpotifyTokenResponse> {
+  const clientId = process.env.SPOTIFY_CLIENT_ID || '';
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || '';
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || '';
+
   const params = new URLSearchParams({
     grant_type: 'authorization_code',
     code,
-    redirect_uri: REDIRECT_URI,
-    client_id: CLIENT_ID,
-    client_secret: process.env.SPOTIFY_CLIENT_SECRET!,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    client_secret: clientSecret,
     code_verifier: codeVerifier,
   });
 
@@ -56,14 +78,15 @@ export async function exchangeCodeForTokens(code: string, codeVerifier: string) 
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`Failed to exchange code: ${JSON.stringify(error)}`);
+    throw new Error('Failed to exchange Spotify authorization code');
   }
 
-  return response.json();
+  return response.json() as Promise<SpotifyTokenResponse>;
 }
 
-export async function getSpotifyUserProfile(accessToken: string) {
+export async function getSpotifyUserProfile(
+  accessToken: string
+): Promise<SpotifyUserProfileResponse> {
   const response = await fetch('https://api.spotify.com/v1/me', {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -74,5 +97,5 @@ export async function getSpotifyUserProfile(accessToken: string) {
     throw new Error('Failed to fetch Spotify profile');
   }
 
-  return response.json();
+  return response.json() as Promise<SpotifyUserProfileResponse>;
 }

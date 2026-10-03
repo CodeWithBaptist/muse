@@ -7,11 +7,12 @@ import { TrackRow } from './TrackRow';
 import { PlaylistPreview } from './PlaylistPreview';
 import { staggerContainer } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  tracks?: any[];
+  tracks?: SpotifyTrackItem[];
   isPlaylistSuggestion?: boolean;
 }
 

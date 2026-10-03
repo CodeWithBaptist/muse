@@ -1,5 +1,10 @@
 import { structuredCompletion } from './provider';
 import { spotifyService } from '../spotify-service';
+import type {
+  ProfileInsightsData,
+  SpotifyArtistSummary,
+  SpotifyTrackItem,
+} from '../validation/api-schemas';
 
 const ProfileInsightsSchema = {
   type: "object",
@@ -34,7 +39,7 @@ const ProfileInsightsSchema = {
   required: ["identity", "vibe", "discovery"]
 };
 
-export async function orchestrateProfileInsights(userId: string) {
+export async function orchestrateProfileInsights(userId: string): Promise<ProfileInsightsData> {
   // 1. Fetch user data
   let dataContext = "";
   try {
@@ -44,9 +49,13 @@ export async function orchestrateProfileInsights(userId: string) {
       spotifyService.getRecentlyPlayed(userId, 10)
     ]);
     
-    const artists = topArtists.items.map((a: any) => `${a.name} (${a.genres.join(', ')})`).join('; ');
-    const tracks = topTracks.items.map((t: any) => `${t.name} by ${t.artists[0].name}`).join('; ');
-    const recent = recentlyPlayed.items.map((i: any) => i.track.name).join('; ');
+    const artistItems = (topArtists?.items ?? []) as SpotifyArtistSummary[];
+    const trackItems = (topTracks?.items ?? []) as SpotifyTrackItem[];
+    const recentItems = (recentlyPlayed?.items ?? []) as Array<{ track: SpotifyTrackItem }>;
+
+    const artists = artistItems.map((a) => `${a.name} (${(a.genres ?? []).join(', ')})`).join('; ');
+    const tracks = trackItems.map((t) => `${t.name} by ${t.artists[0]?.name ?? 'Unknown'}`).join('; ');
+    const recent = recentItems.map((i) => i.track.name).join('; ');
     
     dataContext = `Top Artists: ${artists}. Top Tracks: ${tracks}. Recently Played: ${recent}.`;
   } catch (e) {
@@ -66,7 +75,7 @@ export async function orchestrateProfileInsights(userId: string) {
     Return JSON format.
   `;
 
-  const insights = await structuredCompletion<any>(
+  const insights = await structuredCompletion<ProfileInsightsData>(
     prompt,
     ProfileInsightsSchema,
     "You are a musicologist and taste analyst."

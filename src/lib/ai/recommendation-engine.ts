@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { structuredCompletion } from './provider';
 import { spotifyService } from '../spotify-service';
+import type { SpotifyArtistSummary, SpotifyTrackItem } from '../validation/api-schemas';
 
 const SearchIntentSchema = z.object({
   searchQueries: z.array(z.string()).describe('A list of specific search queries for Spotify (e.g. "genre:afrobeats year:2023", "artist:Brent Faiyaz style:smooth")'),
@@ -18,6 +19,8 @@ const ExplanationSchema = z.object({
   intro: z.string(),
 });
 
+type ExplanationResult = z.infer<typeof ExplanationSchema>;
+
 export async function orchestrateRecommendations(userId: string, userMessage: string) {
   // 0. Fetch user context for personalization (if available)
   let userContext = "";
@@ -27,8 +30,10 @@ export async function orchestrateRecommendations(userId: string, userMessage: st
       spotifyService.getTopTracks(userId, 'medium_term', 5),
     ]);
     
-    const artistNames = topArtists.items.map((a: any) => a.name).join(', ');
-    const trackNames = topTracks.items.map((t: any) => `${t.name} by ${t.artists[0].name}`).join(', ');
+    const artistItems = (topArtists?.items ?? []) as SpotifyArtistSummary[];
+    const trackItems = (topTracks?.items ?? []) as SpotifyTrackItem[];
+    const artistNames = artistItems.map((a) => a.name).join(', ');
+    const trackNames = trackItems.map((t) => `${t.name} by ${t.artists[0]?.name ?? 'Unknown'}`).join(', ');
     userContext = `User's top artists: ${artistNames}. User's top tracks: ${trackNames}.`;
   } catch (e) {
     console.warn("Failed to fetch user context for recommendations", e);
@@ -55,27 +60,25 @@ export async function orchestrateRecommendations(userId: string, userMessage: st
   );
 
   // 2. Execute Search & De-duplicate
-  const pool: any[] = [];
+  const pool: SpotifyTrackItem[] = [];
   const seenIds = new Set<string>();
 
-  // Parallel searches for efficiency
   const searchPromises = intent.searchQueries.map(query => 
     spotifyService.search(userId, query, ['track'], 8)
       .catch(e => {
         console.error(`Search failed for query "${query}":`, e);
-        return { tracks: { items: [] } };
+        return { tracks: { items: [] as SpotifyTrackItem[] } };
       })
   );
 
   const results = await Promise.all(searchPromises);
 
   for (const res of results) {
-    if (res.tracks?.items) {
-      for (const track of res.tracks.items) {
-        if (!seenIds.has(track.id)) {
-          seenIds.add(track.id);
-          pool.push(track);
-        }
+    const items = (res?.tracks?.items ?? []) as SpotifyTrackItem[];
+    for (const track of items) {
+      if (!seenIds.has(track.id)) {
+        seenIds.add(track.id);
+        pool.push(track);
       }
     }
   }
@@ -83,17 +86,16 @@ export async function orchestrateRecommendations(userId: string, userMessage: st
   if (pool.length === 0) {
     return {
       message: "I couldn't find any music matching that vibe. Try describing it in a different way?",
-      tracks: [],
+      tracks: [] as SpotifyTrackItem[],
     };
   }
 
   // 3. AI Ranking and Selection
-  // Limit pool size for AI processing
   const candidates = pool.slice(0, 25).map(t => ({
     id: t.id,
     title: t.name,
-    artist: t.artists.map((a: any) => a.name).join(', '),
-    album: t.album.name,
+    artist: t.artists.map((a) => a.name).join(', '),
+    album: t.album?.name ?? '',
   }));
 
   const rankingPrompt = `
@@ -109,7 +111,7 @@ export async function orchestrateRecommendations(userId: string, userMessage: st
     Return JSON matching the schema: { explanations: [{ trackId, reason }], intro }
   `;
 
-  const selection = await structuredCompletion<any>(
+  const selection = await structuredCompletion<ExplanationResult>(
     rankingPrompt,
     ExplanationSchema,
     "You are MUSE, a premium music companion with impeccable taste. You prefer quality and cohesion over quantity."
@@ -117,7 +119,7 @@ export async function orchestrateRecommendations(userId: string, userMessage: st
 
   // 4. Final Result Assembly
   const selectedTracks = selection.explanations
-    .map((exp: any) => {
+    .map((exp): SpotifyTrackItem | null => {
       const track = pool.find(t => t.id === exp.trackId);
       if (!track) return null;
       return {
@@ -125,7 +127,7 @@ export async function orchestrateRecommendations(userId: string, userMessage: st
         reason: exp.reason,
       };
     })
-    .filter(Boolean);
+    .filter((t): t is SpotifyTrackItem => t !== null);
 
   return {
     message: selection.intro || "Here's a curated selection based on your request:",

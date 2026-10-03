@@ -1,5 +1,16 @@
 import { structuredCompletion } from './provider';
 import { spotifyService } from '../spotify-service';
+import type { SpotifyArtistSummary, SpotifyTrackItem } from '../validation/api-schemas';
+
+interface DiscoverProposalSection {
+  title: string;
+  description: string;
+  searchQueries: string[];
+}
+
+interface DiscoverProposal {
+  sections: DiscoverProposalSection[];
+}
 
 const DiscoverSectionsSchema = {
   type: "object",
@@ -29,8 +40,10 @@ export async function orchestrateDiscover(userId: string) {
       spotifyService.getTopTracks(userId, 'medium_term', 10),
     ]);
     
-    const artistNames = topArtists.items.map((a: any) => a.name).join(', ');
-    const trackNames = topTracks.items.map((t: any) => `${t.name} by ${t.artists[0].name}`).join(', ');
+    const artistItems = (topArtists?.items ?? []) as SpotifyArtistSummary[];
+    const trackItems = (topTracks?.items ?? []) as SpotifyTrackItem[];
+    const artistNames = artistItems.map((a) => a.name).join(', ');
+    const trackNames = trackItems.map((t) => `${t.name} by ${t.artists[0]?.name ?? 'Unknown'}`).join(', ');
     userContext = `User likes: ${artistNames}. Favorite tracks: ${trackNames}.`;
   } catch (e) {
     console.warn("Discover: Failed to fetch user context", e);
@@ -50,26 +63,25 @@ export async function orchestrateDiscover(userId: string) {
     Return JSON format.
   `;
 
-  const proposal = await structuredCompletion<any>(
+  const proposal = await structuredCompletion<DiscoverProposal>(
     prompt,
     DiscoverSectionsSchema,
     "You are an expert music editor for a premium streaming service."
   );
 
   // 3. Fetch data for each section
-  const sections = await Promise.all(proposal.sections.map(async (sec: any) => {
-    const pool: any[] = [];
+  const sections = await Promise.all(proposal.sections.map(async (sec) => {
+    const pool: SpotifyTrackItem[] = [];
     const seenIds = new Set<string>();
 
     for (const query of sec.searchQueries) {
       try {
         const res = await spotifyService.search(userId, query, ['track'], 8);
-        if (res.tracks?.items) {
-          for (const track of res.tracks.items) {
-            if (!seenIds.has(track.id)) {
-              seenIds.add(track.id);
-              pool.push(track);
-            }
+        const items = (res?.tracks?.items ?? []) as SpotifyTrackItem[];
+        for (const track of items) {
+          if (!seenIds.has(track.id)) {
+            seenIds.add(track.id);
+            pool.push(track);
           }
         }
       } catch (e) {

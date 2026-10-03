@@ -1,15 +1,25 @@
 import { generateSpotifyAuthUrl, generateCodeChallenge } from '@/lib/spotify';
+import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { nanoid } from 'nanoid';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
-export async function GET() {
+export async function GET(request?: Request) {
+  if (request) {
+    const rateLimited = await enforceRateLimit(request, {
+      scope: 'auth:spotify:init',
+      limit: 20,
+      windowMs: 60_000,
+    });
+    if (rateLimited) return rateLimited;
+  }
+
   if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_REDIRECT_URI) {
-    return new Response(
-      'MUSE Error: Spotify configuration is missing. Please set SPOTIFY_CLIENT_ID and SPOTIFY_REDIRECT_URI in your environment variables.',
-      { status: 500 }
+    return NextResponse.json(
+      { error: 'Spotify login is not configured yet.' },
+      { status: 503 }
     );
   }
 

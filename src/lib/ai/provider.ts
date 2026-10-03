@@ -86,7 +86,7 @@ export async function chatCompletion(messages: Message[], stream = false) {
 
 export async function structuredCompletion<T>(
   prompt: string,
-  schema: any,
+  schema: unknown,
   systemPrompt = 'You are a helpful music assistant.'
 ): Promise<T> {
   const openai = getOpenAI();
