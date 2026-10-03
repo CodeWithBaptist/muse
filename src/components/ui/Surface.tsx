@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion, HTMLMotionProps } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { transitions } from '@/lib/motion';
 
@@ -20,10 +20,7 @@ export const Surface = React.forwardRef<HTMLDivElement, SurfaceProps>(
     return (
       <motion.div
         ref={ref}
-        transition={{
-          duration: transitions.standard.duration,
-          ease: transitions.standard.ease as any,
-        }}
+        transition={transitions.standard}
         className={cn('rounded-md', variants[variant], className)}
         {...props}
       />

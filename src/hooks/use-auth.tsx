@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 
 interface User {
-  id: string;
+  id?: string;
   displayName: string;
   email: string;
   avatarUrl: string | null;

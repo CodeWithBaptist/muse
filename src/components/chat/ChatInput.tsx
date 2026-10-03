@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { Send, ArrowUp } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
 interface ChatInputProps {

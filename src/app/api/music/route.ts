@@ -1,6 +1,14 @@
 import { getSession } from '@/lib/session';
 import { spotifyService } from '@/lib/spotify-service';
+import {
+  isSpotifyReconnectError,
+  SPOTIFY_RECONNECT_CODE,
+  SPOTIFY_RECONNECT_MESSAGE,
+} from '@/lib/spotify-tokens';
+import { MusicQueryInputSchema } from '@/lib/validation/api-schemas';
 import { NextResponse } from 'next/server';
+
+export const runtime = 'nodejs';
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -9,9 +17,17 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get('type') || 'recent';
-  const limit = parseInt(searchParams.get('limit') || '20', 10);
-  const timeRange = (searchParams.get('timeRange') as any) || 'medium_term';
+  const parsed = MusicQueryInputSchema.safeParse({
+    type: searchParams.get('type') ?? undefined,
+    limit: searchParams.get('limit') ?? undefined,
+    timeRange: searchParams.get('timeRange') ?? undefined,
+  });
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid query parameters.' }, { status: 400 });
+  }
+
+  const { type, limit, timeRange } = parsed.data;
 
   try {
     let data;
@@ -34,13 +50,17 @@ export async function GET(request: Request) {
       case 'playlists':
         data = await spotifyService.getUserPlaylists(session.userId, limit);
         break;
-      default:
-        return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (isSpotifyReconnectError(error)) {
+      return NextResponse.json(
+        { error: SPOTIFY_RECONNECT_MESSAGE, code: SPOTIFY_RECONNECT_CODE },
+        { status: 401 }
+      );
+    }
     console.error(`Spotify API route error (${type}):`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to load music library data.' }, { status: 500 });
   }
 }

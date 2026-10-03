@@ -94,6 +94,12 @@ export const preferences = pgTable("preferences", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const rateLimits = pgTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(1),
+  resetAt: timestamp("reset_at").notNull(),
+});
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Session = typeof sessions.$inferSelect;

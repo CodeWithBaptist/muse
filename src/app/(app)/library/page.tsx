@@ -3,9 +3,18 @@
 import * as React from 'react';
 import { LibraryContent } from '@/components/library/LibraryContent';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
+import { fadeIn, transitions } from '@/lib/motion';
 
-type LibraryType = 'recent' | 'top-tracks' | 'top-artists' | 'saved-tracks' | 'saved-albums' | 'playlists';
+export type LibraryType =
+  | 'recent'
+  | 'top-tracks'
+  | 'top-artists'
+  | 'saved-tracks'
+  | 'saved-albums'
+  | 'playlists';
+
+export type TimeRangeType = 'short_term' | 'medium_term' | 'long_term';
 
 const TABS: { id: LibraryType; label: string }[] = [
   { id: 'recent', label: 'Recently Played' },
@@ -16,24 +25,61 @@ const TABS: { id: LibraryType; label: string }[] = [
   { id: 'playlists', label: 'Playlists' },
 ];
 
+const TIME_RANGES: { id: TimeRangeType; label: string }[] = [
+  { id: 'short_term', label: 'Last 4 weeks' },
+  { id: 'medium_term', label: 'Last 6 months' },
+  { id: 'long_term', label: 'All time' },
+];
+
 export default function LibraryPage() {
   const [activeTab, setActiveTab] = React.useState<LibraryType>('recent');
+  const [timeRange, setTimeRange] = React.useState<TimeRangeType>('medium_term');
+
+  const supportsTimeRange =
+    activeTab === 'top-artists' || activeTab === 'top-tracks';
 
   return (
     <div className="p-8 space-y-10 min-h-full">
       <div className="space-y-6">
-        <h1 className="type-page-title">Library</h1>
-        
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <h1 className="type-page-title">Library</h1>
+
+          {supportsTimeRange && (
+            <div
+              role="group"
+              aria-label="Time range"
+              className="inline-flex items-center gap-1 p-1 rounded-lg bg-surface border border-border-subtle self-start"
+            >
+              {TIME_RANGES.map((range) => (
+                <button
+                  key={range.id}
+                  type="button"
+                  onClick={() => setTimeRange(range.id)}
+                  className={cn(
+                    'px-3 py-1 rounded text-xs font-medium transition-colors',
+                    timeRange === range.id
+                      ? 'bg-accent text-background font-semibold'
+                      : 'text-text-secondary hover:text-text-primary'
+                  )}
+                >
+                  {range.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border-subtle">
           {TABS.map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap",
-                activeTab === tab.id 
-                  ? "bg-accent text-background" 
-                  : "text-text-muted hover:text-text-primary hover:bg-surface"
+                'px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap',
+                activeTab === tab.id
+                  ? 'bg-accent text-background'
+                  : 'text-text-muted hover:text-text-primary hover:bg-surface'
               )}
             >
               {tab.label}
@@ -43,13 +89,14 @@ export default function LibraryPage() {
       </div>
 
       <motion.div
-        key={activeTab}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+        key={`${activeTab}-${supportsTimeRange ? timeRange : 'default'}`}
+        variants={fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={transitions.standard}
         className="pb-20"
       >
-        <LibraryContent type={activeTab} />
+        <LibraryContent type={activeTab} timeRange={timeRange} />
       </motion.div>
     </div>
   );

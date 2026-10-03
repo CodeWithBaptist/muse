@@ -1,58 +1,107 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Logo } from '@/components/ui/Logo';
 import { TrackRow } from './TrackRow';
 import { PlaylistPreview } from './PlaylistPreview';
-import { staggerContainer } from '@/lib/motion';
+import { fadeIn, fadeInUp, staggerContainer, transitions } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  tracks?: any[];
+  tracks?: SpotifyTrackItem[];
   isPlaylistSuggestion?: boolean;
+  isStreaming?: boolean;
+  noResults?: boolean;
 }
 
 export function ChatMessage({ message }: { message: Message }) {
   const isAssistant = message.role === 'assistant';
-  const [localTracks, setLocalTracks] = React.useState(message.tracks || []);
+  const [removedTrackIds, setRemovedTrackIds] = React.useState<Set<string>>(
+    () => new Set()
+  );
+
+  const localTracks = React.useMemo(() => {
+    const source = message.tracks ?? [];
+    if (removedTrackIds.size === 0) return source;
+    return source.filter((t) => !removedTrackIds.has(t.id));
+  }, [message.tracks, removedTrackIds]);
 
   const handleRemoveTrack = (id: string) => {
-    setLocalTracks(prev => prev.filter(t => t.id !== id));
+    setRemovedTrackIds((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
   };
 
   return (
-    <div className={cn(
-      "flex flex-col gap-4 max-w-3xl",
-      isAssistant ? "mr-auto" : "ml-auto text-right"
-    )}>
+    <motion.div
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+      transition={transitions.standard}
+      className={cn(
+        'flex flex-col gap-4 max-w-3xl',
+        isAssistant ? 'mr-auto' : 'ml-auto text-right'
+      )}
+    >
       {isAssistant && (
         <div className="flex items-center gap-3">
           <div className="w-6 h-6 rounded-sm bg-surface border border-border-subtle flex items-center justify-center overflow-hidden">
             <Logo variant="mark" size={14} />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">MUSE</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-text-muted">
+            MUSE
+          </span>
         </div>
       )}
 
-      <div className={cn(
-        "p-4 text-sm leading-relaxed font-medium",
-        isAssistant 
-          ? "bg-transparent text-text-primary border-l border-border-strong pl-6" 
-          : "bg-accent/5 text-text-primary rounded-2xl rounded-tr-none border border-accent/10 px-6"
-      )}>
-        {message.content}
-      </div>
+      <motion.div
+        variants={fadeIn}
+        initial="initial"
+        animate="animate"
+        transition={transitions.standard}
+        className={cn(
+          'p-4 text-sm leading-relaxed font-medium',
+          isAssistant
+            ? 'bg-transparent text-text-primary border-l border-border-strong pl-6'
+            : 'bg-accent/5 text-text-primary rounded-2xl rounded-tr-none border border-accent/10 px-6'
+        )}
+      >
+        <span>{message.content}</span>
+        {isAssistant && message.isStreaming && (
+          <span
+            aria-hidden="true"
+            className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-accent/80 animate-pulse"
+          />
+        )}
+      </motion.div>
+
+      {isAssistant && message.noResults && localTracks.length === 0 && (
+        <div
+          data-testid="chat-no-results-state"
+          className="ml-6 p-4 rounded-lg bg-surface border border-border-subtle text-xs text-text-secondary space-y-1"
+        >
+          <p className="font-semibold text-text-primary uppercase tracking-wider text-[10px]">
+            No matching tracks found
+          </p>
+          <p>
+            Spotify search did not return tracks for those exact criteria. Try naming a specific artist, era, or broader genre.
+          </p>
+        </div>
+      )}
 
       {isAssistant && localTracks.length > 0 && (
         <div className="mt-2">
           {message.isPlaylistSuggestion ? (
-             <PlaylistPreview 
-               tracks={localTracks} 
-               onRemoveTrack={handleRemoveTrack}
-             />
+            <PlaylistPreview
+              tracks={localTracks}
+              onRemoveTrack={handleRemoveTrack}
+            />
           ) : (
             <motion.div
               variants={staggerContainer(0.04)}
@@ -67,6 +116,6 @@ export function ChatMessage({ message }: { message: Message }) {
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

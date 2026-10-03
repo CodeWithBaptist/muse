@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
 import { transitions, fadeInUp, staggerContainer } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
@@ -9,6 +9,14 @@ import Link from 'next/link';
 
 export function Hero() {
   const { authenticated } = useAuth();
+
+  const scrollToHowItWorks = () => {
+    const el = document.getElementById('how-it-works');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <section className="relative pt-32 pb-20 px-6 overflow-hidden">
       <motion.div
@@ -28,9 +36,9 @@ export function Hero() {
         </div>
 
         <motion.div variants={fadeInUp} className="space-y-6">
-          <h2 className="type-display text-[clamp(40px,7vw,80px)] text-balance">
+          <h1 className="type-display text-[clamp(40px,7vw,80px)] text-balance">
             Your music,<br />understood.
-          </h2>
+          </h1>
           <p className="max-w-2xl mx-auto text-text-secondary text-lg md:text-xl font-medium text-balance leading-relaxed">
             Discover music, build playlists, and explore your taste through conversation.
           </p>
@@ -42,14 +50,18 @@ export function Hero() {
               <Button variant="primary">Go to Chat</Button>
             </Link>
           ) : (
-            <Button 
-              onClick={() => window.location.href = '/api/auth/spotify'}
+            <Button
+              onClick={() => {
+                window.location.href = '/api/auth/spotify';
+              }}
               variant="primary"
             >
               Connect Spotify
             </Button>
           )}
-          <Button variant="outline">See how it works</Button>
+          <Button variant="outline" onClick={scrollToHowItWorks}>
+            See how it works
+          </Button>
         </motion.div>
       </motion.div>
     </section>

@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Sidebar } from './Sidebar';
 import { NowPlaying } from './NowPlaying';
 import { MobileNav } from './MobileNav';
@@ -23,13 +23,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isLoading && pathname !== '/') {
     return (
       <div className="flex h-screen bg-background items-center justify-center">
-        <div className="flex gap-1">
-          {[0, 1, 2].map(i => (
+        <div className="flex items-end gap-1 h-4">
+          {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              animate={{ height: [4, 12, 4] }}
+              style={{ transformOrigin: 'bottom' }}
+              animate={{ scaleY: [0.35, 1, 0.35] }}
               transition={{ repeat: Infinity, duration: 0.8, delay: i * 0.1 }}
-              className="w-1 bg-accent rounded-full"
+              className="w-1 h-3.5 bg-accent rounded-full"
             />
           ))}
         </div>

@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-48.png', sizes: '48x48', type: 'image/png' },
       { url: '/favicon.ico', sizes: '48x48' },
     ],
     apple: [
@@ -24,7 +27,6 @@ export const viewport: Viewport = {
   themeColor: "#0B0B0C",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
