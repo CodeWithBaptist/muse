@@ -7,6 +7,8 @@ import { createSession } from '@/lib/session';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
@@ -25,7 +27,7 @@ export async function GET(request: Request) {
   }
 
   if (error || !code || !state || state !== storedState || !codeVerifier) {
-    console.error('Auth error or mismatch:', { error, code, state, storedState, codeVerifier });
+    console.error('Auth error or state mismatch during Spotify callback');
     return NextResponse.redirect(new URL('/?error=auth_failed', request.url));
   }
 

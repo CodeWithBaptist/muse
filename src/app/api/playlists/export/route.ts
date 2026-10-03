@@ -1,9 +1,11 @@
 import { getSession } from '@/lib/session';
 import { spotifyService } from '@/lib/spotify-service';
 import { db } from '@/db';
-import { playlists as playlistsTable, playlistTracks } from '@/db/schema';
+import { playlists as playlistsTable } from '@/db/schema';
 import { NextResponse } from 'next/server';
 import { getValidAccessToken } from '@/lib/spotify-tokens';
+
+export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -36,14 +38,13 @@ export async function POST(request: Request) {
     });
 
     if (!createRes.ok) {
-      const error = await createRes.json();
+      const error = await createRes.json().catch(() => ({}));
       throw new Error(`Failed to create Spotify playlist: ${error.message || createRes.statusText}`);
     }
 
     const spotifyPlaylist = await createRes.json();
 
     // 2. Add Tracks to Spotify Playlist
-    // Spotify allows up to 100 tracks per request
     const addRes = await fetch(`https://api.spotify.com/v1/playlists/${spotifyPlaylist.id}/tracks`, {
       method: 'POST',
       headers: {
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     });
 
     if (!addRes.ok) {
-      const error = await addRes.json();
+      const error = await addRes.json().catch(() => ({}));
       throw new Error(`Failed to add tracks to Spotify playlist: ${error.message || addRes.statusText}`);
     }
 
@@ -74,8 +75,8 @@ export async function POST(request: Request) {
       spotifyUrl: spotifyPlaylist.external_urls.spotify,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Playlist Export Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to export playlist to Spotify right now.' }, { status: 500 });
   }
 }

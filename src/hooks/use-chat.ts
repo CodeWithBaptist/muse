@@ -7,27 +7,59 @@ interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   tracks?: any[];
+  isPlaylistSuggestion?: boolean;
+}
+
+interface ChatError extends Error {
+  code?: string;
+  status?: number;
+}
+
+export function isAiNotConnectedMessage(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const code = (error as { code?: unknown }).code;
+  const message = (error as { message?: unknown }).message;
+  if (code === 'AI_NOT_CONNECTED') return true;
+  if (typeof message === 'string' && /AI is not connected yet|OPENAI_API_KEY/i.test(message)) {
+    return true;
+  }
+  return false;
 }
 
 export function useChat(conversationId?: string) {
-  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [localMessages, setLocalMessages] = React.useState<Message[]>([]);
   const [isThinking, setIsThinking] = React.useState(false);
+
+  const { data: aiStatus } = useQuery({
+    queryKey: ['ai-status'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/ai/status');
+        if (!res || !res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+    retry: false,
+  });
 
   const { data: history } = useQuery({
     queryKey: ['chat', conversationId],
     queryFn: async () => {
       if (!conversationId) return null;
       const res = await fetch(`/api/chat/${conversationId}`);
+      if (!res.ok) return null;
       return res.json();
     },
     enabled: !!conversationId,
+    retry: false,
   });
 
-  React.useEffect(() => {
-    if (history?.messages) {
-      setMessages(history.messages);
-    }
-  }, [history]);
+  const messages = React.useMemo<Message[]>(() => {
+    const base: Message[] = Array.isArray(history?.messages) ? history.messages : [];
+    return [...base, ...localMessages];
+  }, [history, localMessages]);
 
   const chatMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -38,29 +70,45 @@ export function useChat(conversationId?: string) {
         body: JSON.stringify({ content, conversationId }),
       });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Failed to send message');
+        const errBody = await res.json().catch(() => ({}));
+        const err: ChatError = new Error(errBody.error || 'Failed to send message');
+        err.code = errBody.code;
+        err.status = res.status;
+        throw err;
       }
       return res.json();
     },
     onSuccess: (data) => {
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.content, tracks: data.tracks }]);
+      setLocalMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: data.content,
+          tracks: data.tracks,
+          isPlaylistSuggestion: data.isPlaylistSuggestion,
+        },
+      ]);
       setIsThinking(false);
     },
     onError: () => {
       setIsThinking(false);
-    }
+    },
   });
 
   const sendMessage = (content: string) => {
-    setMessages((prev) => [...prev, { role: 'user', content }]);
+    setLocalMessages((prev) => [...prev, { role: 'user', content }]);
     chatMutation.mutate(content);
   };
+
+  const error = chatMutation.error as ChatError | null;
+  const isAiNotConnected =
+    aiStatus?.connected === false || isAiNotConnectedMessage(error);
 
   return {
     messages,
     sendMessage,
     isThinking,
-    error: chatMutation.error as Error | null,
+    error,
+    isAiNotConnected,
   };
 }

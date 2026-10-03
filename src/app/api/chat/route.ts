@@ -2,20 +2,46 @@ import { getSession } from '@/lib/session';
 import { db } from '@/db';
 import { conversations, messages, recommendations } from '@/db/schema';
 import { orchestrateRecommendations } from '@/lib/ai/recommendation-engine';
-import { chatCompletion } from '@/lib/ai/provider';
+import {
+  AI_NOT_CONNECTED_CODE,
+  AI_NOT_CONNECTED_MESSAGE,
+  chatCompletion,
+  isAIConfigured,
+  isAINotConnectedError,
+} from '@/lib/ai/provider';
 import { eq, desc } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
 export async function POST(request: Request) {
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let body: { content?: string; conversationId?: string } = {};
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
   }
 
-  const { content, conversationId } = await request.json();
+  const { content, conversationId } = body;
 
   if (!content) {
     return NextResponse.json({ error: 'Content is required' }, { status: 400 });
+  }
+
+  if (!isAIConfigured()) {
+    return NextResponse.json(
+      {
+        error: AI_NOT_CONNECTED_MESSAGE,
+        code: AI_NOT_CONNECTED_CODE,
+        aiConnected: false,
+      },
+      { status: 503 }
+    );
+  }
+
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -38,8 +64,6 @@ export async function POST(request: Request) {
     });
 
     // 3. Simple Intent Logic
-    // For now, we assume if the user asks for music or a vibe, we discovery.
-    // In a real app, we'd use the AI to classify intent.
     const isDiscoveryRequest = /listening|music|find|recommend|playlist|vibe|play|song|artist|genre/i.test(content);
 
     if (isDiscoveryRequest) {
@@ -47,16 +71,13 @@ export async function POST(request: Request) {
       const isPlaylistSuggestion = /playlist|mix|collection|create|save/i.test(content) || result.tracks.length > 5;
 
       // Save MUSE response
-      const [museMsg] = await db.insert(messages).values({
+      await db.insert(messages).values({
         conversationId: activeConversationId,
         role: 'assistant',
         content: result.message,
       }).returning();
 
-      // We could add a 'metadata' column to the messages table for 'isPlaylistSuggestion'
-      // For now, let's just return it in the response.
-
-      // Save recommendations for "Why This" and Library
+      // Save recommendations for Why This and Library
       if (result.tracks.length > 0) {
         const recs = result.tracks.map((track: any) => ({
           userId: session.userId,
@@ -107,22 +128,43 @@ export async function POST(request: Request) {
       });
     }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    if (isAINotConnectedError(error)) {
+      return NextResponse.json(
+        {
+          error: AI_NOT_CONNECTED_MESSAGE,
+          code: AI_NOT_CONNECTED_CODE,
+          aiConnected: false,
+        },
+        { status: 503 }
+      );
+    }
     console.error('Chat API Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Unable to process chat request right now.' },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const convs = await db.select()
-    .from(conversations)
-    .where(eq(conversations.userId, session.userId))
-    .orderBy(desc(conversations.createdAt));
+  try {
+    const convs = await db.select()
+      .from(conversations)
+      .where(eq(conversations.userId, session.userId))
+      .orderBy(desc(conversations.createdAt));
 
-  return NextResponse.json(convs);
+    return NextResponse.json(convs);
+  } catch (error: unknown) {
+    console.error('Chat list API Error:', error);
+    return NextResponse.json(
+      { error: 'Unable to load conversations.' },
+      { status: 500 }
+    );
+  }
 }

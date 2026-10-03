@@ -3,18 +3,31 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Surface } from '@/components/ui/Surface';
-import { motion } from 'framer-motion';
+import { isAiNotConnectedMessage } from '@/hooks/use-chat';
+import { motion } from 'motion/react';
 import { fadeInUp, staggerContainer } from '@/lib/motion';
 import { User, Activity, Sparkles, Brain } from 'lucide-react';
+
+interface ApiError extends Error {
+  code?: string;
+  status?: number;
+}
 
 export default function ProfilePage() {
   const { data: insights, isLoading, error } = useQuery({
     queryKey: ['profile-insights'],
     queryFn: async () => {
       const res = await fetch('/api/me/profile');
-      if (!res.ok) throw new Error('Failed to fetch profile insights');
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        const err: ApiError = new Error(errBody.error || 'Failed to fetch profile insights');
+        err.code = errBody.code;
+        err.status = res.status;
+        throw err;
+      }
       return res.json();
     },
+    retry: false,
   });
 
   if (isLoading) {
@@ -30,13 +43,38 @@ export default function ProfilePage() {
     );
   }
 
-  if (error) {
+  const aiDisconnected =
+    insights?.aiConnected === false || isAiNotConnectedMessage(error);
+
+  if (aiDisconnected) {
+    return (
+      <div className="p-8 space-y-8">
+        <h1 className="type-page-title">Profile</h1>
+        <Surface
+          data-testid="ai-not-connected-state"
+          className="p-12 text-center space-y-4 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl"
+        >
+          <div className="w-10 h-10 rounded-full bg-surface border border-border-subtle flex items-center justify-center mx-auto">
+            <Sparkles size={18} className="text-accent" />
+          </div>
+          <h2 className="text-lg font-bold text-text-primary">AI is not connected yet</h2>
+          <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
+            Set <code className="font-mono text-xs text-text-primary">OPENAI_API_KEY</code> in your environment variables to generate AI taste insights and musical DNA analysis.
+          </p>
+        </Surface>
+      </div>
+    );
+  }
+
+  if (error || !insights?.identity || !insights?.vibe || !insights?.discovery) {
     return (
       <div className="p-8 space-y-8">
         <h1 className="type-page-title">Profile</h1>
         <Surface className="p-12 text-center space-y-4 border-dashed border-border-strong bg-transparent">
           <p className="type-body text-text-secondary">Unable to load your musical DNA.</p>
-          <p className="text-xs text-text-muted">Ensure your Spotify account and AI configuration are active.</p>
+          <p className="text-xs text-text-muted">
+            {(error as Error | null)?.message || 'Ensure your Spotify account and AI configuration are active.'}
+          </p>
         </Surface>
       </div>
     );

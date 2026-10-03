@@ -2,6 +2,8 @@ import { getSession } from '@/lib/session';
 import { spotifyService } from '@/lib/spotify-service';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: Request) {
   const session = await getSession();
   if (!session) {
@@ -19,8 +21,8 @@ export async function GET(request: Request) {
   try {
     const data = await spotifyService.search(session.userId, q, ['track', 'artist'], limit);
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Spotify Search API route error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to complete search right now.' }, { status: 500 });
   }
 }

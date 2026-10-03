@@ -2,6 +2,8 @@ import { getSession } from '@/lib/session';
 import { spotifyService } from '@/lib/spotify-service';
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
+
 export async function GET(request: Request) {
   const session = await getSession();
   if (!session) {
@@ -39,8 +41,8 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Spotify API route error (${type}):`, error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Unable to load music library data.' }, { status: 500 });
   }
 }
