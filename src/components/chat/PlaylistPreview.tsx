@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Music, Check, ExternalLink, X, GripVertical } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';

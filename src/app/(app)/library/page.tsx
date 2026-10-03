@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { LibraryContent } from '@/components/library/LibraryContent';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 
 type LibraryType = 'recent' | 'top-tracks' | 'top-artists' | 'saved-tracks' | 'saved-albums' | 'playlists';
 

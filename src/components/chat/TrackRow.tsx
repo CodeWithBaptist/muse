@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Play, Plus, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { transitions, fadeInUp } from '@/lib/motion';
 import { cn } from '@/lib/utils';

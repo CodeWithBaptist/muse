@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { Volume2 } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { Logo } from '@/components/ui/Logo';

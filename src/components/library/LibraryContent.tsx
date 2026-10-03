@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { TrackRow } from '@/components/chat/TrackRow';
 import { Surface } from '@/components/ui/Surface';
-import { motion } from 'framer-motion';
+import { motion } from 'motion/react';
 import { staggerContainer, fadeInUp } from '@/lib/motion';
 import { Music, User, Disc, ListMusic, History } from 'lucide-react';
 import { cn } from '@/lib/utils';

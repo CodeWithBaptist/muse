@@ -1,4 +1,4 @@
-import { Transition, Easing } from 'framer-motion';
+import { Transition, Easing } from 'motion/react';
 
 export const durations = {
   instant: 0.09,
