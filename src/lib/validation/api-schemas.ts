@@ -79,6 +79,13 @@ export const PlaylistTrackMetaSchema = z.object({
 
 export const PlaylistExportInputSchema = z.object({
   playlistId: z.string().uuid().optional(),
+  // Set only when adding tracks to a playlist that already exists, so a retry
+  // after a partial failure never creates a second playlist.
+  spotifyPlaylistId: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9]{22}$/, 'Invalid Spotify playlist ID')
+    .optional(),
   name: z
     .string()
     .trim()
