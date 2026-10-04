@@ -186,8 +186,10 @@ describe('RadialSpectrumCanvas', () => {
   ): number {
     const { container, unmount } = render(<Harness />);
     runFrames(200, 40);
-    const button = container.querySelector('[data-muse-hero-action]')!;
-    const host = container.querySelector('section')!;
+    const button = container.querySelector(
+      '[data-muse-hero-action]',
+    ) as HTMLButtonElement;
+    const host = container.querySelector('section') as HTMLElement;
     if (interact) act(() => interact({ button, host }));
     context.strokes.length = 0;
     runFrames(window.from, window.frames);
@@ -341,7 +343,7 @@ describe('RadialSpectrumCanvas', () => {
   it('removes every listener on unmount', () => {
     const { container, unmount } = render(<Harness />);
     runFrames(1200, 2);
-    const host = container.querySelector('section')!;
+    const host = container.querySelector('section') as HTMLElement;
 
     expect(media.listenerCount()).toBe(1);
     unmount();

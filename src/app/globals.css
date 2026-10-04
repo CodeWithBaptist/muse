@@ -198,7 +198,8 @@
 /* Headline lines rise from behind their overflow mask. */
 @keyframes muse-hero-line {
   from {
-    transform: translate3d(0, 115%, 0);
+    /* More than the mask height, so no glyph ever peeks above the mask. */
+    transform: translate3d(0, 130%, 0);
   }
   to {
     transform: translate3d(0, 0, 0);

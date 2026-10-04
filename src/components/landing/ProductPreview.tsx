@@ -19,6 +19,10 @@ import {
 /** How often the scripted timeline is sampled while it plays. */
 const PREVIEW_TICK_MS = 40;
 
+/** Fixed, because the sample data is fixed: no state is derived per render. */
+const TIMELINE = previewTimeline(LANDING_SAMPLE);
+const REPLY_WORDS = LANDING_SAMPLE.reply.split(/\s+/).filter(Boolean);
+
 /**
  * The scripted landing demo: the only simulated sequence in the product.
  *
@@ -44,13 +48,6 @@ export function ProductPreview() {
     previewFinalState(LANDING_SAMPLE),
   );
 
-  const timeline = React.useMemo(() => previewTimeline(LANDING_SAMPLE), []);
-  const timelineRef = React.useRef(timeline);
-  timelineRef.current = timeline;
-  const replyWords = React.useMemo(
-    () => LANDING_SAMPLE.reply.split(/\s+/).filter(Boolean),
-    [],
-  );
 
   const stopTimer = React.useCallback(() => {
     if (timerRef.current !== null) {
@@ -80,7 +77,7 @@ export function ProductPreview() {
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
-      elapsedRef.current = timelineRef.current.totalMs;
+      elapsedRef.current = TIMELINE.totalMs;
       playingRef.current = false;
       stopTimer();
       setState(previewFinalState(LANDING_SAMPLE));
@@ -118,7 +115,7 @@ export function ProductPreview() {
 
     const resume = () => {
       if (!playingRef.current) return;
-      if (elapsedRef.current >= timeline.totalMs) return;
+      if (elapsedRef.current >= TIMELINE.totalMs) return;
       if (document.hidden) return;
       startTimer();
     };
@@ -174,7 +171,7 @@ export function ProductPreview() {
       observer?.disconnect();
       controller.abort();
     };
-  }, [restart, startTimer, stopTimer, timeline.totalMs]);
+  }, [restart, startTimer, stopTimer]);
 
   const phase = state.phase;
   const showPrompt = phase !== 'idle';
@@ -278,7 +275,7 @@ export function ProductPreview() {
                   </div>
 
                   <p className="text-sm leading-relaxed text-text-secondary">
-                    {replyWords.map((word, index) => (
+                    {REPLY_WORDS.map((word, index) => (
                       <span
                         key={`${index}-${word}`}
                         className="transition-opacity duration-200"
@@ -286,7 +283,7 @@ export function ProductPreview() {
                           opacity: index < state.replyWords ? 1 : 0,
                         }}
                       >
-                        {index < replyWords.length - 1 ? `${word} ` : word}
+                        {index < REPLY_WORDS.length - 1 ? `${word} ` : word}
                       </span>
                     ))}
                   </p>
