@@ -110,7 +110,7 @@ export function ThinkingIndicator({
     >
       <EqualizerBars bars={4} tone="lime" height={16} width={3} />
       <motion.p
-        initial={shouldReduceMotion ? false : fadeIn.initial}
+        initial={fadeIn.initial}
         animate={fadeIn.animate}
         transition={
           shouldReduceMotion ? { duration: 0 } : transitions.standard

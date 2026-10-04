@@ -210,6 +210,11 @@
     stroke-dashoffset: 0;
   }
 
+  .muse-word-reveal > span {
+    opacity: 1 !important;
+    transition-duration: 0s !important;
+  }
+
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {

@@ -70,9 +70,9 @@ export function EqualizerBars({
                 animationDuration: `${durationMs}ms`,
                 // Negative delays start each bar out of phase immediately.
                 animationDelay: `${-index * 130}ms`,
-                '--muse-equalizer-static-scale': shouldReduceMotion
-                  ? staticScale
-                  : undefined,
+                // Only used by the reduced motion rule, and always rendered so
+                // the server and client markup stay identical.
+                '--muse-equalizer-static-scale': staticScale,
               } as React.CSSProperties
             }
           />

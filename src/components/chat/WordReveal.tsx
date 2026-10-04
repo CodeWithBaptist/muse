@@ -26,10 +26,9 @@ export function WordReveal({ text, className }: WordRevealProps) {
   const wordCount = React.useMemo(() => countWords(parts), [parts]);
   const plan = React.useMemo(() => planWordReveal(wordCount), [wordCount]);
   const [revealedWords, setRevealedWords] = React.useState(0);
-  // Reduced motion shows the whole reply with no reveal steps.
-  const visibleWords = shouldReduceMotion ? wordCount : revealedWords;
 
   React.useEffect(() => {
+    // Reduced motion reveals the whole reply through CSS with no steps.
     if (shouldReduceMotion) return;
     if (revealedWords >= wordCount) return;
     const timer = setTimeout(() => {
@@ -45,24 +44,22 @@ export function WordReveal({ text, className }: WordRevealProps) {
   ]);
 
   return (
-    <span data-testid="word-reveal" className={className}>
+    <span
+      data-testid="word-reveal"
+      className={cn('muse-word-reveal', className)}
+    >
       {parts.map((part, index) => {
         if (!part.isWord) return part.token;
-        const revealed = shouldReduceMotion || part.wordIndex < visibleWords;
+        const revealed = part.wordIndex < revealedWords;
         return (
           <span
             key={`${index}-${part.token}`}
             data-testid="word-reveal-word"
-            data-revealed={revealed ? 'true' : 'false'}
             className={cn(
               'transition-opacity',
               revealed ? 'opacity-100' : 'opacity-0',
             )}
-            style={{
-              transitionDuration: shouldReduceMotion
-                ? '0ms'
-                : `${plan.fadeMs}ms`,
-            }}
+            style={{ transitionDuration: `${plan.fadeMs}ms` }}
           >
             {part.token}
           </span>
