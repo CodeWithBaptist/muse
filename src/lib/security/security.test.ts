@@ -219,23 +219,31 @@ describe('Stage B Security Hardening', () => {
     expect(postRes.status).toBe(404);
   });
 
-  it('never leaks raw database error messages to the client', async () => {
+  it('keeps database error details out of the client response and logs', async () => {
     process.env.OPENAI_API_KEY = 'sk-real-key-for-test';
     mockDbInsertReturning.mockRejectedValueOnce(
       new Error('SENSITIVE_DB_ERROR: connection string password=secret')
     );
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const res = await chatPost(
-      new Request('http://127.0.0.1:3000/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: 'Hello there' }),
-      })
-    );
-    expect(res.status).toBe(500);
-    const body = await res.json();
-    expect(JSON.stringify(body)).not.toContain('SENSITIVE_DB_ERROR');
-    expect(body).toEqual({ error: 'Unable to process chat request right now.' });
+    try {
+      const res = await chatPost(
+        new Request('http://127.0.0.1:3000/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: 'Hello there' }),
+        })
+      );
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(JSON.stringify(body)).not.toContain('SENSITIVE_DB_ERROR');
+      expect(body).toEqual({ error: 'Unable to process chat request right now.' });
+      const loggedDetails = JSON.stringify(errorLog.mock.calls);
+      expect(loggedDetails).not.toContain('SENSITIVE_DB_ERROR');
+      expect(loggedDetails).not.toContain('password=secret');
+    } finally {
+      errorLog.mockRestore();
+    }
   });
 
   it('refreshes expired Spotify tokens and throws SpotifyReconnectError when refresh is rejected', async () => {

@@ -26,6 +26,76 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
+const SAFE_ERROR_NAMES = new Set([
+  'Error',
+  'TypeError',
+  'RangeError',
+  'ReferenceError',
+  'SyntaxError',
+  'AINotConnectedError',
+  'SpotifyReconnectError',
+  'ZodError',
+  'APIError',
+  'APIConnectionError',
+  'APIConnectionTimeoutError',
+  'AuthenticationError',
+  'RateLimitError',
+  'InternalServerError',
+]);
+
+const SAFE_ERROR_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'ECONNABORTED',
+  'EPIPE',
+  'AI_NOT_CONNECTED',
+  'SPOTIFY_DISCONNECTED',
+  'RATE_LIMITED',
+  '08000',
+  '08001',
+  '08003',
+  '08006',
+  '28P01',
+  '3D000',
+  '42P01',
+  '23505',
+  '53300',
+  '57014',
+]);
+
+function logChatError(context: string, error: unknown): void {
+  if (!error || typeof error !== 'object') {
+    console.error(context, { errorType: typeof error });
+    return;
+  }
+
+  const candidate = error as { name?: unknown; code?: unknown; status?: unknown };
+  const errorType =
+    typeof candidate.name === 'string' && SAFE_ERROR_NAMES.has(candidate.name)
+      ? candidate.name
+      : 'UnknownError';
+  const code =
+    typeof candidate.code === 'string' && SAFE_ERROR_CODES.has(candidate.code)
+      ? candidate.code
+      : undefined;
+  const status =
+    typeof candidate.status === 'number' &&
+    Number.isInteger(candidate.status) &&
+    candidate.status >= 100 &&
+    candidate.status <= 599
+      ? candidate.status
+      : undefined;
+
+  console.error(context, {
+    errorType,
+    ...(code ? { code } : {}),
+    ...(status ? { status } : {}),
+  });
+}
+
 function isSpotifyServiceFailure(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const msg = (error as { message?: unknown }).message;
@@ -279,7 +349,7 @@ export async function POST(request: Request) {
                 })
               );
             } else {
-              console.error('Chat stream error:', streamErr);
+              logChatError('Chat stream error', streamErr);
               controller.enqueue(
                 encodeSseEvent({
                   type: 'error',
@@ -415,7 +485,7 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
-    console.error('Chat API Error:', error);
+    logChatError('Chat API Error', error);
     return NextResponse.json(
       { error: 'Unable to process chat request right now.' },
       { status: 500 }
@@ -438,7 +508,7 @@ export async function GET() {
 
     return NextResponse.json(convs);
   } catch (error: unknown) {
-    console.error('Chat list API Error:', error);
+    logChatError('Chat list API Error', error);
     return NextResponse.json(
       { error: 'Unable to load conversations.' },
       { status: 500 }
@@ -469,7 +539,7 @@ export async function DELETE(request: Request) {
       .where(eq(conversations.userId, session.userId));
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    console.error('Chat clear API Error:', error);
+    logChatError('Chat clear API Error', error);
     return NextResponse.json(
       { error: 'Unable to clear conversation history.' },
       { status: 500 }
