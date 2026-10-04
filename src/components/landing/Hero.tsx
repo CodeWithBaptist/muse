@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
 import { transitions, fadeInUp, staggerContainer } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
@@ -9,11 +9,12 @@ import Link from 'next/link';
 
 export function Hero() {
   const { authenticated } = useAuth();
+  const shouldReduceMotion = useReducedMotion() ?? false;
 
   const scrollToHowItWorks = () => {
     const el = document.getElementById('how-it-works');
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+      el.scrollIntoView({ behavior: shouldReduceMotion ? 'auto' : 'smooth' });
     }
   };
 
@@ -46,8 +47,11 @@ export function Hero() {
 
         <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           {authenticated ? (
-            <Link href="/chat">
-              <Button variant="primary">Go to Chat</Button>
+            <Link
+              href="/chat"
+              className="inline-flex h-11 items-center justify-center rounded-md bg-accent px-6 text-sm font-semibold text-background transition-colors hover:bg-accent/90 focus-ring"
+            >
+              Go to Chat
             </Link>
           ) : (
             <Button

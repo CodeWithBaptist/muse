@@ -1,6 +1,6 @@
 'use client';
 
-import * as React from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import { fadeInUp, staggerContainer } from '@/lib/motion';
 import { Logo } from '@/components/ui/Logo';
@@ -103,80 +103,26 @@ export function Features() {
 }
 
 export function Footer() {
-  const [activeNote, setActiveNote] = React.useState<
-    'privacy' | 'terms' | null
-  >(null);
-
   return (
     <footer className="px-6 py-12 border-t border-border-subtle">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-center gap-8">
           <Logo variant="wordmark" size={100} />
-          <div className="flex gap-8 type-caption">
-            <button
-              type="button"
-              aria-expanded={activeNote === 'privacy'}
-              onClick={() =>
-                setActiveNote((prev) =>
-                  prev === 'privacy' ? null : 'privacy'
-                )
-              }
-              className="hover:text-text-primary transition-colors cursor-pointer"
-            >
+          <nav aria-label="Footer" className="flex flex-wrap justify-center gap-8 type-caption">
+            <Link href="/privacy" className="hover:text-text-primary transition-colors">
               Privacy
-            </button>
-            <button
-              type="button"
-              aria-expanded={activeNote === 'terms'}
-              onClick={() =>
-                setActiveNote((prev) => (prev === 'terms' ? null : 'terms'))
-              }
-              className="hover:text-text-primary transition-colors cursor-pointer"
-            >
+            </Link>
+            <Link href="/terms" className="hover:text-text-primary transition-colors">
               Terms
-            </button>
-            <a
-              href="https://www.spotify.com/legal/privacy-policy/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-text-primary transition-colors"
-            >
-              Spotify Policy
-            </a>
-          </div>
-          <div className="type-caption opacity-50">
+            </Link>
+            <Link href="/spotify-attribution" className="hover:text-text-primary transition-colors">
+              Spotify attribution
+            </Link>
+          </nav>
+          <div className="type-caption text-text-muted">
             &copy; 2026 MUSE. Built for music.
           </div>
         </div>
-
-        {activeNote === 'privacy' && (
-          <div
-            data-testid="footer-privacy-note"
-            className="p-4 rounded-lg bg-surface border border-border-subtle text-xs text-text-secondary leading-relaxed"
-          >
-            <strong className="text-text-primary font-semibold">
-              Data and Privacy:{' '}
-            </strong>
-            MUSE connects to your Spotify account via OAuth to read listening
-            context and export playlists you create. OAuth tokens are encrypted
-            at rest with AES-256-GCM. You can clear saved conversation history
-            in Settings or revoke app access anytime in your Spotify account.
-          </div>
-        )}
-
-        {activeNote === 'terms' && (
-          <div
-            data-testid="footer-terms-note"
-            className="p-4 rounded-lg bg-surface border border-border-subtle text-xs text-text-secondary leading-relaxed"
-          >
-            <strong className="text-text-primary font-semibold">
-              Service Usage:{' '}
-            </strong>
-            MUSE is an AI music companion powered by the Spotify Web API and
-            OpenAI. Track metadata and playback remain subject to your Spotify
-            account agreement.
-          </div>
-        )}
       </div>
     </footer>
   );

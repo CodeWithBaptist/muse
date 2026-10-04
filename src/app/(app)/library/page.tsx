@@ -54,6 +54,7 @@ export default function LibraryPage() {
                 <button
                   key={range.id}
                   type="button"
+                  aria-pressed={timeRange === range.id}
                   onClick={() => setTimeRange(range.id)}
                   className={cn(
                     'px-3 py-1 rounded text-xs font-medium transition-colors',
@@ -69,11 +70,16 @@ export default function LibraryPage() {
           )}
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border-subtle">
+        <div
+          role="group"
+          aria-label="Library sections"
+          className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-border-subtle"
+        >
           {TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
+              aria-pressed={activeTab === tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 'px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider transition-all whitespace-nowrap',

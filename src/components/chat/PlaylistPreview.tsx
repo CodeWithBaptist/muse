@@ -31,6 +31,8 @@ export function PlaylistPreview({
   >('idle');
   const [spotifyUrl, setSpotifyUrl] = React.useState<string | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const nameInputId = React.useId();
+  const descriptionInputId = React.useId();
 
   const buildTrackPayload = () =>
     tracks.map((t) => ({
@@ -121,12 +123,13 @@ export function PlaylistPreview({
         </div>
         <div className="flex-1 space-y-3 min-w-0">
           <div className="space-y-1">
-            <label htmlFor="playlist-name-input" className="type-section-label">
+            <label htmlFor={nameInputId} className="type-section-label">
               Playlist Name
             </label>
             <input
-              id="playlist-name-input"
+              id={nameInputId}
               aria-label="Playlist Name"
+              required
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full bg-surface/60 border border-border-subtle rounded px-3 py-1.5 text-lg font-bold focus:outline-none focus:border-accent text-text-primary placeholder:text-text-muted"
@@ -134,14 +137,11 @@ export function PlaylistPreview({
             />
           </div>
           <div className="space-y-1">
-            <label
-              htmlFor="playlist-description-input"
-              className="type-section-label"
-            >
+            <label htmlFor={descriptionInputId} className="type-section-label">
               Description
             </label>
             <textarea
-              id="playlist-description-input"
+              id={descriptionInputId}
               aria-label="Playlist Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -165,13 +165,19 @@ export function PlaylistPreview({
             All tracks have been removed from this playlist preview.
           </p>
         ) : (
-          <motion.div variants={staggerContainer(0.04)} className="space-y-1">
+          <motion.div
+            role="list"
+            aria-label="Tracks in playlist"
+            variants={staggerContainer(0.04)}
+            className="space-y-1"
+          >
             {tracks.map((track, i) => (
               <TrackRow
                 key={track.id}
                 track={track}
                 index={i}
                 onRemove={onRemoveTrack}
+                listItem
               />
             ))}
           </motion.div>
@@ -179,7 +185,28 @@ export function PlaylistPreview({
       </div>
 
       {errorMessage && (
-        <p className="text-xs text-red-400 font-medium">{errorMessage}</p>
+        <p role="alert" className="text-xs font-medium text-red-400">
+          {errorMessage}
+        </p>
+      )}
+      {draftStatus === 'error' && (
+        <p role="alert" className="text-xs font-medium text-red-400">
+          Unable to save this playlist to MUSE right now.
+        </p>
+      )}
+      {(status === 'creating' ||
+        status === 'success' ||
+        draftStatus === 'saving' ||
+        draftStatus === 'saved') && (
+        <p role="status" aria-live="polite" className="text-xs text-text-secondary">
+          {status === 'creating'
+            ? 'Creating playlist in Spotify.'
+            : status === 'success'
+              ? 'Playlist created in Spotify.'
+              : draftStatus === 'saving'
+                ? 'Saving playlist to MUSE.'
+                : 'Playlist saved to MUSE Playlists.'}
+        </p>
       )}
 
       <div className="pt-4 border-t border-border-subtle flex flex-wrap gap-3">

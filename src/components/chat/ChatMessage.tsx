@@ -76,7 +76,7 @@ export function ChatMessage({ message }: { message: Message }) {
         {isAssistant && message.isStreaming && (
           <span
             aria-hidden="true"
-            className="inline-block w-1.5 h-3.5 ml-1 align-middle bg-accent/80 animate-pulse"
+            className="ml-1 inline-block h-3.5 w-1.5 align-middle bg-accent/80"
           />
         )}
       </motion.div>
@@ -104,13 +104,20 @@ export function ChatMessage({ message }: { message: Message }) {
             />
           ) : (
             <motion.div
+              role="list"
+              aria-label="Recommended tracks"
               variants={staggerContainer(0.04)}
               initial="initial"
               animate="animate"
               className="space-y-1"
             >
               {localTracks.map((track, i) => (
-                <TrackRow key={track.id || i} track={track} index={i} />
+                <TrackRow
+                  key={track.id || i}
+                  track={track}
+                  index={i}
+                  listItem
+                />
               ))}
             </motion.div>
           )}

@@ -66,13 +66,16 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-12">
+      <div aria-busy="true" className="p-8 space-y-12">
         <h1 className="type-page-title">Profile</h1>
+        <p role="status" className="sr-only">
+          Loading profile insights.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {[...Array(4)].map((_, i) => (
             <div
               key={i}
-              className="h-64 bg-surface rounded-2xl animate-pulse border border-border-subtle"
+              className="h-64 rounded-2xl border border-border-subtle bg-surface"
             />
           ))}
         </div>

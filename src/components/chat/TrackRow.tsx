@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Play, ExternalLink, Info, X, Disc } from 'lucide-react';
-import { transitions, fadeIn, fadeInUp } from '@/lib/motion';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { ExternalLink, Info, X, Disc } from "lucide-react";
+import { transitions, fadeIn, fadeInUp } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 import {
   useNowPlaying,
   formatTrackDuration,
   getSpotifyTrackUrl,
-} from '@/hooks/use-now-playing';
+} from "@/hooks/use-now-playing";
+import { PlaybackButton } from "@/components/shell/PlaybackButton";
+import { PlayingEqualizer } from "@/components/shell/PlayingEqualizer";
 
 export interface Track {
   id: string;
@@ -26,58 +28,93 @@ interface TrackRowProps {
   track: Track;
   index: number;
   onRemove?: (id: string) => void;
+  listItem?: boolean;
 }
 
-export function TrackRow({ track, index, onRemove }: TrackRowProps) {
+export function TrackRow({
+  track,
+  index,
+  onRemove,
+  listItem = false,
+}: TrackRowProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
-  const { selectedTrack, selectTrack } = useNowPlaying();
+  const {
+    selectedTrack,
+    activeTrack,
+    playbackMode,
+    selectTrack,
+    getPlaybackAction,
+    playTrack,
+    togglePlayback,
+    isTrackPlaying,
+    isTrackBuffering,
+  } = useNowPlaying();
 
   const artistName = Array.isArray(track.artists)
-    ? track.artists.map((a) => a.name).join(', ')
+    ? track.artists.map((artist) => artist.name).join(", ")
     : track.artists;
-
   const artUrl = track.album?.images?.[0]?.url || track.albumArtUrl;
   const durationLabel = formatTrackDuration(track.duration_ms);
   const spotifyUrl = getSpotifyTrackUrl(track.id);
   const isSelected = selectedTrack?.id === track.id;
+  const action = getPlaybackAction(track);
+  const playing = isTrackPlaying(track.id);
+  const busy = isTrackBuffering(track.id);
+  const isActiveTrack = activeTrack?.id === track.id && playbackMode !== null;
+  const actionLabel =
+    action === "spotify" ? `Play ${track.name} on Spotify` : "";
+
+  const handlePlayback = () => {
+    if (isActiveTrack) {
+      void togglePlayback();
+    } else {
+      void playTrack(track);
+    }
+  };
 
   return (
     <motion.div
+      role={listItem ? 'listitem' : undefined}
       variants={fadeInUp}
       transition={transitions.standard}
       className={cn(
-        'group border-b border-border-subtle last:border-0',
-        isSelected && 'bg-surface/60 rounded-md'
+        "group border-b border-border-subtle last:border-0",
+        isSelected && "rounded-md bg-surface/60",
       )}
     >
-      <div className="flex items-center gap-4 py-3 px-2 hover:bg-surface transition-colors rounded-md">
-        <div className="w-8 text-xs text-text-muted tabular-nums group-hover:hidden">
-          {index + 1}
-        </div>
-        <button
-          type="button"
-          onClick={() => selectTrack(track)}
-          aria-label={`Inspect ${track.name}`}
-          title="Inspect track"
-          className="w-8 hidden group-hover:flex items-center justify-center text-accent"
-        >
-          <Play size={16} fill="currentColor" />
-        </button>
+      <div className="flex items-center gap-4 rounded-md px-2 py-3 transition-colors hover:bg-surface">
+        {playing ? (
+          <div className="flex w-8 shrink-0 justify-center">
+            <PlayingEqualizer />
+          </div>
+        ) : action ? (
+          <PlaybackButton
+            playing={false}
+            busy={busy}
+            label={busy ? "Starting playback" : actionLabel}
+            onClick={handlePlayback}
+            className="h-8 w-8 shrink-0 text-accent opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+          />
+        ) : (
+          <div className="w-8 shrink-0 text-xs tabular-nums text-text-muted">
+            {index + 1}
+          </div>
+        )}
 
         <button
           type="button"
           onClick={() => selectTrack(track)}
-          className="w-10 h-10 bg-surface border border-border-strong rounded shrink-0 overflow-hidden text-left"
+          className="h-10 w-10 shrink-0 overflow-hidden rounded border border-border-strong bg-surface text-left"
           aria-label={`Select ${track.name}`}
         >
           {artUrl ? (
             <img
               src={artUrl}
               alt={track.name}
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="flex h-full w-full items-center justify-center">
               <Disc size={14} className="text-text-muted/30" />
             </div>
           )}
@@ -86,18 +123,19 @@ export function TrackRow({ track, index, onRemove }: TrackRowProps) {
         <button
           type="button"
           onClick={() => selectTrack(track)}
-          className="flex-1 min-w-0 text-left"
+          className="min-w-0 flex-1 text-left"
+          aria-label={`Inspect ${track.name}`}
         >
-          <div className="text-sm font-semibold truncate text-text-primary">
+          <div className="truncate text-sm font-semibold text-text-primary">
             {track.name}
           </div>
-          <div className="text-xs font-medium text-text-secondary truncate">
+          <div className="truncate text-xs font-medium text-text-secondary">
             {artistName}
           </div>
         </button>
 
         {durationLabel && (
-          <span className="hidden sm:inline-block text-xs text-text-muted tabular-nums">
+          <span className="hidden text-xs tabular-nums text-text-muted sm:inline-block">
             {durationLabel}
           </span>
         )}
@@ -108,12 +146,12 @@ export function TrackRow({ track, index, onRemove }: TrackRowProps) {
             data-testid="why-this-toggle"
             aria-expanded={isExpanded}
             aria-label={`Why this track: ${track.name}`}
-            onClick={() => setIsExpanded((prev) => !prev)}
+            onClick={() => setIsExpanded((previous) => !previous)}
             className={cn(
-              'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors',
+              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
               isExpanded
-                ? 'bg-accent/15 text-accent'
-                : 'text-text-muted hover:text-text-primary hover:bg-surface'
+                ? "bg-accent/15 text-accent"
+                : "text-text-muted hover:bg-surface hover:text-text-primary",
             )}
             title="Why this?"
           >
@@ -128,7 +166,7 @@ export function TrackRow({ track, index, onRemove }: TrackRowProps) {
               rel="noopener noreferrer"
               aria-label={`Open ${track.name} in Spotify`}
               title="Open in Spotify"
-              className="p-2 text-text-muted hover:text-text-primary transition-colors rounded-full hover:bg-surface"
+              className="rounded-full p-2 text-text-muted transition-colors hover:bg-surface hover:text-text-primary"
             >
               <ExternalLink size={15} />
             </a>
@@ -140,7 +178,7 @@ export function TrackRow({ track, index, onRemove }: TrackRowProps) {
               onClick={() => onRemove(track.id)}
               aria-label={`Remove ${track.name}`}
               title="Remove track"
-              className="p-2 rounded-full text-text-muted hover:text-red-400 hover:bg-surface transition-colors"
+              className="rounded-full p-2 text-text-muted transition-colors hover:bg-surface hover:text-red-400"
             >
               <X size={15} />
             </button>
@@ -157,14 +195,14 @@ export function TrackRow({ track, index, onRemove }: TrackRowProps) {
             animate="animate"
             exit="exit"
             transition={transitions.standard}
-            className="bg-surface/30 rounded-b-md"
+            className="rounded-b-md bg-surface/30"
           >
-            <div className="px-14 pb-4 pt-2 text-sm text-text-secondary leading-relaxed border-l-2 border-accent/30 ml-4">
-              <span className="text-accent/80 font-semibold uppercase text-[10px] tracking-widest block mb-1">
+            <div className="ml-4 border-l-2 border-accent/30 px-14 pb-4 pt-2 text-sm leading-relaxed text-text-secondary">
+              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-widest text-accent/80">
                 MUSE Reasoning
               </span>
               {track.reason ||
-                'Selected to match the sonic texture, pacing, and mood of your request.'}
+                "Selected to match the sonic texture, pacing, and mood of your request."}
             </div>
           </motion.div>
         )}

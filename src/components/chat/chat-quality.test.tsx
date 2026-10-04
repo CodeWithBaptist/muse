@@ -2,7 +2,10 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { classifyChatError } from '@/hooks/use-chat';
+import {
+  classifyChatError,
+  isAiNotConnectedMessage,
+} from '@/hooks/use-chat';
 import {
   getContextualLoadingMessages,
   ThinkingIndicator,
@@ -39,6 +42,24 @@ describe('Stage D Chat Quality', () => {
 
     render(<ThinkingIndicator stage="Searching Spotify catalog" />);
     expect(screen.getByText('Searching Spotify catalog')).toBeDefined();
+  });
+
+  it('detects AI configuration errors without misclassifying unrelated failures', () => {
+    expect(
+      isAiNotConnectedMessage({
+        code: 'AI_NOT_CONNECTED',
+        message: 'The AI provider is unavailable.',
+      }),
+    ).toBe(true);
+    expect(
+      isAiNotConnectedMessage({
+        message: 'Set OPENAI_API_KEY to enable chat.',
+      }),
+    ).toBe(true);
+    expect(isAiNotConnectedMessage(new Error('Network request failed'))).toBe(
+      false,
+    );
+    expect(isAiNotConnectedMessage(null)).toBe(false);
   });
 
   it('classifies all distinct chat error kinds accurately', () => {
@@ -218,6 +239,45 @@ describe('Stage D Chat Quality', () => {
         screen.getByText('Here is your saved midnight selection.')
       ).toBeDefined();
     });
+  });
+
+  it('keeps the history disclosure target mounted and marks the conversation log', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('/api/ai/status')) {
+        return new Response(
+          JSON.stringify({
+            connected: true,
+            code: 'AI_CONNECTED',
+            message: 'AI is connected',
+          }),
+          { status: 200 },
+        );
+      }
+      return new Response('[]', { status: 200 });
+    });
+
+    renderWithQueryClient(<ChatPage />);
+
+    const historyButton = await screen.findByRole('button', {
+      name: 'History (0)',
+    });
+    const historyPanel = screen.getByTestId('conversation-history-panel');
+    expect(historyButton).toHaveAttribute(
+      'aria-controls',
+      'conversation-history-panel',
+    );
+    expect(historyButton).toHaveAttribute('aria-expanded', 'false');
+    expect(historyPanel).toHaveProperty('hidden', true);
+
+    const conversationLog = screen.getByRole('log', {
+      name: 'Conversation messages',
+    });
+    expect(conversationLog).toHaveAttribute('aria-live', 'polite');
+
+    fireEvent.click(historyButton);
+    expect(historyButton).toHaveAttribute('aria-expanded', 'true');
+    expect(historyPanel).toHaveProperty('hidden', false);
   });
 
   it('renders distinct error banners for rate limited and Spotify disconnected states', async () => {

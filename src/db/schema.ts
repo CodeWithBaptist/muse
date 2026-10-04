@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -94,6 +94,21 @@ export const preferences = pgTable("preferences", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const memories = pgTable(
+  "memories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
+    key: text("key").notNull(),
+    value: text("value").notNull(),
+    confidence: integer("confidence").notNull().default(100),
+    source: text("source").notNull().default("explicit"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("memories_user_key_idx").on(table.userId, table.key)],
+);
+
 export const rateLimits = pgTable("rate_limits", {
   key: text("key").primaryKey(),
   count: integer("count").notNull().default(1),
@@ -110,3 +125,5 @@ export type Playlist = typeof playlists.$inferSelect;
 export type PlaylistTrack = typeof playlistTracks.$inferSelect;
 export type Recommendation = typeof recommendations.$inferSelect;
 export type Preference = typeof preferences.$inferSelect;
+
+export type Memory = typeof memories.$inferSelect;

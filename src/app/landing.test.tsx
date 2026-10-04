@@ -27,6 +27,7 @@ vi.mock('motion/react', () => ({
     button: ({ children, ...props }: any) => <button {...stripMotionProps(props)}>{children}</button>,
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
+  useReducedMotion: () => false,
 }));
 
 describe('Landing Page', () => {

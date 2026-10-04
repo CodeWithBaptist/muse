@@ -32,6 +32,7 @@ const SUGGESTED_PROMPTS = [
 function AiNotConnectedBanner() {
   return (
     <Surface
+      role="status"
       data-testid="ai-not-connected-state"
       className="p-6 border-border-strong bg-surface/80 flex items-start gap-4 rounded-xl"
     >
@@ -118,6 +119,8 @@ function DistinctChatErrorBanner({
 
   return (
     <Surface
+      role="alert"
+      aria-live="assertive"
       data-testid={`chat-error-${kind}`}
       className="p-6 border-border-strong bg-surface flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl"
     >
@@ -191,6 +194,7 @@ export default function ChatPage() {
             onClick={() => setHistoryOpen((prev) => !prev)}
             className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface border border-border-subtle transition-colors"
             aria-expanded={historyOpen}
+            aria-controls="conversation-history-panel"
           >
             <History size={14} />
             <span>History ({conversations.length})</span>
@@ -216,57 +220,63 @@ export default function ChatPage() {
       </div>
 
       {/* Collapsible conversation history drawer */}
-      {historyOpen && (
-        <div
-          data-testid="conversation-history-panel"
-          className="px-6 py-4 border-b border-border-subtle bg-surface/60 max-h-60 overflow-y-auto"
-        >
-          <div className="max-w-4xl mx-auto space-y-2">
-            {conversations.length === 0 ? (
-              <p className="text-xs text-text-muted py-2">
-                No saved conversations yet. Start a conversation below.
-              </p>
-            ) : (
-              conversations.map((conv) => {
-                const isSelected = conv.id === activeConversationId;
-                return (
-                  <div
-                    key={conv.id}
-                    className={cn(
-                      'flex items-center justify-between gap-3 px-3 py-2 rounded-md text-xs transition-colors',
-                      isSelected
-                        ? 'bg-surface border border-border-strong text-text-primary font-semibold'
-                        : 'text-text-secondary hover:text-text-primary hover:bg-surface'
-                    )}
+      <div
+        id="conversation-history-panel"
+        data-testid="conversation-history-panel"
+        hidden={!historyOpen}
+        className="max-h-60 overflow-y-auto border-b border-border-subtle bg-surface/60 px-6 py-4"
+      >
+        <div className="mx-auto max-w-4xl space-y-2">
+          {conversations.length === 0 ? (
+            <p className="py-2 text-xs text-text-muted">
+              No saved conversations yet. Start a conversation below.
+            </p>
+          ) : (
+            conversations.map((conv) => {
+              const isSelected = conv.id === activeConversationId;
+              return (
+                <div
+                  key={conv.id}
+                  className={cn(
+                    'flex items-center justify-between gap-3 rounded-md px-3 py-2 text-xs transition-colors',
+                    isSelected
+                      ? 'border border-border-strong bg-surface font-semibold text-text-primary'
+                      : 'text-text-secondary hover:bg-surface hover:text-text-primary',
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      selectConversation(conv.id);
+                      setHistoryOpen(false);
+                    }}
+                    className="flex-1 truncate text-left"
                   >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        selectConversation(conv.id);
-                        setHistoryOpen(false);
-                      }}
-                      className="flex-1 text-left truncate"
-                    >
-                      {conv.title}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void deleteConversation(conv.id)}
-                      aria-label={`Delete conversation ${conv.title}`}
-                      className="p-1 text-text-muted hover:text-red-400 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                    {conv.title}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void deleteConversation(conv.id)}
+                    aria-label={`Delete conversation ${conv.title}`}
+                    className="p-1 text-text-muted transition-colors hover:text-red-400"
+                  >
+                    <Trash2 size={14} aria-hidden="true" />
+                  </button>
+                </div>
+              );
+            })
+          )}
         </div>
-      )}
+      </div>
 
       <div
         ref={scrollRef}
+        role="log"
+        aria-label="Conversation messages"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-atomic="false"
+        aria-busy={isThinking}
         className="flex-1 overflow-y-auto px-6 py-8 space-y-12 scroll-smooth"
       >
         {messages.length === 0 ? (

@@ -4,22 +4,23 @@ import * as React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
+import { DataControls } from '@/components/settings/DataControls';
+import { MemoryManager } from '@/components/settings/MemoryManager';
+import { SpotifyConnectionPanel } from '@/components/settings/SpotifyConnectionPanel';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils';
 import {
   Check,
   ExternalLink,
-  LogOut,
-  RefreshCw,
   Shield,
   Sliders,
   Trash2,
-  User,
+  User
 } from 'lucide-react';
 import type { UserPreferencesData } from '@/lib/validation/api-schemas';
 
 export default function SettingsPage() {
-  const { user, authenticated, logout } = useAuth();
+  const { user, logout } = useAuth();
   const queryClient = useQueryClient();
 
   const [draftOverrides, setDraftOverrides] = React.useState<{
@@ -27,6 +28,7 @@ export default function SettingsPage() {
     playlistLength?: '10' | '15' | '20';
     explicitContent?: 'allow' | 'clean';
     favoriteGenres?: string;
+    playbackPreference?: 'muse' | 'spotify';
   }>({});
 
   const [saveState, setSaveState] = React.useState<
@@ -45,7 +47,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/ai/status');
       return res.json();
     },
-    retry: false,
+    retry: false
   });
 
   const { data: preferencesData, isLoading: isLoadingPrefs } =
@@ -56,7 +58,7 @@ export default function SettingsPage() {
         if (!res.ok) throw new Error('Unable to load preferences');
         return res.json();
       },
-      retry: false,
+      retry: false
     });
 
   const discoveryStyle =
@@ -71,6 +73,10 @@ export default function SettingsPage() {
     'allow';
   const favoriteGenres =
     draftOverrides.favoriteGenres ?? preferencesData?.favoriteGenres ?? '';
+  const playbackPreference =
+    draftOverrides.playbackPreference ??
+    preferencesData?.playbackPreference ??
+    'muse';
 
   const setDiscoveryStyle = (val: 'balanced' | 'deep_cuts' | 'familiar') =>
     setDraftOverrides((prev) => ({ ...prev, discoveryStyle: val }));
@@ -80,6 +86,8 @@ export default function SettingsPage() {
     setDraftOverrides((prev) => ({ ...prev, explicitContent: val }));
   const setFavoriteGenres = (val: string) =>
     setDraftOverrides((prev) => ({ ...prev, favoriteGenres: val }));
+  const setPlaybackPreference = (val: 'muse' | 'spotify') =>
+    setDraftOverrides((prev) => ({ ...prev, playbackPreference: val }));
 
   const handleSavePreferences = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,7 +101,8 @@ export default function SettingsPage() {
           playlistLength,
           explicitContent,
           favoriteGenres: favoriteGenres.trim(),
-        }),
+          playbackPreference
+        })
       });
       if (!res.ok) throw new Error('Failed to save preferences');
       setSaveState('saved');
@@ -135,49 +144,7 @@ export default function SettingsPage() {
         </div>
 
         <Surface variant="raised" className="p-6 space-y-6 rounded-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-subtle pb-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-text-primary">
-                  Spotify Account
-                </span>
-                <span
-                  className={cn(
-                    'px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border',
-                    authenticated
-                      ? 'bg-accent/10 border-accent/30 text-accent'
-                      : 'bg-surface border-border-strong text-text-muted'
-                  )}
-                >
-                  {authenticated ? 'Connected' : 'Not connected'}
-                </span>
-              </div>
-              <p className="text-xs text-text-secondary">
-                {authenticated && user
-                  ? `${user.displayName} (${user.email})`
-                  : 'Connect your Spotify account to enable personalized discovery and playlist export.'}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  window.location.href = '/api/auth/spotify';
-                }}
-              >
-                <RefreshCw size={13} className="mr-1.5" />
-                {authenticated ? 'Reconnect Spotify' : 'Connect Spotify'}
-              </Button>
-              {authenticated && (
-                <Button size="sm" variant="ghost" onClick={logout}>
-                  <LogOut size={13} className="mr-1.5" />
-                  Log out
-                </Button>
-              )}
-            </div>
-          </div>
+          <SpotifyConnectionPanel user={user} onLogout={() => void logout()} />
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
@@ -217,31 +184,32 @@ export default function SettingsPage() {
 
         <Surface variant="raised" className="p-6 rounded-xl">
           <form onSubmit={handleSavePreferences} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-muted block">
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                 Discovery Style
-              </label>
+              </legend>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   {
                     id: 'balanced' as const,
                     label: 'Balanced',
-                    desc: 'Mix of familiar artists and new discoveries',
+                    desc: 'Mix of familiar artists and new discoveries'
                   },
                   {
                     id: 'deep_cuts' as const,
                     label: 'Deep cuts',
-                    desc: 'Prioritize lesser-known tracks and B-sides',
+                    desc: 'Prioritize lesser-known tracks and B-sides'
                   },
                   {
                     id: 'familiar' as const,
                     label: 'Familiar taste',
-                    desc: 'Stay close to your top artists and genres',
-                  },
+                    desc: 'Stay close to your top artists and genres'
+                  }
                 ].map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
+                    aria-pressed={discoveryStyle === opt.id}
                     onClick={() => {
                       setDiscoveryStyle(opt.id);
                       setSaveState('idle');
@@ -262,18 +230,19 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-text-muted block">
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                   Default Playlist Length
-                </label>
+                </legend>
                 <div className="flex gap-2">
                   {(['10', '15', '20'] as const).map((len) => (
                     <button
                       key={len}
                       type="button"
+                      aria-pressed={playlistLength === len}
                       onClick={() => {
                         setPlaylistLength(len);
                         setSaveState('idle');
@@ -289,20 +258,21 @@ export default function SettingsPage() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-text-muted block">
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                   Explicit Content
-                </label>
+                </legend>
                 <div className="flex gap-2">
                   {[
                     { id: 'allow' as const, label: 'Allow explicit' },
-                    { id: 'clean' as const, label: 'Prefer clean' },
+                    { id: 'clean' as const, label: 'Prefer clean' }
                   ].map((opt) => (
                     <button
                       key={opt.id}
                       type="button"
+                      aria-pressed={explicitContent === opt.id}
                       onClick={() => {
                         setExplicitContent(opt.id);
                         setSaveState('idle');
@@ -318,8 +288,57 @@ export default function SettingsPage() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </fieldset>
             </div>
+
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                Playback Preference
+              </legend>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {[
+                  {
+                    id: 'muse' as const,
+                    label: 'Control Spotify from MUSE',
+                    description:
+                      'Use MUSE controls to play on your active Spotify device. Spotify Premium may be required.'
+                  },
+                  {
+                    id: 'spotify' as const,
+                    label: 'Open in Spotify',
+                    description:
+                      'Use Spotify links instead of starting playback in MUSE.'
+                  }
+                ].map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={playbackPreference === option.id}
+                    onClick={() => {
+                      setPlaybackPreference(option.id);
+                      setSaveState('idle');
+                    }}
+                    className={cn(
+                      'p-3 rounded-md border text-left transition-colors space-y-1',
+                      playbackPreference === option.id
+                        ? 'border-accent bg-accent/[0.06]'
+                        : 'border-border-subtle bg-background hover:border-border-strong'
+                    )}
+                  >
+                    <span className="block text-xs font-semibold text-text-primary">
+                      {option.label}
+                    </span>
+                    <span className="block text-[11px] leading-snug text-text-secondary">
+                      {option.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] leading-relaxed text-text-muted">
+                Applies to newly selected tracks. Playback already in progress
+                remains controllable.
+              </p>
+            </fieldset>
 
             <div className="space-y-2">
               <label
@@ -345,13 +364,17 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between gap-4 pt-2 border-t border-border-subtle">
               <div className="text-xs text-text-secondary">
                 {saveState === 'saved' && (
-                  <span className="text-accent font-medium inline-flex items-center gap-1.5">
-                    <Check size={14} />
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    className="inline-flex items-center gap-1.5 font-medium text-accent"
+                  >
+                    <Check size={14} aria-hidden="true" />
                     Preferences saved
                   </span>
                 )}
                 {saveState === 'error' && (
-                  <span className="text-red-400 font-medium">
+                  <span role="alert" className="font-medium text-red-400">
                     Unable to save preferences right now.
                   </span>
                 )}
@@ -370,6 +393,8 @@ export default function SettingsPage() {
         </Surface>
       </section>
 
+      <MemoryManager />
+
       {/* Data & Privacy */}
       <section id="privacy" className="space-y-4">
         <div className="flex items-center gap-2">
@@ -380,12 +405,81 @@ export default function SettingsPage() {
         </div>
 
         <Surface variant="raised" className="p-6 space-y-6 rounded-xl">
-          <div className="space-y-2 text-xs text-text-secondary leading-relaxed">
+          <div className="space-y-3 text-xs leading-relaxed text-text-secondary">
             <p>
-              MUSE accesses your Spotify profile, listening history, and saved
-              library solely to generate recommendations and export playlists you
-              create. OAuth access and refresh tokens are encrypted at rest with
-              AES-256-GCM.
+              Chat and recommendation requests send the text you enter to
+              OpenAI. For conversational replies, MUSE also sends up to nine
+              earlier messages from that conversation, for up to ten messages
+              total. Recommendation, Discover, and Profile Insights requests
+              also send selected Spotify data, including top artists, top tracks, artist genres,
+              recently played track names, and track metadata returned by
+              Spotify search. Saved explicit memory preferences may also be
+              included in MUSE AI requests.
+            </p>
+            <div className="space-y-2 rounded-md border border-border-strong bg-background p-4">
+              <p className="font-semibold text-text-primary">
+                Spotify policy review needed
+              </p>
+              <p>
+                Spotify&apos;s current Developer Policy says not to use Spotify
+                Platform or any Spotify Content to train or otherwise ingest
+                Spotify Content into a machine-learning or AI model. It also
+                says not to analyze Spotify Content or the Spotify Service for
+                any purpose, including building user profiles. MUSE sends
+                listening-derived data to OpenAI
+                and uses listening history for Profile Insights and personalized
+                recommendations, so these
+                flows appear to conflict with those restrictions. A disclosure
+                or user consent does not resolve the policy issue. The Developer
+                Terms also contain a separate AI restriction and a conditional
+                third-party processor provision. That provision does not appear
+                to override the separate AI restriction. Disconnect clears
+                cached Spotify data but retains Spotify ID, email, and display
+                name for account identity, which also needs review under the
+                disconnection deletion requirement. The Start/Resume and Pause
+                Playback API references say those endpoints work only for
+                Spotify Premium accounts and warn that the Spotify Platform
+                cannot be used for commercial streaming integrations. MUSE sends
+                playback commands to Spotify and does not stream audio itself.
+                Whether this use or any commercial plans fit that restriction
+                needs review. These features are not represented as compliant.
+              </p>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                <a
+                  href="https://developer.spotify.com/policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-accent hover:text-text-primary"
+                >
+                  <span>Read Spotify Developer Policy</span>
+                  <ExternalLink size={12} />
+                </a>
+                <a
+                  href="https://developer.spotify.com/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-accent hover:text-text-primary"
+                >
+                  <span>Read Spotify Developer Terms</span>
+                  <ExternalLink size={12} />
+                </a>
+                <a
+                  href="https://developer.spotify.com/documentation/web-api/reference/start-a-users-playback"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-accent hover:text-text-primary"
+                >
+                  <span>Review Spotify playback API requirements</span>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+            </div>
+            <p>
+              OAuth tokens are encrypted at rest. Conversation history is stored
+              separately from AI memory. Memory entries are structured
+              preferences with a source, confidence, and update time. Review the
+              Privacy placeholder before treating it as a complete privacy
+              notice.
             </p>
           </div>
 
@@ -394,10 +488,12 @@ export default function SettingsPage() {
               <div className="text-sm font-semibold text-text-primary">
                 Conversation History
               </div>
-              <p className="text-xs text-text-secondary">
-                {clearState === 'cleared'
-                  ? 'All saved conversations have been deleted.'
-                  : 'Remove all saved chat conversations and track recommendations from MUSE.'}
+              <p role="status" aria-live="polite" className="text-xs text-text-secondary">
+                {clearState === 'clearing'
+                  ? 'Clearing saved conversation history.'
+                  : clearState === 'cleared'
+                    ? 'All saved conversations have been deleted.'
+                    : 'Remove all saved chat conversations and track recommendations from MUSE.'}
               </p>
             </div>
 
@@ -416,7 +512,33 @@ export default function SettingsPage() {
             </Button>
           </div>
 
+          {clearState === 'error' && (
+            <p role="alert" className="text-xs text-red-400">
+              Unable to clear conversation history right now.
+            </p>
+          )}
+
+          <DataControls />
+
           <div className="flex flex-wrap gap-6 pt-4 border-t border-border-subtle text-xs text-text-secondary">
+            <a
+              href="/privacy"
+              className="hover:text-text-primary transition-colors"
+            >
+              Privacy
+            </a>
+            <a
+              href="/terms"
+              className="hover:text-text-primary transition-colors"
+            >
+              Terms
+            </a>
+            <a
+              href="/spotify-attribution"
+              className="hover:text-text-primary transition-colors"
+            >
+              Spotify attribution
+            </a>
             <a
               href="https://www.spotify.com/account/apps/"
               target="_blank"

@@ -26,7 +26,7 @@ export function DiscoverSection({
     <section className="space-y-6">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
-        <p className="type-caption font-medium opacity-80">{description}</p>
+        <p className="type-caption font-medium">{description}</p>
       </div>
 
       <div className="relative group">

@@ -32,20 +32,24 @@ export function Sidebar() {
   const { user, authenticated, logout } = useAuth();
 
   return (
-    <aside className="w-[240px] border-r border-border-subtle bg-background flex flex-col hidden lg:flex">
+    <aside
+      aria-label="Application sidebar"
+      className="hidden w-[240px] flex-col border-r border-border-subtle bg-background lg:flex"
+    >
       <div className="p-6">
         <Link href="/" className="inline-block">
           <Logo variant="wordmark" size={100} />
         </Link>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1">
+      <nav aria-label="Primary navigation" className="flex-1 px-3 space-y-1">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link
               key={item.name}
               href={item.href}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'group relative flex items-center gap-3 px-4 py-2.5 rounded-md text-sm transition-colors',
                 isActive ? 'text-text-primary bg-surface/50' : 'text-text-secondary hover:text-text-primary hover:bg-surface',
@@ -79,15 +83,16 @@ export function Sidebar() {
             <div className="text-xs font-semibold text-text-primary truncate">
               {authenticated ? user?.displayName : 'Not connected'}
             </div>
-            <div className="text-[10px] text-text-muted/60 uppercase tracking-tighter font-semibold">
+            <div className="text-[10px] text-text-muted uppercase tracking-tighter font-semibold">
               {authenticated ? 'Spotify Connected' : 'Spotify'}
             </div>
           </div>
         </div>
         
-        <div className="space-y-1">
+        <nav aria-label="Account navigation" className="space-y-1">
           <Link
             href="/settings"
+            aria-current={pathname === '/settings' ? 'page' : undefined}
             className={cn(
               'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-text-secondary hover:text-text-primary hover:bg-surface',
               pathname === '/settings' && 'text-text-primary'
@@ -98,14 +103,15 @@ export function Sidebar() {
           </Link>
           {authenticated && (
             <button
-              onClick={logout}
+              type="button"
+              onClick={() => void logout()}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-text-secondary hover:text-text-primary hover:bg-surface"
             >
               <LogOut className="w-4 h-4" />
               <span>Log out</span>
             </button>
           )}
-        </div>
+        </nav>
       </div>
     </aside>
   );

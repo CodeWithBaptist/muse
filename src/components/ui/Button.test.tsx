@@ -15,4 +15,12 @@ describe('Button', () => {
     rerender(<Button variant="secondary">Secondary</Button>);
     expect(screen.getByRole('button').className).toContain('bg-surface');
   });
+
+  it('defaults to a non-submitting button type', () => {
+    render(<Button>Open panel</Button>);
+    expect(screen.getByRole('button', { name: 'Open panel' })).toHaveAttribute(
+      'type',
+      'button',
+    );
+  });
 });

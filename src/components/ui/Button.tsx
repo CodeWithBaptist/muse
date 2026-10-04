@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { motion, HTMLMotionProps } from 'motion/react';
+import { motion, HTMLMotionProps, useReducedMotion } from 'motion/react';
 import { cn } from '@/lib/utils';
 import { transitions } from '@/lib/motion';
 
@@ -12,7 +12,11 @@ interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', ...props }, ref) => {
+  (
+    { className, variant = 'primary', size = 'md', type = 'button', ...props },
+    ref,
+  ) => {
+    const shouldReduceMotion = useReducedMotion() ?? false;
     const variants = {
       primary: 'bg-accent text-background hover:bg-accent/90',
       secondary: 'bg-surface text-text-primary border border-border-subtle hover:border-border-strong',
@@ -29,8 +33,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.button
         ref={ref}
-        whileHover={{ scale: 1.02, y: -1 }}
-        whileTap={{ scale: 0.98, y: 0 }}
+        type={type}
+        whileHover={shouldReduceMotion ? undefined : { scale: 1.02, y: -1 }}
+        whileTap={shouldReduceMotion ? undefined : { scale: 0.98, y: 0 }}
         transition={{
           type: 'spring',
           stiffness: 400,

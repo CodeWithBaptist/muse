@@ -66,7 +66,7 @@ export const MusicSearchQueryInputSchema = z.object({
     .trim()
     .min(1, 'Query parameter "q" is required')
     .max(200, 'Search query is too long'),
-  limit: z.coerce.number().int().min(1).max(50).default(20),
+  limit: z.coerce.number().int().min(1).max(10).default(10),
 });
 
 export const PlaylistTrackMetaSchema = z.object({
@@ -84,17 +84,13 @@ export const PlaylistExportInputSchema = z.object({
     .trim()
     .min(1, 'Playlist name is required')
     .max(100, 'Playlist name is too long'),
-  description: z
-    .string()
-    .trim()
-    .max(300, 'Description is too long')
-    .optional(),
+  description: z.string().trim().max(300, 'Description is too long').optional(),
   trackUris: z
     .array(
       z
         .string()
         .trim()
-        .regex(/^spotify:track:[A-Za-z0-9]{22}$/, 'Invalid Spotify track URI')
+        .regex(/^spotify:track:[A-Za-z0-9]{22}$/, 'Invalid Spotify track URI'),
     )
     .min(1, 'At least one track URI is required')
     .max(100, 'Maximum 100 tracks per export'),
@@ -107,11 +103,7 @@ export const PlaylistCreateDraftInputSchema = z.object({
     .trim()
     .min(1, 'Playlist name is required')
     .max(100, 'Playlist name is too long'),
-  description: z
-    .string()
-    .trim()
-    .max(300, 'Description is too long')
-    .optional(),
+  description: z.string().trim().max(300, 'Description is too long').optional(),
   tracks: z.array(PlaylistTrackMetaSchema).max(100).default([]),
 });
 
@@ -126,12 +118,40 @@ export const PlaylistUpdateInputSchema = z.object({
     .min(1, 'Playlist name cannot be empty')
     .max(100, 'Playlist name is too long')
     .optional(),
-  description: z
-    .string()
-    .trim()
-    .max(300, 'Description is too long')
-    .optional(),
+  description: z.string().trim().max(300, 'Description is too long').optional(),
   removeTrackId: z.string().trim().min(1).max(120).optional(),
+});
+
+export const PlaybackStatusResponseSchema = z.object({
+  availability: z.enum([
+    'ready',
+    'reconnect-required',
+    'disconnected',
+    'unavailable',
+  ]),
+});
+
+export const SpotifyConnectionResponseSchema = z.object({
+  connected: z.boolean(),
+});
+
+export const PlaybackStartInputSchema = z
+  .object({
+    trackUri: z
+      .string()
+      .trim()
+      .regex(/^spotify:track:[A-Za-z0-9]{22}$/),
+  })
+  .strict();
+
+export const PlaybackControlInputSchema = z
+  .object({
+    action: z.enum(['pause', 'resume']),
+  })
+  .strict();
+
+export const PlaybackStartResponseSchema = z.object({
+  success: z.literal(true),
 });
 
 export const UserPreferencesInputSchema = z.object({
@@ -141,6 +161,39 @@ export const UserPreferencesInputSchema = z.object({
   playlistLength: z.enum(['10', '15', '20']).default('15'),
   explicitContent: z.enum(['allow', 'clean']).default('allow'),
   favoriteGenres: z.string().trim().max(200).default(''),
+  playbackPreference: z.enum(['muse', 'spotify']).default('muse'),
+});
+
+export const MemoryInputSchema = z
+  .object({
+    key: z.string().trim().min(1).max(80),
+    value: z.string().trim().min(1).max(500),
+  })
+  .strict();
+
+export const MemoryIdParamSchema = z.object({
+  id: z.string().uuid(),
+});
+
+export const MemoryRecordSchema = z.object({
+  id: z.string().uuid(),
+  key: z.string(),
+  value: z.string(),
+  confidence: z.number().int().min(0).max(100),
+  source: z.string(),
+  updatedAt: z.string(),
+});
+
+export const MemoryListResponseSchema = z.object({
+  memories: z.array(MemoryRecordSchema),
+});
+
+export const MemoryMutationResponseSchema = z.object({
+  memory: MemoryRecordSchema,
+});
+
+export const SuccessResponseSchema = z.object({
+  success: z.literal(true),
 });
 
 export const UserPreferencesResponseSchema = UserPreferencesInputSchema.extend({
@@ -217,7 +270,7 @@ export const ProfileInsightsResponseSchema = z.object({
         key: z.string(),
         value: z.string(),
         source: z.string(),
-      })
+      }),
     )
     .optional(),
 });
@@ -225,3 +278,5 @@ export const ProfileInsightsResponseSchema = z.object({
 export type DiscoverSectionData = z.infer<typeof DiscoverSectionSchema>;
 export type ProfileInsightsData = z.infer<typeof ProfileInsightsResponseSchema>;
 export type UserPreferencesData = z.infer<typeof UserPreferencesResponseSchema>;
+
+export type MemoryRecordData = z.infer<typeof MemoryRecordSchema>;

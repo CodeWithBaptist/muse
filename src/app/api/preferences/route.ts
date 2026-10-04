@@ -38,6 +38,7 @@ export async function GET() {
       playlistLength: map.get('playlistLength'),
       explicitContent: map.get('explicitContent'),
       favoriteGenres: map.get('favoriteGenres'),
+      playbackPreference: map.get('playbackPreference'),
     });
 
     const data = parsed.success
@@ -47,6 +48,7 @@ export async function GET() {
           playlistLength: '15' as const,
           explicitContent: 'allow' as const,
           favoriteGenres: '',
+          playbackPreference: 'muse' as const,
         };
 
     return NextResponse.json(
@@ -101,6 +103,7 @@ export async function PUT(request: Request) {
     ['playlistLength', parsed.data.playlistLength],
     ['explicitContent', parsed.data.explicitContent],
     ['favoriteGenres', parsed.data.favoriteGenres],
+    ['playbackPreference', parsed.data.playbackPreference],
   ];
 
   const now = new Date();
