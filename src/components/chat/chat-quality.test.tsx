@@ -24,6 +24,16 @@ function renderWithQueryClient(ui: React.ReactElement) {
   );
 }
 
+/**
+ * Assistant replies reveal word by word, so the reply text lives in a word
+ * reveal container rather than a single text node.
+ */
+function hasRevealedText(text: string): boolean {
+  return screen
+    .getAllByTestId('word-reveal')
+    .some((element) => (element.textContent ?? '').includes(text));
+}
+
 describe('Stage D Chat Quality', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -176,7 +186,7 @@ describe('Stage D Chat Quality', () => {
     fireEvent.click(screen.getByText('Late night Afrobeats'));
 
     await waitFor(() => {
-      expect(screen.getByText('I searched across the catalog.')).toBeDefined();
+      expect(hasRevealedText('I searched across the catalog.')).toBe(true);
     });
     expect(screen.getByTestId('chat-no-results-state')).toBeDefined();
     expect(screen.getByText('No matching tracks found')).toBeDefined();
@@ -235,9 +245,9 @@ describe('Stage D Chat Quality', () => {
     fireEvent.click(screen.getByText('Lagos Midnight Grooves'));
 
     await waitFor(() => {
-      expect(
-        screen.getByText('Here is your saved midnight selection.')
-      ).toBeDefined();
+      expect(hasRevealedText('Here is your saved midnight selection.')).toBe(
+        true,
+      );
     });
   });
 
