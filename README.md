@@ -66,7 +66,7 @@ Configure these six environment variables in `.env.local` for local development 
 1. In the Spotify Developer Dashboard, open your app settings and register both Redirect URIs:
    * `http://127.0.0.1:3000/api/auth/spotify/callback` (use `127.0.0.1` rather than `localhost` per Spotify redirect URI requirements)
    * `https://muse-six-pink.vercel.app/api/auth/spotify/callback`
-2. Open **User Management** in the Spotify Developer Dashboard and add the full name and Spotify account email address of every tester. Spotify apps in development mode only allow listed users to authenticate and call the API.
+2. Open **User Management** in the Spotify Developer Dashboard and add the full name and Spotify account email address of every tester. Spotify apps in Development Mode only allow listed users to call the API. The app owner needs an active Spotify Premium account, and each app supports up to five authorized users. Spotify raised the developer account app limit from one to 25 Client IDs in July 2026, with Development Mode quota shared across the account. Check the [February 2026 migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide) and [July 2026 changelog](https://developer.spotify.com/documentation/web-api/references/changes/july-2026) for current API access and limits.
 
 ### 3. Database Schema Push
 
