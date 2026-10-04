@@ -5,8 +5,13 @@ import { useQuery } from '@tanstack/react-query';
 import { TrackRow } from '@/components/chat/TrackRow';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
-import { motion } from 'motion/react';
-import { staggerContainer, fadeInUp } from '@/lib/motion';
+import { motion, useReducedMotion } from 'motion/react';
+import {
+  staggerContainer,
+  fadeInUp,
+  tileHover,
+  tileHoverTransition,
+} from '@/lib/motion';
 import { Music, User, Disc, Link2Off, RefreshCw, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
@@ -40,6 +45,7 @@ export function LibraryContent({
   type,
   timeRange = 'medium_term',
 }: LibraryContentProps) {
+  const shouldReduceMotion = useReducedMotion() ?? false;
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['music', type, timeRange],
     queryFn: async () => {
@@ -217,7 +223,8 @@ export function LibraryContent({
           <motion.div
             key={entity.id || i}
             variants={fadeInUp}
-            whileHover={{ y: -4 }}
+            whileHover={shouldReduceMotion ? undefined : tileHover}
+            transition={tileHoverTransition}
             className="group"
           >
             <div

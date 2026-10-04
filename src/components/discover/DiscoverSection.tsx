@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { motion } from 'motion/react';
-import { fadeInUp } from '@/lib/motion';
+import { motion, useReducedMotion } from 'motion/react';
+import { fadeInUp, tileHover, tileHoverTransition } from '@/lib/motion';
 import { Disc, ExternalLink } from 'lucide-react';
 import { useNowPlaying, getSpotifyTrackUrl } from '@/hooks/use-now-playing';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
@@ -19,6 +19,7 @@ export function DiscoverSection({
   tracks,
 }: DiscoverSectionProps) {
   const { selectTrack } = useNowPlaying();
+  const shouldReduceMotion = useReducedMotion() ?? false;
 
   if (tracks.length === 0) return null;
 
@@ -41,7 +42,8 @@ export function DiscoverSection({
                 initial="initial"
                 whileInView="animate"
                 viewport={{ once: true }}
-                whileHover={{ y: -4 }}
+                whileHover={shouldReduceMotion ? undefined : tileHover}
+                transition={tileHoverTransition}
                 className="w-40 md:w-48 shrink-0 space-y-3 snap-start"
               >
                 <button

@@ -6,6 +6,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
 import { TrackRow, type Track } from '@/components/chat/TrackRow';
+import { CreateInSpotifyButton } from '@/components/playlist/CreateInSpotifyButton';
+import type { PlaylistExportTrackMeta } from '@/lib/playlist-export';
 import { motion } from 'motion/react';
 import { fadeIn, fadeInUp, staggerContainer, transitions } from '@/lib/motion';
 import {
@@ -43,7 +45,6 @@ export default function PlaylistsPage() {
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [editName, setEditName] = React.useState('');
   const [editDescription, setEditDescription] = React.useState('');
-  const [exportingId, setExportingId] = React.useState<string | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
 
   const {
@@ -146,48 +147,27 @@ export default function PlaylistsPage() {
     }
   };
 
-  const handleExportPlaylist = async (playlist: MusePlaylist) => {
-    const trackUris = playlist.tracks
+  const playlistTrackUris = (playlist: MusePlaylist): string[] =>
+    playlist.tracks
       .map(
         (t) =>
           t.uri ||
-          (t.id ? `spotify:track:${t.id.replace(/^spotify:track:/, '')}` : null)
+          (t.id ? `spotify:track:${t.id.replace(/^spotify:track:/, '')}` : null),
       )
       .filter((u): u is string => Boolean(u));
 
-    if (trackUris.length === 0) {
-      setActionError('Add at least one track before exporting to Spotify.');
-      return;
-    }
-
-    setExportingId(playlist.id);
-    setActionError(null);
-    try {
-      const res = await fetch('/api/playlists/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          playlistId: playlist.id,
-          name: playlist.name,
-          description: playlist.description || 'Created with MUSE',
-          trackUris,
-        }),
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || 'Failed to export playlist to Spotify');
-      }
-      await queryClient.invalidateQueries({ queryKey: ['muse-playlists'] });
-    } catch (e: unknown) {
-      setActionError(
-        e instanceof Error
-          ? e.message
-          : 'Unable to export playlist to Spotify.'
-      );
-    } finally {
-      setExportingId(null);
-    }
-  };
+  const playlistTrackMeta = (
+    playlist: MusePlaylist,
+  ): PlaylistExportTrackMeta[] =>
+    playlist.tracks.map((t) => ({
+      id: t.id,
+      title: t.name,
+      artist: Array.isArray(t.artists)
+        ? t.artists.map((a) => a.name).join(', ')
+        : t.artists,
+      albumArtUrl: t.album?.images?.[0]?.url || t.albumArtUrl || null,
+      durationMs: t.duration_ms ?? 180_000,
+    }));
 
   const musePlaylists = museData?.playlists ?? [];
   const spotifyPlaylists = spotifyData?.items ?? [];
@@ -288,8 +268,6 @@ export default function PlaylistsPage() {
           >
             {musePlaylists.map((playlist) => {
               const isEditing = editingId === playlist.id;
-              const isExporting = exportingId === playlist.id;
-
               return (
                 <motion.div
                   key={playlist.id}
@@ -381,18 +359,20 @@ export default function PlaylistsPage() {
                             <ExternalLink size={13} />
                           </a>
                         ) : (
-                          <Button
+                          <CreateInSpotifyButton
                             size="sm"
-                            variant="primary"
-                            disabled={
-                              isExporting || playlist.tracks.length === 0
-                            }
-                            onClick={() => handleExportPlaylist(playlist)}
-                          >
-                            {isExporting
-                              ? 'Exporting...'
-                              : 'Create in Spotify'}
-                          </Button>
+                            name={playlist.name}
+                            description={playlist.description || 'Created with MUSE'}
+                            playlistId={playlist.id}
+                            trackUris={playlistTrackUris(playlist)}
+                            tracks={playlistTrackMeta(playlist)}
+                            disabled={playlist.tracks.length === 0}
+                            onResult={() => {
+                              void queryClient.invalidateQueries({
+                                queryKey: ['muse-playlists'],
+                              });
+                            }}
+                          />
                         )}
 
                         <button

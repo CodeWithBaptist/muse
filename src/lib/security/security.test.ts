@@ -194,6 +194,19 @@ describe('Stage B Security Hardening', () => {
     );
     expect(badExportRes.status).toBe(400);
 
+    const badPlaylistIdRes = await playlistExportPost(
+      new Request('http://127.0.0.1:3000/api/playlists/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'My Mix',
+          trackUris: ['spotify:track:3n3Ppam7vgaVa1iaRUc9Lp'],
+          spotifyPlaylistId: 'not-a-playlist-id',
+        }),
+      })
+    );
+    expect(badPlaylistIdRes.status).toBe(400);
+
     const badIdRes = await chatByIdGet(
       new Request('http://127.0.0.1:3000/api/chat/not-a-uuid'),
       { params: Promise.resolve({ id: 'not-a-uuid' }) }

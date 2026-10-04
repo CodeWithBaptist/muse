@@ -3,7 +3,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ExternalLink, Info, X, Disc } from "lucide-react";
-import { transitions, fadeIn, fadeInUp } from "@/lib/motion";
+import { transitions, fadeIn, trackRowReveal } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import {
   useNowPlaying,
@@ -11,7 +11,7 @@ import {
   getSpotifyTrackUrl,
 } from "@/hooks/use-now-playing";
 import { PlaybackButton } from "@/components/shell/PlaybackButton";
-import { PlayingEqualizer } from "@/components/shell/PlayingEqualizer";
+import { EqualizerBars } from "@/components/motion/EqualizerBars";
 
 export interface Track {
   id: string;
@@ -29,6 +29,18 @@ interface TrackRowProps {
   index: number;
   onRemove?: (id: string) => void;
   listItem?: boolean;
+  /**
+   * Whether playback is available for this row. Defaults to the real playback
+   * availability from the Now Playing context. When false, the row never shows
+   * a playing equalizer and offers Open in Spotify on hover instead.
+   */
+  canPlay?: boolean;
+  /** True only while audio is really playing. */
+  isPlaying?: boolean;
+  /** True while playback is paused on this track. */
+  isPaused?: boolean;
+  /** Overrides the play and pause action for this row. */
+  onTogglePlayback?: () => void;
 }
 
 export function TrackRow({
@@ -36,6 +48,10 @@ export function TrackRow({
   index,
   onRemove,
   listItem = false,
+  canPlay,
+  isPlaying,
+  isPaused,
+  onTogglePlayback,
 }: TrackRowProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const {
@@ -58,13 +74,26 @@ export function TrackRow({
   const spotifyUrl = getSpotifyTrackUrl(track.id);
   const isSelected = selectedTrack?.id === track.id;
   const action = getPlaybackAction(track);
-  const playing = isTrackPlaying(track.id);
   const busy = isTrackBuffering(track.id);
   const isActiveTrack = activeTrack?.id === track.id && playbackMode !== null;
+
+  const playingNow = isPlaying ?? isTrackPlaying(track.id);
+  const pausedNow = isPaused ?? (isActiveTrack && !playingNow);
+  const canPlayNow =
+    canPlay ?? (action !== null || playingNow || pausedNow || busy);
+  // Honesty rule: no equalizer, no playing title, when playback is not real.
+  const showEqualizer = canPlayNow && (playingNow || pausedNow);
+  const showPlayingTitle = showEqualizer;
   const actionLabel =
-    action === "spotify" ? `Play ${track.name} on Spotify` : "";
+    action === "spotify"
+      ? `Play ${track.name} on Spotify`
+      : `Play ${track.name}`;
 
   const handlePlayback = () => {
+    if (onTogglePlayback) {
+      onTogglePlayback();
+      return;
+    }
     if (isActiveTrack) {
       void togglePlayback();
     } else {
@@ -74,32 +103,61 @@ export function TrackRow({
 
   return (
     <motion.div
-      role={listItem ? 'listitem' : undefined}
-      variants={fadeInUp}
-      transition={transitions.standard}
+      role={listItem ? "listitem" : undefined}
+      variants={trackRowReveal}
+      custom={index}
+      initial="initial"
+      animate="animate"
       className={cn(
         "group border-b border-border-subtle last:border-0",
         isSelected && "rounded-md bg-surface/60",
       )}
     >
       <div className="flex items-center gap-4 rounded-md px-2 py-3 transition-colors hover:bg-surface">
-        {playing ? (
-          <div className="flex w-8 shrink-0 justify-center">
-            <PlayingEqualizer />
-          </div>
-        ) : action ? (
-          <PlaybackButton
-            playing={false}
-            busy={busy}
-            label={busy ? "Starting playback" : actionLabel}
-            onClick={handlePlayback}
-            className="h-8 w-8 shrink-0 text-accent opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
-          />
-        ) : (
-          <div className="w-8 shrink-0 text-xs tabular-nums text-text-muted">
-            {index + 1}
-          </div>
-        )}
+        <div className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+          {showEqualizer ? (
+            <EqualizerBars
+              label={
+                pausedNow
+                  ? `${track.name} is paused`
+                  : `Now playing ${track.name}`
+              }
+              playing={!pausedNow}
+              height={14}
+              width={2}
+            />
+          ) : (
+            <>
+              <span
+                data-testid="track-row-number"
+                className="text-xs tabular-nums text-text-muted transition-opacity duration-[140ms] group-hover:opacity-0 group-focus-within:opacity-0"
+              >
+                {index + 1}
+              </span>
+              {canPlayNow ? (
+                <PlaybackButton
+                  playing={playingNow}
+                  busy={busy}
+                  label={busy ? "Starting playback" : actionLabel}
+                  onClick={handlePlayback}
+                  className="absolute inset-0 h-8 w-8 opacity-100 transition-opacity duration-[140ms] sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
+                />
+              ) : spotifyUrl ? (
+                <a
+                  href={spotifyUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="track-row-open-in-spotify"
+                  aria-label={`Open ${track.name} in Spotify`}
+                  title="Open in Spotify"
+                  className="absolute inset-0 flex items-center justify-center rounded-full text-text-muted opacity-0 transition-opacity duration-[140ms] group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:text-text-primary"
+                >
+                  <ExternalLink size={14} aria-hidden="true" />
+                </a>
+              ) : null}
+            </>
+          )}
+        </div>
 
         <button
           type="button"
@@ -126,7 +184,12 @@ export function TrackRow({
           className="min-w-0 flex-1 text-left"
           aria-label={`Inspect ${track.name}`}
         >
-          <div className="truncate text-sm font-semibold text-text-primary">
+          <div
+            className={cn(
+              "truncate text-sm font-semibold",
+              showPlayingTitle ? "text-accent" : "text-text-primary",
+            )}
+          >
             {track.name}
           </div>
           <div className="truncate text-xs font-medium text-text-secondary">
@@ -134,11 +197,11 @@ export function TrackRow({
           </div>
         </button>
 
-        {durationLabel && (
-          <span className="hidden text-xs tabular-nums text-text-muted sm:inline-block">
+        <span className="hidden w-10 shrink-0 text-right sm:inline-block">
+          <span className="text-xs tabular-nums text-text-muted">
             {durationLabel}
           </span>
-        )}
+        </span>
 
         <div className="flex items-center gap-2">
           <button

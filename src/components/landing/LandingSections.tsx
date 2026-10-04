@@ -44,7 +44,7 @@ export function HowItWorks() {
           variants={staggerContainer(0.1)}
           initial="initial"
           whileInView="animate"
-          viewport={{ once: false, amount: 0.2 }}
+          viewport={{ once: true, amount: 0.25 }}
           className="grid md:grid-cols-4 gap-8"
         >
           {STEPS.map((step, i) => (
@@ -75,28 +75,44 @@ export function Features() {
   return (
     <section className="px-6 py-32">
       <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-16 items-center">
-        <div className="space-y-8">
-          <h2 className="text-4xl font-semibold leading-tight">
+        <motion.div
+          variants={staggerContainer(0.06)}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, amount: 0.25 }}
+          className="space-y-8"
+        >
+          <motion.h2
+            variants={fadeInUp}
+            className="text-4xl font-semibold leading-tight"
+          >
             Designed for the <br /> modern listener.
-          </h2>
+          </motion.h2>
           <ul className="grid grid-cols-1 gap-4">
             {FEATURES.map((feature, i) => (
-              <li
+              <motion.li
                 key={i}
+                variants={fadeInUp}
                 className="flex items-center gap-3 type-body text-text-secondary"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-accent" />
                 <span className="font-medium">{feature}</span>
-              </li>
+              </motion.li>
             ))}
           </ul>
-        </div>
-        <div className="aspect-square bg-surface border border-border-strong rounded-2xl flex items-center justify-center p-12">
+        </motion.div>
+        <motion.div
+          variants={fadeInUp}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true, amount: 0.25 }}
+          className="aspect-square bg-surface border border-border-strong rounded-2xl flex items-center justify-center p-12"
+        >
           <div className="text-center space-y-4">
             <Logo variant="mark" size={80} className="mx-auto" />
             <p className="text-sm text-text-muted italic">MUSE Intelligence</p>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

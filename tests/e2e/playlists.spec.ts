@@ -34,15 +34,19 @@ test('a playlist recommendation can be saved to MUSE and exported to Spotify', a
   );
 
   await preview.getByRole('button', { name: 'Save to MUSE Playlists' }).click();
-  await expect(preview.getByRole('status')).toContainText(
+  await expect(preview.getByTestId('playlist-draft-status')).toHaveText(
     'Playlist saved to MUSE Playlists.',
   );
 
   await preview.getByRole('button', { name: 'Create in Spotify' }).click();
-  await expect(preview.getByRole('status')).toContainText(
+  await expect(preview.getByTestId('create-in-spotify-status')).toHaveText(
     'Playlist created in Spotify.',
   );
   await expect(
-    preview.getByRole('button', { name: 'Open in Spotify' }),
+    preview.getByRole('link', { name: 'Open in Spotify' }),
   ).toBeVisible();
+  await expect(preview.getByRole('link', { name: 'Open in Spotify' })).toHaveAttribute(
+    'href',
+    'https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M',
+  );
 });
