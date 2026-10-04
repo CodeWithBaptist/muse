@@ -175,6 +175,52 @@
 }
 
 /*
+ * Scripted landing preview. This is the only simulated sequence in the product:
+ * it plays once when it scrolls into view and it keeps the finished frame when
+ * motion is reduced or when the preview was already on screen at load.
+ */
+@keyframes muse-preview-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes muse-preview-thinking {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 8px, 0);
+  }
+  12%,
+  86% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
+.muse-preview[data-play="armed"] [data-preview-item] {
+  opacity: 0;
+}
+
+.muse-preview[data-play="playing"] [data-preview-item] {
+  animation: muse-preview-enter var(--muse-preview-duration, 320ms)
+    var(--ease-emphasized) both;
+  animation-delay: var(--muse-preview-delay, 0ms);
+}
+
+.muse-preview[data-play="playing"] [data-preview-item="thinking"] {
+  animation-name: muse-preview-thinking;
+}
+
+/*
  * Equalizer bars. Transform only (scaleY) so the browser can composite them.
  * Bars are static when motion is reduced. A paused equalizer keeps its bars in
  * place instead of stopping the animation, so the paused state is visible.
@@ -243,6 +289,11 @@
 
   .muse-hero-enter,
   .muse-hero-rise {
+    animation: none !important;
+  }
+
+  .muse-preview [data-preview-item] {
+    opacity: 1 !important;
     animation: none !important;
   }
 

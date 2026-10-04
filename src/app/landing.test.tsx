@@ -2,33 +2,10 @@ import { render, screen } from '@testing-library/react';
 import HomePage from './page';
 import { describe, it, expect, vi } from 'vitest';
 
-function stripMotionProps(props: Record<string, any>) {
-  const {
-    initial,
-    animate,
-    exit,
-    variants,
-    transition,
-    whileHover,
-    whileTap,
-    whileInView,
-    viewport,
-    layoutId,
-    ...domProps
-  } = props;
-  return domProps;
-}
-
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...stripMotionProps(props)}>{children}</div>,
-    h1: ({ children, ...props }: any) => <h1 {...stripMotionProps(props)}>{children}</h1>,
-    p: ({ children, ...props }: any) => <p {...stripMotionProps(props)}>{children}</p>,
-    button: ({ children, ...props }: any) => <button {...stripMotionProps(props)}>{children}</button>,
-  },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
-  useReducedMotion: () => false,
-}));
+vi.mock('motion/react', async () => {
+  const { motionMock } = await import('@/test/motion-mock');
+  return motionMock;
+});
 
 describe('Landing Page', () => {
   it('renders the MUSE brand wordmark and hero heading', () => {
