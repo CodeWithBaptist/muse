@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { fadeIn, transitions } from '@/lib/motion';
+import { EqualizerBars } from '@/components/motion/EqualizerBars';
 
 const DEFAULT_MESSAGES = [
   'Understanding your vibe',
@@ -10,6 +11,9 @@ const DEFAULT_MESSAGES = [
   'Finding something that fits',
   'Building your mix',
 ];
+
+/** How long each contextual line stays on screen while the request runs. */
+export const THINKING_MESSAGE_INTERVAL_MS = 1000;
 
 export function getContextualLoadingMessages(prompt?: string): string[] {
   if (!prompt) return DEFAULT_MESSAGES;
@@ -45,17 +49,56 @@ export function getContextualLoadingMessages(prompt?: string): string[] {
 }
 
 interface ThinkingIndicatorProps {
+  /** Real stage reported by the streaming response, when one has arrived. */
   stage?: string | null;
   prompt?: string;
+  intervalMs?: number;
 }
 
-export function ThinkingIndicator({ stage, prompt }: ThinkingIndicatorProps) {
+/**
+ * Thinking indicator for a request that is really running. The bars animate
+ * only while this component is mounted, which only happens while a request is
+ * in flight. When the AI is not connected the chat screen shows that state
+ * instead of this indicator.
+ */
+export function ThinkingIndicator({
+  stage,
+  prompt,
+  intervalMs = THINKING_MESSAGE_INTERVAL_MS,
+}: ThinkingIndicatorProps) {
   const shouldReduceMotion = useReducedMotion() ?? false;
   const messages = React.useMemo(
     () => getContextualLoadingMessages(prompt),
     [prompt],
   );
-  const activeLabel = stage || messages[0] || DEFAULT_MESSAGES[0];
+  const promptKey = prompt ?? '';
+  const [rotation, setRotation] = React.useState({
+    key: promptKey,
+    index: 0,
+  });
+
+  const stageLabel = stage?.trim() ? stage.trim() : null;
+  // A new prompt starts its own rotation from the first line.
+  const messageIndex = rotation.key === promptKey ? rotation.index : 0;
+
+  React.useEffect(() => {
+    if (stageLabel || messages.length <= 1) return;
+    const timer = setInterval(() => {
+      setRotation((current) => ({
+        key: promptKey,
+        index:
+          current.key === promptKey
+            ? (current.index + 1) % messages.length
+            : 1,
+      }));
+    }, intervalMs);
+    return () => clearInterval(timer);
+  }, [intervalMs, messages.length, promptKey, stageLabel]);
+
+  const activeLabel =
+    stageLabel ??
+    messages[Math.min(messageIndex, messages.length - 1)] ??
+    DEFAULT_MESSAGES[0];
 
   return (
     <div
@@ -65,27 +108,7 @@ export function ThinkingIndicator({ stage, prompt }: ThinkingIndicatorProps) {
       data-testid="thinking-indicator"
       className="flex flex-col gap-3 py-4"
     >
-      <div className="flex h-4 items-center gap-1.5" aria-hidden="true">
-        {[0, 1, 2, 3].map((index) => (
-          <motion.span
-            key={index}
-            animate={
-              shouldReduceMotion ? { scaleY: 1 } : { scaleY: [0.3, 1, 0.4] }
-            }
-            transition={
-              shouldReduceMotion
-                ? { duration: 0 }
-                : {
-                    repeat: Infinity,
-                    duration: 0.8,
-                    delay: index * 0.1,
-                    ease: 'easeInOut',
-                  }
-            }
-            className="h-4 w-1 origin-bottom rounded-full bg-accent"
-          />
-        ))}
-      </div>
+      <EqualizerBars bars={4} tone="lime" height={16} width={3} />
       <motion.p
         initial={shouldReduceMotion ? false : fadeIn.initial}
         animate={fadeIn.animate}

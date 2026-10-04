@@ -320,7 +320,7 @@ export default function ChatPage() {
               <ChatMessage key={i} message={msg} />
             ))}
 
-            {isThinking && (
+            {isThinking && !isAiNotConnected && (
               <div className="mr-auto">
                 <ThinkingIndicator stage={thinkingStage} prompt={lastPrompt} />
               </div>

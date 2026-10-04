@@ -5,7 +5,8 @@ import { motion } from 'motion/react';
 import { Logo } from '@/components/ui/Logo';
 import { TrackRow } from './TrackRow';
 import { PlaylistPreview } from './PlaylistPreview';
-import { fadeIn, fadeInUp, staggerContainer, transitions } from '@/lib/motion';
+import { WordReveal } from './WordReveal';
+import { fadeIn, fadeInUp, transitions } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 
@@ -72,12 +73,10 @@ export function ChatMessage({ message }: { message: Message }) {
             : 'bg-accent/5 text-text-primary rounded-2xl rounded-tr-none border border-accent/10 px-6'
         )}
       >
-        <span>{message.content}</span>
-        {isAssistant && message.isStreaming && (
-          <span
-            aria-hidden="true"
-            className="ml-1 inline-block h-3.5 w-1.5 align-middle bg-accent/80"
-          />
+        {isAssistant ? (
+          <WordReveal text={message.content} />
+        ) : (
+          <span>{message.content}</span>
         )}
       </motion.div>
 
@@ -103,14 +102,7 @@ export function ChatMessage({ message }: { message: Message }) {
               onRemoveTrack={handleRemoveTrack}
             />
           ) : (
-            <motion.div
-              role="list"
-              aria-label="Recommended tracks"
-              variants={staggerContainer(0.04)}
-              initial="initial"
-              animate="animate"
-              className="space-y-1"
-            >
+            <div role="list" aria-label="Recommended tracks" className="space-y-1">
               {localTracks.map((track, i) => (
                 <TrackRow
                   key={track.id || i}
@@ -119,7 +111,7 @@ export function ChatMessage({ message }: { message: Message }) {
                   listItem
                 />
               ))}
-            </motion.div>
+            </div>
           )}
         </div>
       )}
