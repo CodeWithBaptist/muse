@@ -28,7 +28,7 @@ const SIZE_CLASSES = {
 } as const;
 
 const BASE_CLASSES =
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold transition-colors focus-ring';
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.98] focus-ring';
 
 const VARIANT_CLASSES = {
   primary: 'bg-accent text-background hover:bg-accent/90',
