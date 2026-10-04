@@ -5,6 +5,7 @@ const mockDbSelectWhere = vi.fn();
 const mockDbInsertReturning = vi.fn();
 const mockDbDeleteWhere = vi.fn();
 const mockDbUpdateWhere = vi.fn();
+const mockDbTransaction = vi.fn();
 
 vi.mock('@/db', () => ({
   db: {
@@ -27,6 +28,7 @@ vi.mock('@/db', () => ({
         where: (...args: unknown[]) => mockDbUpdateWhere(...args),
       })),
     })),
+    transaction: (...args: unknown[]) => mockDbTransaction(...args),
   },
 }));
 
@@ -41,8 +43,10 @@ vi.mock('@/lib/session', () => ({
 import { verifySameOrigin } from './csrf';
 import { enforceRateLimit } from './rate-limit';
 import { GET as logoutGet, POST as logoutPost } from '@/app/api/auth/logout/route';
-import { POST as chatPost } from '@/app/api/chat/route';
+import { DELETE as chatClearDelete, POST as chatPost } from '@/app/api/chat/route';
 import { GET as chatByIdGet, DELETE as chatByIdDelete } from '@/app/api/chat/[id]/route';
+import { DELETE as accountDelete } from '@/app/api/me/account/route';
+import { DELETE as spotifyDisconnectDelete } from '@/app/api/me/spotify/route';
 import { GET as musicGet } from '@/app/api/music/route';
 import { GET as musicSearchGet } from '@/app/api/music/search/route';
 import { POST as playlistExportPost } from '@/app/api/playlists/export/route';
@@ -64,6 +68,19 @@ describe('Stage B Security Hardening', () => {
     mockDbExecute.mockResolvedValue({
       rows: [{ count: 1, reset_at: new Date(Date.now() + 60_000).toISOString() }],
     });
+    mockDbTransaction.mockImplementation(
+      async (callback: (transaction: unknown) => Promise<unknown>) =>
+        callback({
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: (...whereArgs: unknown[]) => mockDbSelectWhere(...whereArgs),
+            })),
+          })),
+          delete: (..._deleteArgs: unknown[]) => ({
+            where: (...whereArgs: unknown[]) => mockDbDeleteWhere(...whereArgs),
+          }),
+        }),
+    );
   });
 
   afterEach(() => {
@@ -217,6 +234,45 @@ describe('Stage B Security Hardening', () => {
       })
     );
     expect(postRes.status).toBe(404);
+  });
+
+  it('clears saved recommendations with conversation history', async () => {
+    const response = await chatClearDelete(
+      new Request('http://127.0.0.1:3000/api/chat', { method: 'DELETE' })
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDbTransaction).toHaveBeenCalledTimes(1);
+    expect(mockDbDeleteWhere).toHaveBeenCalledTimes(2);
+  });
+
+  it('deletes account data and clears playlist tracks before removing the account', async () => {
+    mockDbSelectWhere.mockResolvedValueOnce([
+      { id: '22222222-2222-4222-8222-222222222222' },
+    ]);
+
+    const response = await accountDelete(
+      new Request('http://127.0.0.1:3000/api/me/account', { method: 'DELETE' }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDbTransaction).toHaveBeenCalledTimes(1);
+    expect(mockDbDeleteWhere).toHaveBeenCalledTimes(3);
+    expect(mockDeleteSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('disconnects Spotify and clears Spotify-derived data and chat history transactionally', async () => {
+    mockDbSelectWhere.mockResolvedValueOnce([
+      { id: '22222222-2222-4222-8222-222222222222' },
+    ]);
+
+    const response = await spotifyDisconnectDelete(
+      new Request('http://127.0.0.1:3000/api/me/spotify', { method: 'DELETE' }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mockDbTransaction).toHaveBeenCalledTimes(1);
+    expect(mockDbDeleteWhere).toHaveBeenCalledTimes(6);
   });
 
   it('keeps database error details out of the client response and logs', async () => {

@@ -1,134 +1,237 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { ExternalLink, Disc, X } from 'lucide-react';
-import { Surface } from '@/components/ui/Surface';
-import { Logo } from '@/components/ui/Logo';
+import * as React from "react";
+import { Disc, ExternalLink, X } from "lucide-react";
+import { Surface } from "@/components/ui/Surface";
+import { Logo } from "@/components/ui/Logo";
 import {
-  useNowPlaying,
   formatTrackDuration,
   getSpotifyTrackUrl,
-} from '@/hooks/use-now-playing';
+  useNowPlaying,
+} from "@/hooks/use-now-playing";
+import { PlaybackButton } from "./PlaybackButton";
+import { TrackArtwork } from "./TrackArtwork";
+
+function artistLabel(track: { artists: { name: string }[] | string }) {
+  return Array.isArray(track.artists)
+    ? track.artists.map((artist) => artist.name).join(", ")
+    : track.artists;
+}
+
+function availabilityMessage(
+  availability: ReturnType<typeof useNowPlaying>["availability"],
+) {
+  if (availability === "checking") return "Checking Spotify playback access.";
+  if (availability === "disconnected") {
+    return "Connect Spotify to use playback in MUSE.";
+  }
+  if (availability === "reconnect-required") {
+    return "Reconnect Spotify to enable playback in MUSE.";
+  }
+  if (availability === "premium-required") {
+    return "An eligible Spotify Premium subscription is required for full playback in MUSE.";
+  }
+  if (availability === "unavailable") {
+    return "Playback is unavailable here. Open this track in Spotify.";
+  }
+  if (availability === "ready") {
+    return "Open Spotify on an active device to start playback from MUSE.";
+  }
+  return null;
+}
 
 export function NowPlaying() {
-  const { selectedTrack, clearTrack } = useNowPlaying();
+  const {
+    selectedTrack,
+    activeTrack,
+    availability,
+    playbackPreference,
+    isPlaying,
+    isBuffering,
+    playbackMode,
+    playbackNotice,
+    clearTrack,
+    getPlaybackAction,
+    playTrack,
+    togglePlayback,
+    isTrackPlaying,
+    isTrackBuffering,
+  } = useNowPlaying();
 
-  const artistName = selectedTrack
-    ? Array.isArray(selectedTrack.artists)
-      ? selectedTrack.artists.map((a) => a.name).join(', ')
-      : selectedTrack.artists
-    : '';
+  const track =
+    isPlaying || isBuffering
+      ? (activeTrack ?? selectedTrack)
+      : (selectedTrack ?? activeTrack);
 
-  const artUrl =
-    selectedTrack?.album?.images?.[0]?.url || selectedTrack?.albumArtUrl;
-  const durationLabel = formatTrackDuration(selectedTrack?.duration_ms);
-  const spotifyUrl = getSpotifyTrackUrl(selectedTrack?.id);
+  if (!track) {
+    return (
+      <aside
+        data-testid="now-playing-panel"
+        className="hidden w-[280px] flex-col border-l border-border-subtle bg-background xl:flex"
+      >
+        <div className="flex flex-1 flex-col items-center justify-center space-y-6 p-6 text-center">
+          <Surface
+            variant="raised"
+            className="flex aspect-square w-full items-center justify-center overflow-hidden border-border-strong bg-surface/50"
+          >
+            <Logo variant="mark" size={48} className="opacity-10" />
+          </Surface>
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-text-muted">
+              No track selected
+            </h3>
+            <p className="text-xs font-medium text-text-muted/70">
+              Select a track to see playback options
+            </p>
+          </div>
+        </div>
+        <div className="border-t border-border-subtle p-6">
+          <p className="text-center text-[11px] leading-relaxed text-text-muted">
+            Playback from MUSE uses an active Spotify device and may require an
+            eligible Premium subscription. Track links open in Spotify.
+          </p>
+        </div>
+      </aside>
+    );
+  }
+
+  const artistName = artistLabel(track);
+  const artUrl = track.album?.images?.[0]?.url || track.albumArtUrl;
+  const durationLabel = formatTrackDuration(track.duration_ms);
+  const spotifyUrl = getSpotifyTrackUrl(track.id);
+  const action = getPlaybackAction(track);
+  const playing = isTrackPlaying(track.id);
+  const busy = isTrackBuffering(track.id);
+  const isActiveTrack = activeTrack?.id === track.id && playbackMode !== null;
+  const actionLabel =
+    action === "spotify" ? `Play ${track.name} on Spotify` : "";
+  const notice =
+    playbackNotice ??
+    (playbackPreference === "spotify" && !isActiveTrack
+      ? "Your playback preference is Spotify. Open this track there to listen."
+      : availabilityMessage(availability));
+
+  const handlePlayback = () => {
+    if (isActiveTrack) {
+      void togglePlayback();
+    } else {
+      void playTrack(track);
+    }
+  };
 
   return (
     <aside
       data-testid="now-playing-panel"
-      className="w-[280px] border-l border-border-subtle bg-background flex flex-col hidden xl:flex"
+      className="hidden w-[280px] flex-col border-l border-border-subtle bg-background xl:flex"
     >
-      {selectedTrack ? (
-        <div className="p-6 flex-1 flex flex-col justify-between space-y-6 overflow-y-auto">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="type-section-label">Selected Track</span>
+      <div className="flex flex-1 flex-col justify-between space-y-6 overflow-y-auto p-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="type-section-label">
+              {playing ? "Now Playing" : "Selected Track"}
+            </span>
+            {selectedTrack && !playing && (
               <button
                 type="button"
                 onClick={clearTrack}
                 aria-label="Clear selected track"
-                className="p-1 text-text-muted hover:text-text-primary transition-colors rounded"
+                className="rounded p-1 text-text-muted transition-colors hover:text-text-primary"
               >
                 <X size={14} />
               </button>
-            </div>
-
-            <Surface
-              variant="raised"
-              className="w-full aspect-square flex items-center justify-center border-border-strong bg-surface overflow-hidden rounded-lg"
-            >
-              {artUrl ? (
-                <img
-                  src={artUrl}
-                  alt={selectedTrack.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Disc size={40} className="text-text-muted/30" />
-              )}
-            </Surface>
-
-            <div className="space-y-1">
-              <h3 className="text-base font-semibold text-text-primary leading-snug">
-                {selectedTrack.name}
-              </h3>
-              <p className="text-xs font-medium text-text-secondary">
-                {artistName}
-              </p>
-              {durationLabel && (
-                <p className="text-[11px] text-text-muted tabular-nums">
-                  Duration: {durationLabel}
-                </p>
-              )}
-            </div>
-
-            {selectedTrack.reason && (
-              <div className="p-3 rounded-md bg-surface border border-border-subtle space-y-1">
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-accent">
-                  Why this track
-                </span>
-                <p className="text-xs text-text-secondary leading-relaxed">
-                  {selectedTrack.reason}
-                </p>
-              </div>
             )}
           </div>
 
-          <div className="pt-4 border-t border-border-subtle space-y-3">
+          <Surface
+            variant="raised"
+            className="flex aspect-square w-full items-center justify-center overflow-hidden border-border-strong bg-surface"
+          >
+            {artUrl ? (
+              <TrackArtwork
+                src={artUrl}
+                alt={track.name}
+                className="h-full w-full"
+              />
+            ) : (
+              <Disc size={40} className="text-text-muted/30" />
+            )}
+          </Surface>
+
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold leading-snug text-text-primary">
+              {track.name}
+            </h3>
+            <p className="text-xs font-medium text-text-secondary">
+              {artistName}
+            </p>
+            {durationLabel && (
+              <p className="text-[11px] tabular-nums text-text-muted">
+                Duration: {durationLabel}
+              </p>
+            )}
+          </div>
+
+          {track.reason && (
+            <div className="space-y-1 rounded-md border border-border-subtle bg-surface p-3">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-accent">
+                Why this track
+              </span>
+              <p className="text-xs leading-relaxed text-text-secondary">
+                {track.reason}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4 border-t border-border-subtle pt-4">
+          {notice && (
+            <p
+              role="status"
+              aria-live="polite"
+              className="text-center text-[11px] leading-relaxed text-text-muted"
+            >
+              {notice}
+            </p>
+          )}
+
+          <div className="space-y-2">
+            {action && (
+              <PlaybackButton
+                playing={playing}
+                busy={busy}
+                label={
+                  busy
+                    ? "Starting playback"
+                    : playing
+                      ? `Pause ${track.name} on Spotify`
+                      : actionLabel
+                }
+                onClick={handlePlayback}
+                className="h-10 w-full gap-2 rounded-md px-4 text-xs font-semibold"
+              />
+            )}
             {spotifyUrl && (
               <a
                 href={spotifyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-accent text-background text-xs font-semibold hover:opacity-90 transition-opacity"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border-strong px-4 py-2.5 text-xs font-semibold text-text-primary transition-colors hover:bg-surface"
               >
                 <span>Open in Spotify</span>
                 <ExternalLink size={14} />
               </a>
             )}
-            <p className="text-[11px] text-text-muted text-center leading-relaxed">
-              Full track playback opens directly in Spotify.
-            </p>
+            {availability === "reconnect-required" && (
+              <a
+                href="/api/auth/spotify"
+                className="inline-flex w-full items-center justify-center rounded-md px-4 py-2 text-xs font-semibold text-accent hover:bg-surface"
+              >
+                Reconnect Spotify
+              </a>
+            )}
           </div>
         </div>
-      ) : (
-        <>
-          <div className="p-6 flex-1 flex flex-col justify-center items-center text-center space-y-6">
-            <Surface
-              variant="raised"
-              className="w-full aspect-square flex items-center justify-center border-border-strong bg-surface/50 overflow-hidden"
-            >
-              <Logo variant="mark" size={48} className="opacity-10" />
-            </Surface>
-
-            <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-text-muted">
-                No track selected
-              </h3>
-              <p className="text-xs font-medium text-text-muted/60">
-                Select any track to inspect details or open in Spotify
-              </p>
-            </div>
-          </div>
-
-          <div className="p-6 border-t border-border-subtle">
-            <p className="text-[11px] text-text-muted text-center leading-relaxed">
-              Playback runs through your connected Spotify app or web player.
-            </p>
-          </div>
-        </>
-      )}
+      </div>
     </aside>
   );
 }
