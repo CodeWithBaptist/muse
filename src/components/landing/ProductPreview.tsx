@@ -1,10 +1,8 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { useState, useEffect } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Surface } from '@/components/ui/Surface';
-import { fadeInUp, staggerContainer } from '@/lib/motion';
-import { cn } from '@/lib/utils';
+import { transitions } from '@/lib/motion';
 import { Logo } from '@/components/ui/Logo';
 
 const TRACKS = [
@@ -14,172 +12,105 @@ const TRACKS = [
 ];
 
 export function ProductPreview() {
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-    const sequence = async () => {
-      while (active) {
-        setStep(0);
-        await wait(1500);
-        if (!active) break;
-        setStep(1);
-        await wait(2000);
-        if (!active) break;
-        setStep(2);
-        await wait(1500);
-        if (!active) break;
-        setStep(3);
-        await wait(3000);
-        if (!active) break;
-        setStep(4);
-        await wait(2000);
-        if (!active) break;
-        setStep(5);
-        await wait(5000);
-      }
-    };
-    sequence();
-    return () => {
-      active = false;
-    };
-  }, []);
+  const shouldReduceMotion = useReducedMotion() ?? false;
 
   return (
-    <section className="px-6 py-20 max-w-5xl mx-auto">
+    <section
+      aria-labelledby="product-preview-heading"
+      className="mx-auto max-w-5xl px-6 py-20"
+    >
+      <h2 id="product-preview-heading" className="sr-only">
+        Example MUSE conversation
+      </h2>
       <motion.div
-        whileInView={{ scale: [0.98, 1], opacity: [0, 1] }}
-        viewport={{ once: false, amount: 0.3 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={shouldReduceMotion ? { duration: 0 } : transitions.standard}
       >
         <Surface
           variant="raised"
-          className="overflow-hidden border-border-strong aspect-video flex flex-col"
+          className="flex aspect-video flex-col overflow-hidden border-border-strong"
         >
-          {/* Header */}
-          <div className="p-4 border-b border-border-subtle flex items-center justify-between bg-surface">
-            <div className="flex gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
-              <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
-              <div className="w-2.5 h-2.5 rounded-full bg-border-strong" />
+          <div className="flex items-center justify-between border-b border-border-subtle bg-surface p-4">
+            <div className="flex gap-1.5" aria-hidden="true">
+              <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
+              <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
+              <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
             </div>
-            <div className="text-[10px] uppercase tracking-widest text-text-muted font-medium">
-              Preview
-            </div>
+            <span className="text-[10px] font-medium uppercase tracking-widest text-text-muted">
+              Illustrative preview
+            </span>
           </div>
 
-          {/* Content Area */}
-          <div className="flex-1 p-6 space-y-8 overflow-y-auto custom-scrollbar">
-            {/* Prompt */}
-            <div className="max-w-md ml-auto">
+          <div className="custom-scrollbar flex-1 space-y-8 overflow-y-auto p-6">
+            <div className="ml-auto max-w-md">
               <Surface
                 variant="flat"
-                className="p-4 rounded-2xl rounded-tr-none bg-accent/10 border-accent/20"
+                className="rounded-2xl rounded-tr-none border border-accent/20 bg-accent/10 p-4"
               >
                 <p className="text-sm">
-                  {step >= 1
-                    ? 'I want something like Brent Faiyaz but less sad.'
-                    : ''}
-                  {step === 0 && <span className="animate-pulse">|</span>}
+                  I want something like Brent Faiyaz but less sad.
                 </p>
               </Surface>
             </div>
 
-            {/* MUSE Response */}
-            {step >= 2 && (
-              <div className="max-w-md space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-sm bg-surface border border-border-subtle flex items-center justify-center overflow-hidden shrink-0">
-                    <Logo variant="mark" size={20} />
-                  </div>
-                  {step === 2 && (
-                    <div className="flex items-end gap-1 h-4">
-                      {[0, 1, 2].map((i) => (
-                        <motion.div
-                          key={i}
-                          style={{ transformOrigin: 'bottom' }}
-                          animate={{ scaleY: [0.35, 1, 0.35] }}
-                          transition={{
-                            repeat: Infinity,
-                            duration: 0.8,
-                            delay: i * 0.1,
-                          }}
-                          className="w-1 h-3.5 bg-accent rounded-full"
-                        />
-                      ))}
-                    </div>
-                  )}
+            <div className="max-w-md space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-subtle bg-surface">
+                  <Logo variant="mark" size={20} />
                 </div>
-
-                {step >= 3 && (
-                  <motion.div
-                    variants={fadeInUp}
-                    initial="initial"
-                    animate="animate"
-                    className="space-y-6"
-                  >
-                    <p className="text-sm text-text-secondary leading-relaxed">
-                      Understood. Focus on that smooth, late-night R&amp;B
-                      texture with a bit more warmth. Here&apos;s what I found:
-                    </p>
-
-                    <motion.div
-                      variants={staggerContainer(0.05)}
-                      className="space-y-1"
-                    >
-                      {TRACKS.map((track, i) => (
-                        <motion.div
-                          key={i}
-                          variants={fadeInUp}
-                          className="flex items-center gap-4 p-2 rounded hover:bg-surface transition-colors group"
-                        >
-                          <div className="w-10 h-10 bg-border-strong rounded shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate">
-                              {track.title}
-                            </div>
-                            <div className="text-xs text-text-muted truncate">
-                              {track.artist}
-                            </div>
-                          </div>
-                          <div className="text-[10px] text-text-muted tabular-nums">
-                            {track.duration}
-                          </div>
-                        </motion.div>
-                      ))}
-                    </motion.div>
-
-                    {step >= 4 && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="p-4 rounded-lg bg-surface border border-border-strong flex items-center justify-between"
-                      >
-                        <div className="text-sm font-medium">
-                          Create &quot;Late Night Vibe&quot; playlist?
-                        </div>
-                        <motion.button
-                          disabled={step === 5}
-                          className={cn(
-                            'px-4 py-2 rounded text-xs font-bold transition-all',
-                            step === 5
-                              ? 'bg-accent text-background'
-                              : 'bg-accent/20 text-accent'
-                          )}
-                        >
-                          {step === 5 ? 'Created in Spotify' : 'Create'}
-                        </motion.button>
-                      </motion.div>
-                    )}
-                  </motion.div>
-                )}
+                <span className="text-xs font-semibold text-text-secondary">
+                  Example response
+                </span>
               </div>
-            )}
+
+              <p className="text-sm leading-relaxed text-text-secondary">
+                A sample recommendation layout with track links and an optional
+                playlist action.
+              </p>
+
+              <div role="list" aria-label="Sample recommended tracks" className="space-y-1">
+                {TRACKS.map((track) => (
+                  <div
+                    key={track.title}
+                    role="listitem"
+                    className="group flex items-center gap-4 rounded p-2 transition-colors hover:bg-surface"
+                  >
+                    <div
+                      aria-hidden="true"
+                      className="h-10 w-10 shrink-0 rounded bg-border-strong"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-text-primary">
+                        {track.title}
+                      </p>
+                      <p className="truncate text-xs text-text-muted">
+                        {track.artist}
+                      </p>
+                    </div>
+                    <span className="text-[10px] tabular-nums text-text-muted">
+                      {track.duration}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-2 rounded-lg border border-border-strong bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-sm font-medium">
+                  Example playlist action
+                </p>
+                <span className="text-xs text-text-muted">
+                  No playlist is created from this preview.
+                </span>
+              </div>
+            </div>
           </div>
         </Surface>
       </motion.div>
+      <p className="mt-3 text-xs text-text-muted">
+        Illustrative UI only. This preview does not contact Spotify or OpenAI.
+      </p>
     </section>
   );
 }

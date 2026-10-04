@@ -65,9 +65,15 @@ export function LibraryContent({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
+      <div
+        aria-busy="true"
+        className="grid grid-cols-2 gap-6 md:grid-cols-4 lg:grid-cols-5"
+      >
+        <p role="status" className="sr-only">
+          Loading library items.
+        </p>
         {[...Array(10)].map((_, i) => (
-          <div key={i} className="space-y-4 animate-pulse">
+          <div key={i} className="space-y-4">
             <div className="aspect-square bg-surface rounded-lg" />
             <div className="h-4 bg-surface rounded w-3/4" />
             <div className="h-3 bg-surface rounded w-1/2" />
@@ -136,7 +142,7 @@ export function LibraryContent({
 
   if (items.length === 0) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center text-center space-y-4 opacity-60">
+      <div className="py-20 flex flex-col items-center justify-center text-center space-y-4">
         <Music size={48} strokeWidth={1} />
         <div className="space-y-1">
           <p className="font-semibold uppercase tracking-widest text-[10px]">
@@ -159,13 +165,20 @@ export function LibraryContent({
         : items.map((i) => (i.track || i) as unknown as SpotifyTrackItem);
     return (
       <motion.div
+        role="list"
+        aria-label="Spotify tracks"
         variants={staggerContainer(0.02)}
         initial="initial"
         animate="animate"
         className="space-y-1"
       >
         {tracks.map((track, i) => (
-          <TrackRow key={`${track.id}-${i}`} track={track} index={i} />
+          <TrackRow
+            key={`${track.id}-${i}`}
+            track={track}
+            index={i}
+            listItem
+          />
         ))}
       </motion.div>
     );

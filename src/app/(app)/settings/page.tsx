@@ -184,10 +184,10 @@ export default function SettingsPage() {
 
         <Surface variant="raised" className="p-6 rounded-xl">
           <form onSubmit={handleSavePreferences} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-muted block">
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                 Discovery Style
-              </label>
+              </legend>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
                   {
@@ -209,6 +209,7 @@ export default function SettingsPage() {
                   <button
                     key={opt.id}
                     type="button"
+                    aria-pressed={discoveryStyle === opt.id}
                     onClick={() => {
                       setDiscoveryStyle(opt.id);
                       setSaveState('idle');
@@ -229,18 +230,19 @@ export default function SettingsPage() {
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-text-muted block">
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                   Default Playlist Length
-                </label>
+                </legend>
                 <div className="flex gap-2">
                   {(['10', '15', '20'] as const).map((len) => (
                     <button
                       key={len}
                       type="button"
+                      aria-pressed={playlistLength === len}
                       onClick={() => {
                         setPlaylistLength(len);
                         setSaveState('idle');
@@ -256,12 +258,12 @@ export default function SettingsPage() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
-              <div className="space-y-2">
-                <label className="text-xs font-semibold uppercase tracking-wider text-text-muted block">
+              <fieldset className="space-y-2">
+                <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                   Explicit Content
-                </label>
+                </legend>
                 <div className="flex gap-2">
                   {[
                     { id: 'allow' as const, label: 'Allow explicit' },
@@ -270,6 +272,7 @@ export default function SettingsPage() {
                     <button
                       key={opt.id}
                       type="button"
+                      aria-pressed={explicitContent === opt.id}
                       onClick={() => {
                         setExplicitContent(opt.id);
                         setSaveState('idle');
@@ -285,18 +288,14 @@ export default function SettingsPage() {
                     </button>
                   ))}
                 </div>
-              </div>
+              </fieldset>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-text-muted block">
+            <fieldset className="space-y-2">
+              <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                 Playback Preference
-              </label>
-              <div
-                role="group"
-                aria-label="Playback preference"
-                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
-              >
+              </legend>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   {
                     id: 'muse' as const,
@@ -339,7 +338,7 @@ export default function SettingsPage() {
                 Applies to newly selected tracks. Playback already in progress
                 remains controllable.
               </p>
-            </div>
+            </fieldset>
 
             <div className="space-y-2">
               <label
@@ -365,13 +364,17 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between gap-4 pt-2 border-t border-border-subtle">
               <div className="text-xs text-text-secondary">
                 {saveState === 'saved' && (
-                  <span className="text-accent font-medium inline-flex items-center gap-1.5">
-                    <Check size={14} />
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    className="inline-flex items-center gap-1.5 font-medium text-accent"
+                  >
+                    <Check size={14} aria-hidden="true" />
                     Preferences saved
                   </span>
                 )}
                 {saveState === 'error' && (
-                  <span className="text-red-400 font-medium">
+                  <span role="alert" className="font-medium text-red-400">
                     Unable to save preferences right now.
                   </span>
                 )}
@@ -485,10 +488,12 @@ export default function SettingsPage() {
               <div className="text-sm font-semibold text-text-primary">
                 Conversation History
               </div>
-              <p className="text-xs text-text-secondary">
-                {clearState === 'cleared'
-                  ? 'All saved conversations have been deleted.'
-                  : 'Remove all saved chat conversations and track recommendations from MUSE.'}
+              <p role="status" aria-live="polite" className="text-xs text-text-secondary">
+                {clearState === 'clearing'
+                  ? 'Clearing saved conversation history.'
+                  : clearState === 'cleared'
+                    ? 'All saved conversations have been deleted.'
+                    : 'Remove all saved chat conversations and track recommendations from MUSE.'}
               </p>
             </div>
 

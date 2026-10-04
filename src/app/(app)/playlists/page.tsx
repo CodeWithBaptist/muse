@@ -202,17 +202,22 @@ export default function PlaylistsPage() {
             connected Spotify playlists.
           </p>
         </div>
-        <Link href="/chat">
-          <Button variant="primary" size="sm">
-            <PlusSquare size={15} className="mr-2" />
-            New Playlist in Chat
-          </Button>
+        <Link
+          href="/chat"
+          className="inline-flex h-9 items-center justify-center rounded-md bg-accent px-4 text-xs font-semibold text-background transition-colors hover:bg-accent/90 focus-ring"
+        >
+          <PlusSquare size={15} className="mr-2" aria-hidden="true" />
+          New Playlist in Chat
         </Link>
       </div>
 
       {actionError && (
-        <Surface className="p-4 border-red-500/40 bg-red-500/[0.04] rounded-lg">
-          <p className="text-xs text-red-300 font-medium">{actionError}</p>
+        <Surface
+          role="alert"
+          aria-live="assertive"
+          className="rounded-lg border-red-500/40 bg-red-500/[0.04] p-4"
+        >
+          <p className="text-xs font-medium text-red-300">{actionError}</p>
         </Surface>
       )}
 
@@ -226,16 +231,22 @@ export default function PlaylistsPage() {
         </div>
 
         {isLoadingMuse ? (
-          <div className="space-y-4">
+          <div aria-busy="true" className="space-y-4">
+            <p role="status" className="sr-only">
+              Loading saved MUSE playlists.
+            </p>
             {[0, 1].map((i) => (
               <div
                 key={i}
-                className="h-36 bg-surface rounded-xl animate-pulse border border-border-subtle"
+                className="h-36 rounded-xl border border-border-subtle bg-surface"
               />
             ))}
           </div>
         ) : museError ? (
-          <Surface className="p-8 text-center space-y-2 border-dashed border-border-strong bg-transparent rounded-xl">
+          <Surface
+            role="alert"
+            className="space-y-2 rounded-xl border-dashed border-border-strong bg-transparent p-8 text-center"
+          >
             <p className="text-sm font-semibold text-text-primary">
               Unable to load saved MUSE playlists
             </p>
@@ -260,10 +271,11 @@ export default function PlaylistsPage() {
               </p>
             </div>
             <div className="pt-2">
-              <Link href="/chat">
-                <Button variant="outline" size="sm">
-                  Build a playlist in Chat
-                </Button>
+              <Link
+                href="/chat"
+                className="inline-flex h-9 items-center justify-center rounded-md border border-border-strong px-4 text-xs font-semibold text-text-primary transition-colors hover:bg-surface focus-ring"
+              >
+                Build a playlist in Chat
               </Link>
             </div>
           </Surface>
@@ -397,19 +409,25 @@ export default function PlaylistsPage() {
 
                     {playlist.tracks.length > 0 && (
                       <div className="border-t border-border-subtle pt-4 space-y-1">
-                        <div className="text-[11px] font-semibold uppercase tracking-wider text-text-muted mb-2">
+                        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
                           {playlist.tracks.length} Tracks
                         </div>
-                        {playlist.tracks.map((track, idx) => (
-                          <TrackRow
-                            key={`${playlist.id}-${track.id}-${idx}`}
-                            track={track}
-                            index={idx}
-                            onRemove={(trackId) =>
-                              handleRemoveTrack(playlist.id, trackId)
-                            }
-                          />
-                        ))}
+                        <div
+                          role="list"
+                          aria-label={`Tracks in ${playlist.name}`}
+                        >
+                          {playlist.tracks.map((track, idx) => (
+                            <TrackRow
+                              key={`${playlist.id}-${track.id}-${idx}`}
+                              track={track}
+                              index={idx}
+                              onRemove={(trackId) =>
+                                handleRemoveTrack(playlist.id, trackId)
+                              }
+                              listItem
+                            />
+                          ))}
+                        </div>
                       </div>
                     )}
                   </Surface>
@@ -427,16 +445,25 @@ export default function PlaylistsPage() {
         </div>
 
         {isLoadingSpotify ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+          <div
+            aria-busy="true"
+            className="grid grid-cols-2 gap-6 md:grid-cols-4 lg:grid-cols-6"
+          >
+            <p role="status" className="sr-only">
+              Loading Spotify playlists.
+            </p>
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="space-y-3 animate-pulse">
+              <div key={i} className="space-y-3">
                 <div className="aspect-square bg-surface rounded-lg" />
                 <div className="h-4 bg-surface rounded w-3/4" />
               </div>
             ))}
           </div>
         ) : spotifyError ? (
-          <Surface className="p-8 text-center space-y-3 border-dashed border-border-strong bg-transparent rounded-xl">
+          <Surface
+            role="alert"
+            className="space-y-3 rounded-xl border-dashed border-border-strong bg-transparent p-8 text-center"
+          >
             <Link2Off size={20} className="text-text-muted mx-auto" />
             <p className="text-xs text-text-secondary">
               Connect or refresh your Spotify session to browse your existing

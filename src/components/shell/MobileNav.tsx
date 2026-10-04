@@ -60,6 +60,33 @@ export function MobileNav() {
   const [openPathname, setOpenPathname] = React.useState<string | null>(null);
   const isOpen = openPathname === pathname;
   const shouldReduceMotion = useReducedMotion() ?? false;
+  const menuButtonRef = React.useRef<HTMLButtonElement>(null);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const previousPathname = React.useRef(pathname);
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    menuRef.current?.querySelector<HTMLElement>('a[href]')?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setOpenPathname(null);
+        menuButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (previousPathname.current === pathname) return;
+    previousPathname.current = pathname;
+    window.requestAnimationFrame(() => {
+      document.getElementById('main-content')?.focus();
+    });
+  }, [pathname]);
 
   const track =
     isPlaying || isBuffering
@@ -102,13 +129,20 @@ export function MobileNav() {
 
   return (
     <>
-      <div className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-border-subtle bg-background px-6 lg:hidden">
+      <header
+        role="banner"
+        aria-label="Mobile header"
+        className="fixed left-0 right-0 top-0 z-40 flex h-16 items-center justify-between border-b border-border-subtle bg-background px-6 lg:hidden"
+      >
         <Link href="/" className="flex items-center">
           <Logo variant="wordmark" size={80} />
         </Link>
         <button
+          ref={menuButtonRef}
           type="button"
           aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? "mobile-site-navigation" : undefined}
           onClick={() =>
             setOpenPathname((previous) =>
               previous === pathname ? null : pathname,
@@ -118,11 +152,13 @@ export function MobileNav() {
         >
           {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
-      </div>
+      </header>
 
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="mobile-site-navigation"
+            ref={menuRef}
             variants={fadeIn}
             initial="initial"
             animate="animate"
@@ -132,11 +168,12 @@ export function MobileNav() {
             }
             className="fixed inset-x-0 bottom-16 top-16 z-30 flex flex-col justify-between overflow-y-auto bg-background p-6 lg:hidden"
           >
-            <nav className="space-y-4">
+            <nav aria-label="Mobile navigation" className="space-y-4">
               {NAV_ITEMS.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
+                  aria-current={pathname === item.href ? "page" : undefined}
                   onClick={() => setOpenPathname(null)}
                   className={cn(
                     "flex items-center gap-4 py-1 text-xl font-medium transition-colors",
@@ -170,7 +207,10 @@ export function MobileNav() {
         )}
       </AnimatePresence>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-between gap-3 border-t border-border-subtle bg-background px-4 lg:hidden sm:px-6">
+      <aside
+        aria-label="Mobile now playing controls"
+        className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-center justify-between gap-3 border-t border-border-subtle bg-background px-4 lg:hidden sm:px-6"
+      >
         <span className="sr-only" role="status" aria-live="polite">
           {inlineNotice ?? ""}
         </span>
@@ -240,7 +280,7 @@ export function MobileNav() {
             <ExternalLink size={16} />
           </a>
         )}
-      </div>
+      </aside>
     </>
   );
 }

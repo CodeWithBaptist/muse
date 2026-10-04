@@ -28,9 +28,15 @@ interface TrackRowProps {
   track: Track;
   index: number;
   onRemove?: (id: string) => void;
+  listItem?: boolean;
 }
 
-export function TrackRow({ track, index, onRemove }: TrackRowProps) {
+export function TrackRow({
+  track,
+  index,
+  onRemove,
+  listItem = false,
+}: TrackRowProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const {
     selectedTrack,
@@ -68,6 +74,7 @@ export function TrackRow({ track, index, onRemove }: TrackRowProps) {
 
   return (
     <motion.div
+      role={listItem ? 'listitem' : undefined}
       variants={fadeInUp}
       transition={transitions.standard}
       className={cn(

@@ -119,7 +119,7 @@ export function Footer() {
               Spotify attribution
             </Link>
           </nav>
-          <div className="type-caption opacity-50">
+          <div className="type-caption text-text-muted">
             &copy; 2026 MUSE. Built for music.
           </div>
         </div>

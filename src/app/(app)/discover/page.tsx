@@ -37,16 +37,19 @@ export default function DiscoverPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-12">
+      <div aria-busy="true" className="p-8 space-y-12">
         <h1 className="type-page-title">Discover</h1>
+        <p role="status" className="sr-only">
+          Loading discovery sections.
+        </p>
         {[...Array(3)].map((_, i) => (
           <div key={i} className="space-y-6">
-            <div className="h-8 bg-surface rounded w-1/4 animate-pulse" />
+            <div className="h-8 w-1/4 rounded bg-surface" />
             <div className="flex gap-6 overflow-hidden">
               {[...Array(5)].map((_, j) => (
                 <div
                   key={j}
-                  className="w-48 aspect-square bg-surface rounded-lg animate-pulse"
+                  className="aspect-square w-48 rounded-lg bg-surface"
                 />
               ))}
             </div>
@@ -129,10 +132,13 @@ export default function DiscoverPage() {
     return (
       <div className="p-8 space-y-8">
         <h1 className="type-page-title">Discover</h1>
-        <Surface className="p-12 text-center space-y-4 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl">
-          <p className="text-text-primary font-semibold">
+        <Surface
+          role="alert"
+          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-12 text-center"
+        >
+          <h2 className="font-semibold text-text-primary">
             Unable to curate recommendations right now
-          </p>
+          </h2>
           <p className="text-xs text-text-muted">
             {(error as Error).message}
           </p>

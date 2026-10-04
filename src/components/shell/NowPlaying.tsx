@@ -66,6 +66,7 @@ export function NowPlaying() {
   if (!track) {
     return (
       <aside
+        aria-label="Now playing"
         data-testid="now-playing-panel"
         className="hidden w-[280px] flex-col border-l border-border-subtle bg-background xl:flex"
       >
@@ -80,7 +81,7 @@ export function NowPlaying() {
             <h3 className="text-sm font-semibold text-text-muted">
               No track selected
             </h3>
-            <p className="text-xs font-medium text-text-muted/70">
+            <p className="text-xs font-medium text-text-muted">
               Select a track to see playback options
             </p>
           </div>
@@ -121,6 +122,7 @@ export function NowPlaying() {
 
   return (
     <aside
+      aria-label="Now playing"
       data-testid="now-playing-panel"
       className="hidden w-[280px] flex-col border-l border-border-subtle bg-background xl:flex"
     >
