@@ -3,57 +3,80 @@ import type { CSSProperties } from 'react';
 /**
  * Hero entrance choreography.
  *
- * The hero runs its entrance in CSS rather than through Motion so the text
- * paints as soon as the stylesheet is parsed, without waiting for hydration.
- * The primary hero text starts within about 0.25s and the whole hero settles
- * within about 1.1s. Only transform and opacity are animated.
+ * The hero runs its entrance in CSS rather than through Motion so the content
+ * paints as soon as the stylesheet is parsed, instead of waiting for hydration.
+ * Every step uses `animation-fill-mode: backwards`, never `both`: backwards
+ * applies the first keyframe while a step waits for its delay, and it holds
+ * nothing after the step ends, so the buttons keep their pressed transforms.
  *
- * The canvas is the one exception: it repaints per frame, and the ridge is the
- * last beat to settle because it keeps drifting with the beat after the text
- * has landed.
+ * The pieces are the m, the u, the s, the e, and the dot of the wordmark, then
+ * the two headline lines, the subtext, and the two actions. The whole sequence
+ * settles well under 2.3 seconds. The canvas ring, and the beat pulse on the
+ * dot, are the only parts driven by the animation loop.
  */
 
-export type HeroBeatId = 'ridge' | 'wordmark' | 'heading' | 'actions';
+export type HeroLetterId = 'm' | 'u' | 's' | 'e';
 
-export interface HeroBeat {
-  id: HeroBeatId;
-  /** Seconds from first paint. */
-  start: number;
-  /** Seconds. */
-  duration: number;
+export const HERO_LETTER_STAGGER_MS = 85;
+export const HERO_LETTER_MS = 760;
+export const HERO_LETTER_RISE_PX = 34;
+
+export const HERO_DOT_START_MS = 420;
+export const HERO_DOT_MS = 1000;
+export const HERO_DOT_DROP_PX = 120;
+export const HERO_DOT_BOUNCE_PX = 16;
+/** When the dot has landed and settled, and the beat pulse may take over. */
+export const HERO_DOT_SETTLE_MS = HERO_DOT_START_MS + HERO_DOT_MS;
+
+export const HERO_HEADLINE_START_MS = 900;
+export const HERO_HEADLINE_STAGGER_MS = 110;
+export const HERO_HEADLINE_MS = 700;
+
+export const HERO_SUBTEXT_START_MS = 1400;
+export const HERO_ACTIONS_START_MS = 1600;
+export const HERO_FADE_MS = 520;
+
+/** How far the wordmark letters and the hero text travel, in CSS pixels. */
+export const HERO_FADE_DISTANCE_PX = 12;
+
+export const HERO_SEQUENCE_MS = HERO_ACTIONS_START_MS + HERO_FADE_MS;
+
+/** The dot pulses up to this scale on each beat, from HERO_DOT_SETTLE_MS on. */
+export const HERO_DOT_PULSE_SCALE = 0.17;
+
+export function heroLetterDelayMs(index: number): number {
+  return Math.max(0, index) * HERO_LETTER_STAGGER_MS;
 }
 
-export const HERO_RIDGE_DISTANCE_PX = 16;
-export const HERO_TEXT_DISTANCE_PX = 12;
-
-export const HERO_CHOREOGRAPHY: readonly HeroBeat[] = [
-  { id: 'wordmark', start: 0.05, duration: 0.7 },
-  { id: 'ridge', start: 0.1, duration: 1 },
-  { id: 'heading', start: 0.12, duration: 0.4 },
-  { id: 'actions', start: 0.24, duration: 0.4 },
-];
-
-const HERO_BEATS: Record<HeroBeatId, HeroBeat> = HERO_CHOREOGRAPHY.reduce(
-  (beats, beat) => ({ ...beats, [beat.id]: beat }),
-  {} as Record<HeroBeatId, HeroBeat>,
-);
-
-export function heroBeat(id: HeroBeatId): HeroBeat {
-  return HERO_BEATS[id];
+export function heroHeadlineDelayMs(index: number): number {
+  return HERO_HEADLINE_START_MS + Math.max(0, index) * HERO_HEADLINE_STAGGER_MS;
 }
 
-/** Inline delay and duration for the shared `.muse-hero-enter` classes. */
-export function heroBeatStyle(id: HeroBeatId): CSSProperties {
-  const beat = heroBeat(id);
-  return {
-    animationDelay: `${Math.round(beat.start * 1000)}ms`,
-    animationDuration: `${Math.round(beat.duration * 1000)}ms`,
-  };
+function delayStyle(delayMs: number): CSSProperties {
+  return { '--muse-hero-delay': `${Math.round(delayMs)}ms` } as CSSProperties;
 }
 
-/** When the last beat finishes, in milliseconds. */
-export function heroEntranceSettleMs(): number {
-  return Math.round(
-    Math.max(...HERO_CHOREOGRAPHY.map((beat) => beat.start + beat.duration)) * 1000,
-  );
+/** Inline delay for a wordmark letter. */
+export function heroLetterStyle(index: number): CSSProperties {
+  return delayStyle(heroLetterDelayMs(index));
+}
+
+/** Inline delay for the wordmark dot. */
+export function heroDotStyle(): CSSProperties {
+  return delayStyle(HERO_DOT_START_MS);
+}
+
+/** Inline delay for one masked headline line. */
+export function heroHeadlineStyle(index: number): CSSProperties {
+  return delayStyle(heroHeadlineDelayMs(index));
+}
+
+/** Inline delay for the subtext or the actions. */
+export function heroFadeStyle(delayMs: number): CSSProperties {
+  return delayStyle(delayMs);
+}
+
+/** When the last step of the sequence finishes, in milliseconds. */
+export function heroSequenceMs(): number {
+  return HERO_SEQUENCE_MS;
 }

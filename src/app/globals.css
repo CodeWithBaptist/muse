@@ -135,13 +135,17 @@
 
 /*
  * Hero entrance. Driven by CSS so the hero paints as soon as the stylesheet is
- * parsed instead of waiting for hydration. Transform and opacity only. The
- * per beat delay and duration come from src/lib/hero-entrance.ts.
+ * parsed, instead of waiting for hydration. Transform and opacity only, and
+ * every step uses animation-fill-mode: backwards: the first keyframe applies
+ * while a step waits for its delay, and nothing is held afterwards, so the
+ * buttons keep their own hover and pressed transforms.
+ *
+ * The delays, durations, and distances come from src/lib/hero-entrance.ts.
  */
-@keyframes muse-hero-enter {
+@keyframes muse-hero-letter {
   from {
     opacity: 0;
-    transform: translate3d(0, var(--muse-hero-distance, 12px), 0);
+    transform: translate3d(0, var(--muse-hero-rise, 34px), 0);
   }
   to {
     opacity: 1;
@@ -149,40 +153,69 @@
   }
 }
 
-@keyframes muse-hero-rise {
-  from {
-    transform: translate3d(0, 100%, 0);
-  }
-  to {
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-.muse-hero-enter {
-  animation: muse-hero-enter var(--muse-hero-duration, 400ms)
-    var(--ease-emphasized) both;
-  animation-delay: var(--muse-hero-delay, 0ms);
-}
-
-.muse-hero-enter-ridge {
-  --muse-hero-distance: 16px;
-}
-
-.muse-hero-rise {
-  animation: muse-hero-rise var(--muse-hero-duration, 700ms)
-    var(--ease-emphasized) both;
+.muse-hero-letter {
+  animation: muse-hero-letter var(--muse-hero-letter-duration, 760ms)
+    var(--ease-emphasized) backwards;
   animation-delay: var(--muse-hero-delay, 0ms);
 }
 
 /*
- * Scripted landing preview. This is the only simulated sequence in the product:
- * it plays once when it scrolls into view and it keeps the finished frame when
- * motion is reduced or when the preview was already on screen at load.
+ * The lime dot: it drops from 120px above, lands, bounces up 16px once, and
+ * settles. The fall accelerates, the bounce eases out, and the last stretch
+ * holds at rest so the beat pulse can take over.
  */
-@keyframes muse-preview-enter {
+@keyframes muse-hero-dot {
+  0% {
+    transform: translate3d(0, -120px, 0);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
+  }
+  38% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  58% {
+    transform: translate3d(0, -16px, 0);
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 1);
+  }
+  78%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.muse-hero-dot-drop {
+  animation: muse-hero-dot var(--muse-hero-dot-duration, 1000ms) linear
+    backwards;
+  animation-delay: var(--muse-hero-delay, 420ms);
+}
+
+/* The loop writes a scale here on the shared beat, from the same clock as the
+ * canvas. Outside the loop the element carries no transform at all. */
+.muse-hero-dot-pulse {
+  transform-origin: center;
+}
+
+/* Headline lines rise from behind their overflow mask. */
+@keyframes muse-hero-line {
+  from {
+    /* More than the mask height, so no glyph ever peeks above the mask. */
+    transform: translate3d(0, 130%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.muse-hero-line {
+  animation: muse-hero-line var(--muse-hero-line-duration, 700ms)
+    var(--ease-emphasized) backwards;
+  animation-delay: var(--muse-hero-delay, 900ms);
+}
+
+@keyframes muse-hero-fade {
   from {
     opacity: 0;
-    transform: translate3d(0, 8px, 0);
+    transform: translate3d(0, 12px, 0);
   }
   to {
     opacity: 1;
@@ -190,34 +223,58 @@
   }
 }
 
-@keyframes muse-preview-thinking {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 8px, 0);
+.muse-hero-fade {
+  animation: muse-hero-fade var(--muse-hero-fade-duration, 520ms)
+    var(--ease-emphasized) backwards;
+  animation-delay: var(--muse-hero-delay, 0ms);
+}
+
+/*
+ * The hero wordmark. Each piece of the mark is its own inline svg with a tight
+ * viewBox, so a transform on a piece is measured in CSS pixels at every size.
+ * The height steps up at the md breakpoint, exactly like the shared Logo did.
+ */
+.muse-wordmark {
+  --muse-wordmark-piece-height: 77px;
+}
+
+@media (min-width: 768px) {
+  .muse-wordmark {
+    --muse-wordmark-piece-height: 153px;
   }
-  12%,
-  86% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
+}
+
+.muse-wordmark-piece {
+  height: var(--muse-wordmark-piece-height);
+  width: calc(
+    var(--muse-wordmark-piece-ratio, 0.5) * var(--muse-wordmark-piece-height)
+  );
+}
+
+/*
+ * Section reveal for the numbered steps. The stagger comes from an inline
+ * custom property, so reduced motion can zero it without any JavaScript.
+ */
+.muse-step {
+  transition-property: opacity, transform;
+  transition-duration: 500ms;
+  transition-timing-function: var(--ease-emphasized);
+  transition-delay: var(--muse-step-delay, 0ms);
+}
+
+/* The final mark pulses once when it enters view, then rests. */
+@keyframes muse-cta-pulse {
+  0%,
   100% {
-    opacity: 0;
-    transform: translate3d(0, -6px, 0);
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.06);
   }
 }
 
-.muse-preview[data-play="armed"] [data-preview-item] {
-  opacity: 0;
-}
-
-.muse-preview[data-play="playing"] [data-preview-item] {
-  animation: muse-preview-enter var(--muse-preview-duration, 320ms)
-    var(--ease-emphasized) both;
-  animation-delay: var(--muse-preview-delay, 0ms);
-}
-
-.muse-preview[data-play="playing"] [data-preview-item="thinking"] {
-  animation-name: muse-preview-thinking;
+.muse-cta-pulse {
+  animation: muse-cta-pulse 700ms var(--ease-emphasized) 1;
 }
 
 /*
@@ -287,14 +344,16 @@
     scroll-behavior: auto !important;
   }
 
-  .muse-hero-enter,
-  .muse-hero-rise {
+  .muse-hero-letter,
+  .muse-hero-dot-drop,
+  .muse-hero-line,
+  .muse-hero-fade,
+  .muse-cta-pulse {
     animation: none !important;
   }
 
-  .muse-preview [data-preview-item] {
-    opacity: 1 !important;
-    animation: none !important;
+  .muse-step {
+    transition-delay: 0ms;
   }
 
   .muse-equalizer-bar {
