@@ -1,66 +1,102 @@
 'use client';
 
 import { useRef } from 'react';
-import { useReducedMotion } from 'motion/react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/use-auth';
-import { Logo } from '@/components/ui/Logo';
-import { heroBeatStyle } from '@/lib/hero-entrance';
-import Link from 'next/link';
-import { RidgelineCanvas } from './RidgelineCanvas';
+import {
+  HERO_ACTIONS_START_MS,
+  HERO_SUBTEXT_START_MS,
+  heroFadeStyle,
+  heroHeadlineStyle,
+} from '@/lib/hero-entrance';
+import { HeroWordmark } from './HeroWordmark';
+import {
+  HERO_ACTION_ATTRIBUTE,
+  RadialSpectrumCanvas,
+} from './RadialSpectrumCanvas';
 
+/**
+ * The hero.
+ *
+ * The radial spectrum canvas sits behind everything, the content keeps its own
+ * stacking order, and the entrance is CSS driven so the text is visible without
+ * JavaScript. The canvas measures the content block through `contentRef` and
+ * scales the wordmark dot through `dotRef`, so one loop drives both.
+ */
 export function Hero() {
   const { authenticated } = useAuth();
-  const shouldReduceMotion = useReducedMotion() ?? false;
   const contentRef = useRef<HTMLDivElement | null>(null);
+  const dotRef = useRef<HTMLSpanElement | null>(null);
 
   const scrollToHowItWorks = () => {
     const el = document.getElementById('how-it-works');
-    if (el) {
-      el.scrollIntoView({ behavior: shouldReduceMotion ? 'auto' : 'smooth' });
-    }
+    if (!el) return;
+    const reduceMotion =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
   };
 
   return (
     <section className="relative pt-32 pb-20 px-6 overflow-hidden">
-      <RidgelineCanvas
-        contentRef={contentRef}
-        className="muse-hero-enter muse-hero-enter-ridge"
-        style={heroBeatStyle('ridge')}
-      />
+      <RadialSpectrumCanvas contentRef={contentRef} pulseRef={dotRef} />
 
       <div
         ref={contentRef}
         className="relative z-10 max-w-4xl mx-auto text-center space-y-8"
       >
-        <div className="flex justify-center overflow-hidden">
-          <div className="muse-hero-rise" style={heroBeatStyle('wordmark')}>
-            <Logo variant="wordmark" size={240} className="md:w-[480px] md:h-auto" />
-          </div>
+        <div className="flex justify-center">
+          <HeroWordmark pulseRef={dotRef} />
         </div>
 
-        <div className="muse-hero-enter space-y-6" style={heroBeatStyle('heading')}>
+        <div className="space-y-6">
           <h1 className="type-display text-[clamp(40px,7vw,80px)] text-balance">
-            Your music,<br />understood.
+            <span className="muse-hero-mask block overflow-hidden pb-[0.16em] -mb-[0.16em]">
+              <span
+                className="muse-hero-line block"
+                style={heroHeadlineStyle(0)}
+              >
+                Your music,
+              </span>
+            </span>
+            <span className="muse-hero-mask block overflow-hidden pb-[0.16em] -mb-[0.16em]">
+              <span
+                className="muse-hero-line block"
+                style={heroHeadlineStyle(1)}
+              >
+                understood.
+              </span>
+            </span>
           </h1>
-          <p className="max-w-2xl mx-auto text-text-secondary text-lg md:text-xl font-medium text-balance leading-relaxed">
-            Discover music, build playlists, and explore your taste through conversation.
+
+          <p
+            className="muse-hero-fade max-w-2xl mx-auto text-text-secondary text-lg md:text-xl font-medium text-balance leading-relaxed"
+            style={heroFadeStyle(HERO_SUBTEXT_START_MS)}
+          >
+            Discover music, build playlists, and explore your taste through
+            conversation.
           </p>
         </div>
 
         <div
-          className="muse-hero-enter flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
-          style={heroBeatStyle('actions')}
+          className="muse-hero-fade flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+          style={heroFadeStyle(HERO_ACTIONS_START_MS)}
         >
           {authenticated ? (
             <Link
               href="/chat"
+              data-muse-hero-action
               className="inline-flex h-11 items-center justify-center rounded-md bg-accent px-6 text-sm font-semibold text-background transition-colors hover:bg-accent/90 focus-ring"
             >
               Go to Chat
             </Link>
           ) : (
             <Button
+              data-muse-hero-action
               onClick={() => {
                 window.location.href = '/api/auth/spotify';
               }}
@@ -69,7 +105,7 @@ export function Hero() {
               Connect Spotify
             </Button>
           )}
-          <Button variant="outline" onClick={scrollToHowItWorks}>
+          <Button data-muse-hero-action variant="outline" onClick={scrollToHowItWorks}>
             See how it works
           </Button>
         </div>
