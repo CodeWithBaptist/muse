@@ -134,6 +134,47 @@
 }
 
 /*
+ * Hero entrance. Driven by CSS so the hero paints as soon as the stylesheet is
+ * parsed instead of waiting for hydration. Transform and opacity only. The
+ * per beat delay and duration come from src/lib/hero-entrance.ts.
+ */
+@keyframes muse-hero-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--muse-hero-distance, 12px), 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes muse-hero-rise {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.muse-hero-enter {
+  animation: muse-hero-enter var(--muse-hero-duration, 400ms)
+    var(--ease-emphasized) both;
+  animation-delay: var(--muse-hero-delay, 0ms);
+}
+
+.muse-hero-enter-ridge {
+  --muse-hero-distance: 16px;
+}
+
+.muse-hero-rise {
+  animation: muse-hero-rise var(--muse-hero-duration, 700ms)
+    var(--ease-emphasized) both;
+  animation-delay: var(--muse-hero-delay, 0ms);
+}
+
+/*
  * Equalizer bars. Transform only (scaleY) so the browser can composite them.
  * Bars are static when motion is reduced. A paused equalizer keeps its bars in
  * place instead of stopping the animation, so the paused state is visible.
@@ -198,6 +239,11 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .muse-hero-enter,
+  .muse-hero-rise {
+    animation: none !important;
   }
 
   .muse-equalizer-bar {

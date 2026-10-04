@@ -1,15 +1,18 @@
 'use client';
 
-import { motion, useReducedMotion } from 'motion/react';
+import { useRef } from 'react';
+import { useReducedMotion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
-import { transitions, fadeInUp, staggerContainer } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
 import { Logo } from '@/components/ui/Logo';
+import { heroBeatStyle } from '@/lib/hero-entrance';
 import Link from 'next/link';
+import { RidgelineCanvas } from './RidgelineCanvas';
 
 export function Hero() {
   const { authenticated } = useAuth();
   const shouldReduceMotion = useReducedMotion() ?? false;
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToHowItWorks = () => {
     const el = document.getElementById('how-it-works');
@@ -20,32 +23,35 @@ export function Hero() {
 
   return (
     <section className="relative pt-32 pb-20 px-6 overflow-hidden">
-      <motion.div
-        variants={staggerContainer(0.1, 0.2)}
-        initial="initial"
-        animate="animate"
-        className="max-w-4xl mx-auto text-center space-y-8"
+      <RidgelineCanvas
+        contentRef={contentRef}
+        className="muse-hero-enter muse-hero-enter-ridge"
+        style={heroBeatStyle('ridge')}
+      />
+
+      <div
+        ref={contentRef}
+        className="relative z-10 max-w-4xl mx-auto text-center space-y-8"
       >
         <div className="flex justify-center overflow-hidden">
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            transition={{ ...transitions.emphasized, duration: 0.8 }}
-          >
+          <div className="muse-hero-rise" style={heroBeatStyle('wordmark')}>
             <Logo variant="wordmark" size={240} className="md:w-[480px] md:h-auto" />
-          </motion.div>
+          </div>
         </div>
 
-        <motion.div variants={fadeInUp} className="space-y-6">
+        <div className="muse-hero-enter space-y-6" style={heroBeatStyle('heading')}>
           <h1 className="type-display text-[clamp(40px,7vw,80px)] text-balance">
             Your music,<br />understood.
           </h1>
           <p className="max-w-2xl mx-auto text-text-secondary text-lg md:text-xl font-medium text-balance leading-relaxed">
             Discover music, build playlists, and explore your taste through conversation.
           </p>
-        </motion.div>
+        </div>
 
-        <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        <div
+          className="muse-hero-enter flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+          style={heroBeatStyle('actions')}
+        >
           {authenticated ? (
             <Link
               href="/chat"
@@ -66,8 +72,8 @@ export function Hero() {
           <Button variant="outline" onClick={scrollToHowItWorks}>
             See how it works
           </Button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </section>
   );
 }
