@@ -349,10 +349,6 @@ export function introProgress(
   return 1 - inverted * inverted * inverted;
 }
 
-export function introSettlesMs(count: number): number {
-  return SPECTRUM_INTRO_START_MS + SPECTRUM_INTRO_BUILD_MS;
-}
-
 const TWO_PI = Math.PI * 2;
 
 /** Phase within the current beat, 0 to 1. */

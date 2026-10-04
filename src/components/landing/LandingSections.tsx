@@ -50,8 +50,22 @@ function prefersReducedMotion(): boolean {
  */
 export function HowItWorks() {
   const stepRefs = React.useRef<Array<HTMLDivElement | null>>([]);
+  // Nothing starts hidden: without JavaScript every step is simply visible.
+  // The hidden state is armed after hydration, and only for the steps that are
+  // still below the fold.
   const [revealed, setRevealed] = React.useState<boolean[]>(() =>
     STEPS.map(() => false),
+  );
+  const [armed, setArmed] = React.useState<boolean[]>(() =>
+    STEPS.map(() => false),
+  );
+  /**
+   * Stagger, in milliseconds, for each step. Steps that enter together cascade
+   * 90ms apart, and a step that enters alone starts right away, so the reveal
+   * never lags behind the scroll.
+   */
+  const [delays, setDelays] = React.useState<number[]>(() =>
+    STEPS.map(() => 0),
   );
   const [current, setCurrent] = React.useState(-1);
 
@@ -61,6 +75,9 @@ export function HowItWorks() {
     );
     if (nodes.length === 0) return;
 
+    // Reduced motion: no reveal, no stagger, no observers.
+    if (prefersReducedMotion()) return;
+
     const revealAll = () =>
       setRevealed((previous) =>
         previous.every(Boolean) ? previous : STEPS.map(() => true),
@@ -69,8 +86,30 @@ export function HowItWorks() {
     const indexOf = (target: Element) =>
       nodes.findIndex((node) => node === target);
 
+    const frame = window.requestAnimationFrame(() => {
+      const viewportHeight = window.innerHeight;
+      setArmed((previous) => {
+        const next = [...previous];
+        for (let index = 0; index < nodes.length; index += 1) {
+          next[index] = nodes[index].getBoundingClientRect().top >= viewportHeight;
+        }
+        return next;
+      });
+      setRevealed((previous) => {
+        const next = [...previous];
+        for (let index = 0; index < nodes.length; index += 1) {
+          if (nodes[index].getBoundingClientRect().top < viewportHeight) {
+            next[index] = true;
+          }
+        }
+        return next;
+      });
+    });
+
     if (typeof IntersectionObserver !== 'function') {
-      // Without an observer the steps are simply visible.
+      // Without an observer the steps are simply visible and the first step is
+      // current. This runs in a frame callback so the first paint is untouched.
+      window.cancelAnimationFrame(frame);
       const handle = window.setTimeout(() => {
         revealAll();
         setCurrent(0);
@@ -80,17 +119,32 @@ export function HowItWorks() {
 
     const revealObserver = new IntersectionObserver(
       (entries) => {
+        const arriving = entries
+          .filter((entry) => entry.isIntersecting)
+          .map((entry) => indexOf(entry.target))
+          .filter((index) => index >= 0)
+          .sort((a, b) => a - b);
+
+        if (arriving.length === 0) return;
+
         setRevealed((previous) => {
           const next = [...previous];
           let changed = false;
-          for (const entry of entries) {
-            const index = indexOf(entry.target);
-            if (index >= 0 && entry.isIntersecting && !next[index]) {
+          for (const index of arriving) {
+            if (!next[index]) {
               next[index] = true;
               changed = true;
             }
           }
           return changed ? next : previous;
+        });
+
+        setDelays((previous) => {
+          const next = [...previous];
+          arriving.forEach((index, position) => {
+            next[index] = position * STEP_REVEAL_STAGGER_MS;
+          });
+          return next;
         });
       },
       { threshold: 0.45 },
@@ -114,6 +168,7 @@ export function HowItWorks() {
     });
 
     return () => {
+      window.cancelAnimationFrame(frame);
       revealObserver.disconnect();
       currentObserver.disconnect();
     };
@@ -142,14 +197,17 @@ export function HowItWorks() {
               }}
               data-step={i}
               data-revealed={revealed[i] ? 'true' : 'false'}
+              data-armed={armed[i] && !revealed[i] ? 'true' : 'false'}
               data-current={current === i ? 'true' : 'false'}
               className={cn(
                 'muse-step space-y-4',
-                revealed[i] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3',
+                armed[i] && !revealed[i]
+                  ? 'opacity-0 translate-y-3'
+                  : 'opacity-100 translate-y-0',
               )}
               style={
                 {
-                  '--muse-step-delay': `${i * STEP_REVEAL_STAGGER_MS}ms`,
+                  '--muse-step-delay': `${delays[i]}ms`,
                 } as React.CSSProperties
               }
             >

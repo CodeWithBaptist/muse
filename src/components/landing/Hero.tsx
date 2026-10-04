@@ -11,10 +11,7 @@ import {
   heroHeadlineStyle,
 } from '@/lib/hero-entrance';
 import { HeroWordmark } from './HeroWordmark';
-import {
-  HERO_ACTION_ATTRIBUTE,
-  RadialSpectrumCanvas,
-} from './RadialSpectrumCanvas';
+import { RadialSpectrumCanvas } from './RadialSpectrumCanvas';
 
 /**
  * The hero.
@@ -55,7 +52,7 @@ export function Hero() {
 
         <div className="space-y-6">
           <h1 className="type-display text-[clamp(40px,7vw,80px)] text-balance">
-            <span className="muse-hero-mask block overflow-hidden pb-[0.16em] -mb-[0.16em]">
+            <span className="muse-hero-mask block overflow-hidden pt-[0.12em] -mt-[0.12em] pb-[0.16em] -mb-[0.16em]">
               <span
                 className="muse-hero-line block"
                 style={heroHeadlineStyle(0)}
@@ -63,7 +60,7 @@ export function Hero() {
                 Your music,
               </span>
             </span>
-            <span className="muse-hero-mask block overflow-hidden pb-[0.16em] -mb-[0.16em]">
+            <span className="muse-hero-mask block overflow-hidden pt-[0.12em] -mt-[0.12em] pb-[0.16em] -mb-[0.16em]">
               <span
                 className="muse-hero-line block"
                 style={heroHeadlineStyle(1)}

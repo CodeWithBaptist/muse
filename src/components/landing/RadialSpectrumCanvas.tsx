@@ -6,6 +6,8 @@ import { HERO_DOT_PULSE_SCALE, HERO_DOT_SETTLE_MS } from '@/lib/hero-entrance';
 import {
   SPECTRUM_FALLBACK_PALETTE,
   SPECTRUM_HOVER_AMPLITUDE,
+  SPECTRUM_INTRO_BUILD_MS,
+  SPECTRUM_INTRO_START_MS,
   barCountForWidth,
   beatEnvelope,
   drawRadialSpectrum,
@@ -295,7 +297,11 @@ export function RadialSpectrumCanvas({
         stop();
         paintStatic();
       } else {
-        startedAt = performance.now();
+        // Coming back from reduced motion: keep the ring settled instead of
+        // replaying the intro build.
+        startedAt =
+          performance.now() -
+          (SPECTRUM_INTRO_START_MS + SPECTRUM_INTRO_BUILD_MS);
         measure();
         start();
       }

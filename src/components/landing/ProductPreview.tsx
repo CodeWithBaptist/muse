@@ -43,6 +43,8 @@ export function ProductPreview() {
   const startedAtRef = React.useRef(0);
   const timerRef = React.useRef<number | null>(null);
   const playingRef = React.useRef(false);
+  /** True while the preview is at least 40 percent visible. */
+  const visibleRef = React.useRef(false);
 
   const [state, setState] = React.useState<PreviewState>(() =>
     previewFinalState(LANDING_SAMPLE),
@@ -88,7 +90,8 @@ export function ProductPreview() {
     // replay is already the typing phase instead of an empty slate.
     setState(previewStateAt(LANDING_SAMPLE, 0));
     playingRef.current = true;
-    startTimer();
+    // Replaying while offscreen waits for the preview to come back.
+    if (visibleRef.current) startTimer();
   }, [startTimer, stopTimer]);
 
   React.useEffect(() => {
@@ -123,10 +126,15 @@ export function ProductPreview() {
     let fallbackTimer = 0;
     let observer: IntersectionObserver | null = null;
     if (typeof IntersectionObserver === 'function') {
+      // The observer keeps running, because the preview has to pause when it
+      // leaves the viewport and pick up from where it stopped. The first
+      // record is the current state of the preview: below the fold it is not
+      // intersecting, and the sequence has to wait for the scroll.
       observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[0];
           if (!entry) return;
+          visibleRef.current = entry.isIntersecting;
           if (entry.isIntersecting) {
             if (!playingRef.current && elapsedRef.current === 0) {
               restart();
@@ -136,12 +144,12 @@ export function ProductPreview() {
           } else {
             pause();
           }
-          observer?.disconnect();
         },
         { threshold: PREVIEW_VISIBLE_THRESHOLD },
       );
       observer.observe(node);
     } else {
+      visibleRef.current = true;
       // No observer (very old browser): play straight away.
       fallbackTimer = window.setTimeout(() => restart(), 0);
     }

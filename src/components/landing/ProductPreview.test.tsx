@@ -120,7 +120,8 @@ describe('ProductPreview', () => {
     act(() => {
       FakeIntersectionObserver.instances[0].trigger(true);
     });
-    expect(FakeIntersectionObserver.instances[0].disconnected).toBe(true);
+    // The observer stays on: the preview pauses when it leaves the viewport.
+    expect(FakeIntersectionObserver.instances[0].disconnected).toBe(false);
     expect(phase()).toBe('typing');
 
     // Typing: the prompt arrives about 42ms per character.
@@ -201,28 +202,66 @@ describe('ProductPreview', () => {
     expect(document.querySelector('a[href^="https://open.spotify.com"]')).toBeNull();
   });
 
-  it('pauses while offscreen and never loops on its own', async () => {
+  it('waits below the fold, plays when 40 percent visible, and pauses offscreen', async () => {
+    render(<ProductPreview />);
+    const observer = FakeIntersectionObserver.instances[0];
+
+    // The first record of an observed element is its current state: still the
+    // finished frame, so nothing has started.
+    act(() => {
+      observer.trigger(false);
+    });
+    await progress(3000);
+    expect(phase()).toBe('open');
+
+    act(() => {
+      observer.trigger(true);
+    });
+    expect(phase()).toBe('typing');
+
+    await progress(600);
+    const beforePause = phase();
+    expect(beforePause).toBe('typing');
+
+    // Leaving the viewport pauses the sequence: no progress while away.
+    act(() => {
+      observer.trigger(false);
+    });
+    await progress(4000);
+    expect(phase()).toBe('typing');
+
+    // Coming back resumes it, and it still finishes on its own.
+    act(() => {
+      observer.trigger(true);
+    });
+    await progress(timeline.totalMs + 400);
+    expect(phase()).toBe('open');
+
+    // Finished is finished: no loop.
+    await progress(5000);
+    expect(phase()).toBe('open');
+  });
+
+  it('pauses while the tab is hidden', async () => {
     render(<ProductPreview />);
     act(() => {
       FakeIntersectionObserver.instances[0].trigger(true);
     });
     await progress(600);
-    const beforePause = phase();
 
     act(() => {
-      document.dispatchEvent(new Event('visibilitychange'));
       Object.defineProperty(document, 'hidden', { value: true, configurable: true });
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    await progress(2000);
+    await progress(3000);
+    expect(phase()).toBe('typing');
+
     Object.defineProperty(document, 'hidden', { value: false, configurable: true });
     act(() => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
-
-    await progress(timeline.totalMs + 200);
+    await progress(timeline.totalMs + 400);
     expect(phase()).toBe('open');
-    expect(beforePause).toBe('typing');
   });
 
   it('replays from the start when Replay is pressed', async () => {

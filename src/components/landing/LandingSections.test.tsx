@@ -89,14 +89,64 @@ describe('HowItWorks', () => {
     expect(nodes[0].getAttribute('data-revealed')).toBe('true');
     expect(nodes[1].getAttribute('data-revealed')).toBe('false');
     expect(nodes[0].className).toContain('translate-y-0');
-    expect(nodes[1].className).toContain('translate-y-3');
-    // The stagger is a CSS custom property, so it never touches layout.
-    expect(nodes[2].style.getPropertyValue('--muse-step-delay')).toBe('180ms');
+    // A step that enters alone starts right away, with no stagger.
+    expect(nodes[0].style.getPropertyValue('--muse-step-delay')).toBe('0ms');
+
+    // Steps that enter together cascade 90ms apart. The stagger is a CSS
+    // custom property, so it never touches layout.
+    act(() => {
+      reveal.trigger([
+        { target: nodes[1], isIntersecting: true },
+        { target: nodes[2], isIntersecting: true },
+        { target: nodes[3], isIntersecting: true },
+      ]);
+    });
+    expect(nodes[2].style.getPropertyValue('--muse-step-delay')).toBe('90ms');
+    expect(nodes[3].style.getPropertyValue('--muse-step-delay')).toBe('180ms');
 
     act(() => {
       reveal.trigger([{ target: nodes[0], isIntersecting: false }]);
     });
     expect(nodes[0].getAttribute('data-revealed')).toBe('true');
+  });
+
+  it('starts with every step visible, so nothing depends on JavaScript', () => {
+    const { unmount } = render(<HowItWorks />);
+    const nodes = steps();
+
+    // The first client render, before any observer has fired, is visible: a
+    // step is only hidden once JavaScript has armed it below the fold.
+    for (const node of nodes) {
+      expect(node.getAttribute('data-armed')).toBe('false');
+      expect(node.className).toContain('opacity-100');
+    }
+
+    // jsdom reports a zero height viewport, so no step gets armed.
+    for (const node of nodes) {
+      expect(node.getAttribute('data-armed')).toBe('false');
+    }
+
+    unmount();
+    expect(FakeIntersectionObserver.instances[0].disconnected).toBe(true);
+  });
+
+  it('does not hide or observe anything when motion is reduced', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      (() => ({
+        matches: true,
+        addEventListener() {},
+        removeEventListener() {},
+      })) as unknown as typeof matchMedia,
+    );
+    FakeIntersectionObserver.instances = [];
+
+    render(<HowItWorks />);
+    expect(FakeIntersectionObserver.instances).toHaveLength(0);
+    for (const node of steps()) {
+      expect(node.className).toContain('opacity-100');
+      expect(node.style.getPropertyValue('--muse-step-delay')).toBe('0ms');
+    }
   });
 
   it('brightens the current step and leaves the others quiet', () => {
