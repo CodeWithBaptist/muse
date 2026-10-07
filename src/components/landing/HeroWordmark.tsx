@@ -7,89 +7,50 @@ import {
   heroLetterStyle,
   type HeroLetterId,
 } from '@/lib/hero-entrance';
+import {
+  LANDING_PIECE_VIEWBOX_HEIGHT,
+  LANDING_PIECE_VIEWBOX_Y,
+  LANDING_WORDMARK_PIECES,
+  landingPieceRatio,
+  type LandingWordmarkPiece,
+} from '@/lib/landing-wordmark';
 
 /**
  * The hero wordmark.
  *
  * This is a separate component from the shared Logo on purpose: the hero has to
  * animate the m, the u, the s, the e, and the dot independently, and the shared
- * Logo may not change. The path data below is copied verbatim from
- * src/assets/brand/muse-wordmark.svg, so the shapes are identical to the brand
- * mark. Each piece gets its own tightly cropped viewBox so a transform on a
- * piece is measured in CSS pixels, the same on every screen size.
+ * Logo may not change. The path data lives in src/lib/landing-wordmark.ts, a
+ * verbatim copy of src/assets/brand/muse-wordmark.svg, so the shapes stay
+ * identical to the brand mark. Each piece gets its own tightly cropped viewBox
+ * so a transform on a piece is measured in CSS pixels, the same on every screen
+ * size.
  *
  * Colours come from the design tokens, and the animation only touches
  * transform and opacity.
  */
 
-const PIECE_VIEWBOX_Y = -76;
-const PIECE_VIEWBOX_HEIGHT = 104;
+/**
+ * The pieces come from the landing copy of the brand path data, shared with the
+ * header mark and the closing band canvas. `HERO_WORDMARK_PIECES` stays the
+ * export name the tests and the hero read.
+ */
+export type WordmarkPiece = LandingWordmarkPiece;
 
-export interface WordmarkPiece {
-  id: HeroLetterId | 'dot';
-  tone: 'ink' | 'accent';
-  /** Left edge of the piece in the original wordmark viewBox. */
-  x: number;
-  width: number;
-  d: string;
-}
+export type HeroWordmarkPieceId = HeroLetterId | 'dot';
 
-export const HERO_WORDMARK_PIECES: readonly WordmarkPiece[] = [
-  {
-    id: 'm',
-    tone: 'ink',
-    x: 2.3,
-    width: 75.6,
-    d:
-      'M12.1 0Q7.6 0 5 -2.7Q2.3 -5.3 2.3 -9.2V-42.3Q2.3 -46.5 4.9 -49.4Q7.4 -52.3 12.1 -52.3Q16.7 -52.3 19 -49.4Q21.3 -46.5 21.3 -42.1V-37.1H23.1Q23.1 -45.6 26.7 -49Q30.3 -52.3 35.6 -52.3Q42.4 -52.3 45.6 -48.1Q48.8 -43.9 48.8 -37.1H50.6Q50.6 -42.8 52.5 -46.1Q54.4 -49.4 57.4 -50.9Q60.3 -52.3 63.5 -52.3Q70 -52.3 73.1 -49.2Q76.1 -46.1 77 -40.9Q77.9 -35.7 77.9 -29.2V-9.2Q77.9 -5.3 75.2 -2.7Q72.6 0 68.2 0Q63.8 0 61.1 -2.7Q58.4 -5.3 58.4 -9.2V-26.9Q58.4 -30.5 57.5 -32.5Q56.6 -34.5 53.9 -34.5Q51 -34.5 50.2 -32.3Q49.3 -30.1 49.3 -26.7V-9.2Q49.3 -5.3 46.8 -2.7Q44.3 0 39.9 0Q35.4 0 32.8 -2.7Q30.1 -5.3 30.1 -9.2V-26.9Q30.1 -30.5 29.2 -32.5Q28.3 -34.5 25.7 -34.5Q22.8 -34.5 22.1 -32.3Q21.3 -30.1 21.3 -26.7V-9.2Q21.3 -5.3 18.9 -2.7Q16.5 0 12.1 0Z',
-  },
-  {
-    id: 'u',
-    tone: 'ink',
-    x: 84.3,
-    width: 49.6,
-    d:
-      'M100.3 0Q93.3 0 88.9 -5.3Q84.5 -10.6 84.4 -20.2L84.3 -43.3Q84.3 -47.6 87 -50Q89.6 -52.5 94.2 -52.5Q98.6 -52.5 101.3 -50Q104 -47.6 104 -43.3V-22.4Q104 -14.9 109.9 -14.9Q112.8 -14.9 113.8 -17.1Q114.8 -19.2 114.8 -22.6V-43.3Q114.8 -47.2 117.5 -49.9Q120.2 -52.5 124.5 -52.5Q129 -52.5 131.4 -49.9Q133.9 -47.2 133.9 -43.3V-10.5Q133.9 -5.7 131.8 -2.9Q129.6 0 124.8 0Q120.1 0 117.5 -2.9Q114.8 -5.7 114.8 -10.5V-12.2H113Q113 -6.4 109.6 -3.2Q106.1 0 100.3 0Z',
-  },
-  {
-    id: 's',
-    tone: 'ink',
-    x: 139.9,
-    width: 49.5,
-    d:
-      'M165.5 1.3Q158.6 1.3 152.8 -0.1Q146.9 -1.4 143.4 -4.4Q139.9 -7.3 139.9 -12.2Q139.9 -16.5 142.5 -19.3Q145.1 -22.1 149.4 -22.1Q152.1 -22.1 154.8 -21.2Q157.6 -20.4 160.7 -19.6Q163.8 -18.8 167.4 -18.8Q170.6 -18.8 171.7 -19.1Q172.8 -19.5 172.8 -20.5Q172.8 -21.7 171.4 -22.1Q170.1 -22.5 166.9 -23.1L159.7 -24.5Q155.2 -25.4 150.9 -26.9Q146.7 -28.3 143.9 -31.2Q141.2 -34.1 141.2 -39.1Q141.2 -45.9 147.2 -49.7Q153.3 -53.5 164.8 -53.5Q171.4 -53.5 176.7 -52.2Q181.9 -50.9 185 -48.4Q188.1 -45.8 188.1 -42Q188.2 -37.9 185.9 -35.4Q183.6 -32.9 180.1 -32.9Q177.6 -32.9 175.1 -33.5Q172.5 -34.2 169.6 -35Q166.6 -35.7 162.8 -35.8Q160.1 -36 158.4 -35.5Q156.7 -35 156.7 -33.9Q156.7 -32.7 158.7 -32.2Q160.7 -31.8 164.7 -31.1L171.8 -29.8Q178.3 -28.7 182.2 -27.1Q186 -25.4 187.7 -22.5Q189.4 -19.6 189.4 -14.5Q189.4 -9.2 186.4 -5.7Q183.3 -2.1 177.9 -0.4Q172.5 1.3 165.5 1.3Z',
-  },
-  {
-    id: 'e',
-    tone: 'ink',
-    x: 195.1,
-    width: 48.5,
-    d:
-      'M195.1 -26Q195.1 -33.9 198.2 -39.9Q201.4 -45.9 207.2 -49.3Q213.1 -52.7 221.2 -52.7Q227.5 -52.7 232.6 -50.4Q237.6 -48.1 240.5 -44.2Q243.4 -40.4 243.4 -35.8Q243.4 -31 240.6 -29Q237.8 -27 232.3 -27H211.3Q211.3 -24.4 213.4 -22.7Q215.4 -21 220.3 -21Q222.8 -21 225 -21.5Q227.1 -22 229.4 -22.5Q231.6 -22.9 234.4 -22.9Q238.4 -22.9 241 -20.1Q243.6 -17.2 243.6 -12.2Q243.6 -6.3 237.6 -3Q231.5 0.3 221.7 0.3Q214.8 0.3 208.8 -2.4Q202.7 -5.1 198.9 -11Q195.1 -16.8 195.1 -26ZM227.5 -30.3Q229 -30.3 228.5 -31.7Q228.1 -33.1 226.1 -34.6Q224.1 -36.1 220.3 -36.1Q215.9 -36.1 213.8 -34.2Q211.6 -32.3 211.6 -30.3Z',
-  },
-  {
-    id: 'dot',
-    tone: 'accent',
-    x: 249.1,
-    width: 24.8,
-    d:
-      'M261.6 1.9Q255.7 1.9 252.4 -1.2Q249.1 -4.4 249.1 -9.6Q249.1 -14.9 252.5 -18.2Q255.9 -21.5 261.6 -21.5Q267.2 -21.5 270.6 -18.2Q273.9 -15 273.9 -9.7Q273.9 -4.5 270.7 -1.3Q267.5 1.9 261.6 1.9Z',
-  },
-];
-
-function pieceRatio(piece: WordmarkPiece): number {
-  return piece.width / PIECE_VIEWBOX_HEIGHT;
-}
+export const HERO_WORDMARK_PIECES: readonly WordmarkPiece[] =
+  LANDING_WORDMARK_PIECES;
 
 function PieceSvg({ piece }: { piece: WordmarkPiece }) {
   return (
     <svg
       aria-hidden="true"
-      viewBox={`${piece.x} ${PIECE_VIEWBOX_Y} ${piece.width} ${PIECE_VIEWBOX_HEIGHT}`}
+      viewBox={`${piece.x} ${LANDING_PIECE_VIEWBOX_Y} ${piece.width} ${LANDING_PIECE_VIEWBOX_HEIGHT}`}
       className="muse-wordmark-piece block"
       style={
         {
-          '--muse-wordmark-piece-ratio': String(pieceRatio(piece)),
+          '--muse-wordmark-piece-ratio': String(landingPieceRatio(piece)),
         } as React.CSSProperties
       }
     >
@@ -144,7 +105,7 @@ export function HeroWordmark({ pulseRef, className }: HeroWordmarkProps) {
           <span
             ref={pulseRef}
             data-testid="hero-wordmark-dot"
-            className="muse-hero-dot-pulse inline-block"
+            className="muse-dot-pulse inline-block"
           >
             <PieceSvg piece={dot} />
           </span>
