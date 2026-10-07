@@ -464,3 +464,26 @@ Unresolved and worth checking against the Spotify dashboard: which quota mode th
 Two further constraints found while verifying, neither requiring a change now. `GET /search` dropped its maximum limit from 50 to 10 and its default from 20 to 5; MUSE searches with a limit of 8, so it is inside the cap but with little margin left. `GET /artists/{id}/top-tracks` was removed, which is the obvious endpoint for an "explore this artist" affordance, so that will need to go through search like the rest of MUSE's discovery. MUSE uses `popularity`, `followers`, and `available_markets` nowhere, so the wider set of field removals does not affect it.
 
 **Date.** 2026-10-07
+
+## D-010: Reorder stays inside MUSE, and evolution previews cannot write
+
+**Decision.** Track reorder persists to `playlist_tracks.position` in MUSE only. Where a playlist also exists in Spotify, the page states plainly that the order there is unchanged. Playlist evolution is split across two handlers: a preview handler with no write path of any kind, and a separate confirm handler that re-resolves every track id through Spotify and stores the metadata Spotify returns.
+
+**Why.** Section 34 requires that nothing changes in Spotify until the visitor explicitly confirms, and that an existing Spotify playlist is never modified silently. Putting the preview in a handler that cannot write makes that a structural property rather than a convention someone has to remember.
+
+Reorder is different. Spotify's replacement endpoint supports either reorder or replace, and replace overwrites the playlist's items outright. If the visitor added tracks in Spotify since MUSE last saw the playlist, a replace would delete them. That is a destructive write triggered by a drag gesture, which is not a trade worth making without an explicit decision about reconciliation. So reorder stays in MUSE and says so, instead of quietly diverging or quietly destroying.
+
+Confirming an evolution re-resolves each track rather than trusting the client. The ids arrive from the browser, and storing whatever metadata came with them would let a crafted request put invented titles and artists into a playlist that MUSE then displays. Section 29 requires every displayed track to be resolved through Spotify, so the confirm handler calls Spotify for each id and keeps what comes back.
+
+**Alternatives considered.**
+1. Write reorder to Spotify using replace. One call, and the orders would match. Rejected as destructive whenever the two have diverged.
+2. Write reorder using a sequence of range moves. Not destructive, but the endpoint takes one range per call, so an N track reorder is up to N requests, and a failure part way through leaves the playlist in an order nobody chose.
+3. Keep evolution in one handler with a `confirmed` flag. Fewer files, but then the preview path can write, and the guarantee becomes a conditional instead of a structure.
+4. Trust client metadata on confirm and verify only when adding to Spotify. Cheaper, and Spotify would reject bad ids, but a MUSE draft never reaches Spotify, so unverified metadata would be stored and displayed.
+5. Define the evolution intents in the engine. Rejected after it broke the build: the client component imported the labels, which pulled the engine, its Spotify service, and the database driver into the browser bundle.
+
+**Impact.** `PATCH /api/playlists/:id` accepts `trackOrder` and requires it to be a permutation of the tracks the playlist actually has, applied in one transaction so two rows cannot end up claiming the same position. Two new routes sit under `/api/playlists/:id/evolve`. One shared module now holds the add-items call that the export route used to make on its own. The reorder handle is a real button that also moves the row with the arrow keys, because drag alone is not usable by keyboard and competes with scrolling on touch.
+
+Still open: the confirm handler's behaviour against a real database is not covered by a handler level test, and reorder does not reach Spotify at all. Both are known gaps rather than finished work.
+
+**Date.** 2026-10-07
