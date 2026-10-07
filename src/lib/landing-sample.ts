@@ -5,13 +5,27 @@
  * Spotify or OpenAI, no playlist is created, and the preview labels itself
  * "Sample" on screen. The demo drives the real chat components with these
  * values, and every control inside it is inert.
+ *
+ * The three tracks are real recordings by three different artists, chosen
+ * because they genuinely answer the sample prompt: same alternative R&B
+ * territory as the named artist, warm and romantic rather than bleak. A
+ * request for something like an artist but less sad must not be answered with
+ * three tracks by that same artist.
+ *
+ * These rows are not resolved through Spotify, so the ids keep a `sample-`
+ * prefix and the real TrackRow renders no link for any of them.
+ *
+ * Durations are deliberately absent. Spotify is the only source of truth for
+ * `duration_ms`, and public sources disagree with each other and with Spotify
+ * by a second or two, so any number written here would be invented metadata.
+ * TrackRow reserves the duration slot whether or not a value is present, so
+ * omitting it causes no layout shift.
  */
 
 export interface SampleTrack {
   id: string;
   name: string;
   artist: string;
-  durationMs: number;
 }
 
 /** A prompt that reads like a real request, kept from the landing copy. */
@@ -19,7 +33,7 @@ export const SAMPLE_PROMPT = 'I want something like Brent Faiyaz but less sad.';
 
 /** The reply body shown by the demo. Short, so the reveal stays quick. */
 export const SAMPLE_REPLY =
-  'A sample recommendation layout with example tracks and an example playlist action.';
+  'Warmer alternative R&B from three different artists, with less of the melancholy.';
 
 /**
  * The two scripted thinking lines, in the same wording the real thinking
@@ -39,17 +53,25 @@ export const SAMPLE_PLAYLIST_NAME = 'Late night drive';
 export const SAMPLE_SPOTIFY_URL = 'https://open.spotify.com/';
 
 /**
- * Three example rows. The ids are not Spotify track ids, so the real TrackRow
- * never renders a track link for them: the demo has no reachable links at all.
+ * Three example rows from three artists. The ids are not Spotify track ids, so
+ * the real TrackRow never renders a track link for them: the demo has no
+ * reachable links at all.
  */
 export const SAMPLE_TRACKS: readonly SampleTrack[] = [
-  { id: 'sample-selfish', name: 'Selfish', artist: 'Brent Faiyaz', durationMs: 225_000 },
-  { id: 'sample-trust', name: 'Trust', artist: 'Brent Faiyaz', durationMs: 192_000 },
   {
-    id: 'sample-dead-man-walking',
-    name: 'Dead Man Walking',
-    artist: 'Brent Faiyaz',
-    durationMs: 187_000,
+    id: 'sample-get-you',
+    name: 'Get You (feat. Kali Uchis)',
+    artist: 'Daniel Caesar',
+  },
+  {
+    id: 'sample-i-want-you-around',
+    name: 'I Want You Around',
+    artist: 'Snoh Aalegra',
+  },
+  {
+    id: 'sample-over',
+    name: 'Over',
+    artist: 'Lucky Daye',
   },
 ];
 

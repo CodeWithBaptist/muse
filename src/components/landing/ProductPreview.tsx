@@ -323,7 +323,6 @@ export function ProductPreview() {
                           id: track.id,
                           name: track.name,
                           artists: track.artist,
-                          duration_ms: track.durationMs,
                         }}
                         index={index}
                         listItem

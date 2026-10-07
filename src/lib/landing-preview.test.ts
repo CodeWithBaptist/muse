@@ -33,8 +33,14 @@ describe('landing sample data', () => {
     // Sample ids are not Spotify ids, so the real TrackRow renders no links.
     for (const track of SAMPLE_TRACKS) {
       expect(track.id).toMatch(/^sample-/);
-      expect(track.durationMs).toBeGreaterThan(0);
+      // Durations are never invented. The sample carries none at all, because
+      // only Spotify can state an authoritative duration_ms and it is not
+      // contacted by the demo.
+      expect('durationMs' in track).toBe(false);
     }
+    // A request for something like one artist must not be answered with three
+    // tracks by that same artist.
+    expect(new Set(SAMPLE_TRACKS.map((track) => track.artist)).size).toBeGreaterThan(1);
     expect(PREVIEW_VISIBLE_THRESHOLD).toBe(0.4);
   });
 });
