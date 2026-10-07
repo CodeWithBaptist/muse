@@ -371,25 +371,37 @@ export const LOGO_UNITS_HEIGHT = LANDING_WORDMARK_HEIGHT;
 /** The baseline the bars rise from, in the same units. */
 export const LOGO_BASELINE = LANDING_WORDMARK_BASELINE;
 
-export const BAND_BAR_PITCH = 3.2;
-export const BAND_BAR_WIDTH = 2.3;
-export const BAND_BAR_MAX_HEIGHT = 56;
+/**
+ * The bars are thin and well spaced, so the letters read as letters. At the old
+ * 2.3 in 3.2 pitch the bars nearly touched and the wordmark read as a solid
+ * block with a fuzzy top edge.
+ */
+export const BAND_BAR_PITCH = 4.6;
+export const BAND_BAR_WIDTH = 1.3;
+/** Bars peak at roughly 70 percent of the 54 unit letter height. */
+export const BAND_BAR_MAX_HEIGHT = 38;
 export const BAND_BAR_MIN_RATIO = 0.12;
 export const BAND_BAR_MAX_RATIO = 1;
+/**
+ * Gain on the four sine waves. Their amplitudes sum to 0.9, so the old 1.6
+ * drove the clamp and most bars sat pinned at full height. At 0.95 the tallest
+ * bar reaches 0.995 and the shape breathes instead of saturating.
+ */
+export const BAND_BAR_GAIN = 0.95;
 
 /** One sweep of the playhead across the logo. */
-export const BAND_PLAYHEAD_PERIOD_MS = 7700;
+export const BAND_PLAYHEAD_PERIOD_MS = 12000;
 export const BAND_PLAYHEAD_STATIC = 0.4;
 
 /** The pointer lifts the bars within this many logo units. */
 export const BAND_CURSOR_RADIUS = 18;
-export const BAND_CURSOR_LIFT = 0.5;
+export const BAND_CURSOR_LIFT = 0.3;
 
 /** Bar alphas, and the outline that keeps the shapes readable. */
-export const BAND_BAR_LIME_ALPHA = 0.95;
-export const BAND_BAR_INK_ALPHA = 0.9;
-export const BAND_OUTLINE_ALPHA = 0.22;
-export const BAND_OUTLINE_WIDTH_PX = 1.2;
+export const BAND_BAR_LIME_ALPHA = 0.7;
+export const BAND_BAR_INK_ALPHA = 0.42;
+export const BAND_OUTLINE_ALPHA = 0.34;
+export const BAND_OUTLINE_WIDTH_PX = 1.1;
 
 /** Plain edge fade, as a fraction of the band width on each side. */
 export const BAND_EDGE_FADE = 0.2;
@@ -420,7 +432,7 @@ export function bandBarRaw(x: number, time: number): number {
         0.18 * Math.sin(x * 47 + time * 3.1) +
         0.12 * Math.sin(x * 91 - time * 4.3),
     ) *
-      1.6 +
+      BAND_BAR_GAIN +
     0.14
   );
 }

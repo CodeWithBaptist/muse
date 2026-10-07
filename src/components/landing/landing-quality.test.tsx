@@ -469,12 +469,13 @@ describe('landing quality checklist', () => {
     expect(canvas).toContain('BAND_MAX_LOGO_WIDTH = 820');
     expect(canvas).toContain('BAND_LOGO_WIDTH_FRACTION = 0.82');
     expect(canvas).toContain('BAND_LOGO_VERTICAL_MARGIN = 36');
-    expect(canvas).toContain('BAND_BAR_PITCH = 3.2');
-    expect(canvas).toContain('BAND_BAR_WIDTH = 2.3');
-    expect(canvas).toContain('BAND_BAR_MAX_HEIGHT = 56');
-    expect(canvas).toContain('BAND_PLAYHEAD_PERIOD_MS = 7700');
+    expect(canvas).toContain('BAND_BAR_PITCH = 4.6');
+    expect(canvas).toContain('BAND_BAR_WIDTH = 1.3');
+    expect(canvas).toContain('BAND_BAR_MAX_HEIGHT = 38');
+    expect(canvas).toContain('BAND_BAR_GAIN = 0.95');
+    expect(canvas).toContain('BAND_PLAYHEAD_PERIOD_MS = 12000');
     expect(canvas).toContain('BAND_CURSOR_RADIUS = 18');
-    expect(canvas).toContain('BAND_CURSOR_LIFT = 0.5');
+    expect(canvas).toContain('BAND_CURSOR_LIFT = 0.3');
 
     // The wordmark geometry the band draws from.
     const wordmark = read('src/lib/landing-wordmark.ts');

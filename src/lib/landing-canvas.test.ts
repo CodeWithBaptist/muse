@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BEAT_MS } from './beat-clock';
 import {
   BAND_BAR_MAX_HEIGHT,
+  BAND_BAR_GAIN,
   BAND_BAR_MIN_RATIO,
   BAND_BAR_PITCH,
   BAND_BAR_WIDTH,
@@ -493,7 +494,7 @@ describe('closing band bar heights', () => {
           0.18 * Math.sin(x * 47 + t * 3.1) +
           0.12 * Math.sin(x * 91 - t * 4.3),
       ) *
-        1.6 +
+        BAND_BAR_GAIN +
       0.14;
 
     expect(clamp(raw, BAND_BAR_MIN_RATIO, 1) * BAND_BAR_MAX_HEIGHT).toBeCloseTo(
@@ -513,12 +514,12 @@ describe('closing band bar heights', () => {
     expect(bandBarHeight(100, 1.2, 1, 1)).toBeCloseTo(onBeat, 9);
   });
 
-  it('lifts the bars within 18 units of the pointer by 0.5', () => {
+  it('lifts the bars within 18 units of the pointer by 0.3', () => {
     expect(BAND_CURSOR_RADIUS).toBe(18);
-    expect(BAND_CURSOR_LIFT).toBe(0.5);
+    expect(BAND_CURSOR_LIFT).toBe(0.3);
 
-    expect(bandCursorLift(100, 100)).toBe(0.5);
-    expect(bandCursorLift(100, 118)).toBe(0.5);
+    expect(bandCursorLift(100, 100)).toBe(0.3);
+    expect(bandCursorLift(100, 118)).toBe(0.3);
     expect(bandCursorLift(100, 119)).toBe(0);
     expect(bandCursorLift(100, null)).toBe(0);
 
@@ -527,25 +528,27 @@ describe('closing band bar heights', () => {
     expect(lifted).toBeGreaterThan(plain);
   });
 
-  it('steps the bars every 3.2 units at 2.3 wide', () => {
+  it('steps the bars every 4.6 units at 1.3 wide, with a real gap', () => {
     const positions = bandBarPositions();
-    expect(BAND_BAR_PITCH).toBe(3.2);
-    expect(BAND_BAR_WIDTH).toBe(2.3);
+    expect(BAND_BAR_PITCH).toBe(4.6);
+    expect(BAND_BAR_WIDTH).toBe(1.3);
+    // Thin bars with space between them, so the letters stay legible.
+    expect(BAND_BAR_WIDTH / BAND_BAR_PITCH).toBeLessThan(0.35);
     expect(positions[0]).toBe(0);
-    expect(positions[1]).toBeCloseTo(3.2, 10);
+    expect(positions[1]).toBeCloseTo(4.6, 10);
     expect(positions[positions.length - 1]).toBeLessThan(LOGO_UNITS_WIDTH);
     expect(positions).toHaveLength(Math.ceil(LOGO_UNITS_WIDTH / BAND_BAR_PITCH));
   });
 });
 
 describe('closing band playhead', () => {
-  it('crosses the logo in 7.7 seconds and wraps', () => {
-    expect(BAND_PLAYHEAD_PERIOD_MS).toBe(7700);
+  it('crosses the logo in 12 seconds and wraps', () => {
+    expect(BAND_PLAYHEAD_PERIOD_MS).toBe(12000);
     expect(bandPlayhead(0)).toBe(0);
     expect(bandPlayhead(BAND_PLAYHEAD_PERIOD_MS / 2)).toBeCloseTo(0.5, 10);
     expect(bandPlayhead(BAND_PLAYHEAD_PERIOD_MS)).toBeCloseTo(0, 10);
-    expect(bandPlayhead(BAND_PLAYHEAD_PERIOD_MS * 3 + 1925)).toBeCloseTo(0.25, 10);
-    expect(bandPlayhead(-1925)).toBeCloseTo(0.75, 10);
+    expect(bandPlayhead(BAND_PLAYHEAD_PERIOD_MS * 3 + 3000)).toBeCloseTo(0.25, 10);
+    expect(bandPlayhead(-3000)).toBeCloseTo(0.75, 10);
   });
 
   it('parks at 40 percent for the static frame', () => {
@@ -578,14 +581,16 @@ describe('closing band drawing', () => {
     expect(bars).toBe(4 * bandBarPositions().length);
   });
 
-  it('strokes the outline at about 1.2 screen pixels', () => {
+  it('strokes the outline at about 1.1 screen pixels', () => {
     const { context, calls } = createMockContext();
     const frame = staticBandFrame(1440, 240);
     drawLivingLogo(context, frame, paths);
 
     const scale = logoScale(frame.width, frame.height);
     expect(context.lineWidth).toBeCloseTo(BAND_OUTLINE_WIDTH_PX / scale, 9);
-    expect(BAND_OUTLINE_ALPHA).toBe(0.22);
+    expect(BAND_OUTLINE_WIDTH_PX).toBe(1.1);
+    // Stronger than before, because the outline now carries the letterforms.
+    expect(BAND_OUTLINE_ALPHA).toBe(0.34);
   });
 
   it('fades the outer 20 percent of each edge, and nothing else', () => {
