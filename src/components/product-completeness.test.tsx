@@ -192,7 +192,10 @@ describe('Stage E: Product Completeness', () => {
     expect(nameInput.value).toBe('Edited Late Night Mix');
 
     fireEvent.click(screen.getByLabelText('Remove Stay Flo'));
-    expect(screen.queryByText('Stay Flo')).toBeNull();
+    // The row collapses out rather than vanishing, so it leaves the tree once
+    // the exit transition finishes instead of on the same tick. The underlying
+    // data is already gone, which is what the export assertion below checks.
+    await waitFor(() => expect(screen.queryByText('Stay Flo')).toBeNull());
 
     fireEvent.click(screen.getByRole('button', { name: /create in spotify/i }));
 

@@ -9,6 +9,7 @@ import { WordReveal } from './WordReveal';
 import { fadeIn, fadeInUp, transitions } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
+import type { RefinementSummary } from '@/hooks/use-chat';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -17,6 +18,7 @@ interface Message {
   isPlaylistSuggestion?: boolean;
   isStreaming?: boolean;
   noResults?: boolean;
+  refinement?: RefinementSummary;
 }
 
 export function ChatMessage({ message }: { message: Message }) {
@@ -59,6 +61,19 @@ export function ChatMessage({ message }: { message: Message }) {
             MUSE
           </span>
         </div>
+      )}
+
+      {/* A refinement turn says what changed, so the new rows read as a
+          narrowing of the last request rather than an unrelated search. The
+          accent is confined to the one word label. */}
+      {isAssistant && message.refinement && (
+        <p
+          data-testid="refinement-summary"
+          className="ml-6 flex flex-wrap items-baseline gap-2 text-[11px] leading-relaxed text-text-muted"
+        >
+          <span className="type-section-label text-accent">Refined</span>
+          <span>{message.refinement.summary}</span>
+        </p>
       )}
 
       <motion.div

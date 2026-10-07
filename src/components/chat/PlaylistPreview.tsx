@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { AnimatePresence } from 'motion/react';
 import { Music, RotateCcw, BookmarkPlus } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
@@ -125,15 +126,20 @@ export function PlaylistPreview({
           </p>
         ) : (
           <div role="list" aria-label="Tracks in playlist" className="space-y-1">
-            {tracks.map((track, i) => (
-              <TrackRow
-                key={track.id}
-                track={track}
-                index={i}
-                onRemove={onRemoveTrack}
-                listItem
-              />
-            ))}
+            {/* popLayout takes the leaving row out of flow immediately, so the
+                rows below move up while it fades rather than after it. initial
+                is off, so opening a preview does not replay an entrance. */}
+            <AnimatePresence initial={false} mode="popLayout">
+              {tracks.map((track, i) => (
+                <TrackRow
+                  key={track.id}
+                  track={track}
+                  index={i}
+                  onRemove={onRemoveTrack}
+                  listItem
+                />
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>

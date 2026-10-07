@@ -4,6 +4,22 @@ import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 
+/**
+ * What a refinement turn changed, as reported by the server.
+ *
+ * Present only when the turn narrowed an earlier request, so the interface can
+ * say so instead of looking like an unrelated new search.
+ */
+export interface RefinementSummary {
+  summary: string;
+  excludedArtists: string[];
+  excludedGenres: string[];
+  avoided: string[];
+  newTracks: number;
+  droppedAlreadyShown: number;
+  droppedExcludedArtist: number;
+}
+
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -11,6 +27,34 @@ export interface Message {
   isPlaylistSuggestion?: boolean;
   isStreaming?: boolean;
   noResults?: boolean;
+  refinement?: RefinementSummary;
+}
+
+const stringArray = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+
+/** Reads the refinement block off an API payload, ignoring anything malformed. */
+export function parseRefinement(value: unknown): RefinementSummary | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const candidate = value as Record<string, unknown>;
+  if (typeof candidate.summary !== 'string' || candidate.summary.length === 0) {
+    return undefined;
+  }
+  return {
+    summary: candidate.summary,
+    excludedArtists: stringArray(candidate.excludedArtists),
+    excludedGenres: stringArray(candidate.excludedGenres),
+    avoided: stringArray(candidate.avoided),
+    newTracks: typeof candidate.newTracks === 'number' ? candidate.newTracks : 0,
+    droppedAlreadyShown:
+      typeof candidate.droppedAlreadyShown === 'number'
+        ? candidate.droppedAlreadyShown
+        : 0,
+    droppedExcludedArtist:
+      typeof candidate.droppedExcludedArtist === 'number'
+        ? candidate.droppedExcludedArtist
+        : 0,
+  };
 }
 
 export interface ConversationSummary {
@@ -287,6 +331,7 @@ export function useChat(initialConversationId?: string) {
             : undefined,
           isPlaylistSuggestion: Boolean(data.isPlaylistSuggestion),
           noResults: Boolean(data.noResults),
+          refinement: parseRefinement(data.refinement),
         },
       ]);
       setIsThinking(false);

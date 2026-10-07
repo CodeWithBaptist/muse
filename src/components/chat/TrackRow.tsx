@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import { ExternalLink, Info, X, Disc } from "lucide-react";
-import { transitions, fadeIn, trackRowReveal } from "@/lib/motion";
+import { durations, easings, transitions, fadeIn, trackRowReveal } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import {
   useNowPlaying,
@@ -54,6 +54,10 @@ export function TrackRow({
   onTogglePlayback,
 }: TrackRowProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
+  // Movement is dropped when the visitor prefers reduced motion. The exit stays
+  // a fade, because a fade is still permitted and it is what tells the user the
+  // row is going.
+  const shouldReduceMotion = useReducedMotion() ?? false;
   const {
     selectedTrack,
     activeTrack,
@@ -108,6 +112,14 @@ export function TrackRow({
       custom={index}
       initial="initial"
       animate="animate"
+      // A removed row collapses out and the rows below it move up to fill the
+      // gap, rather than the list snapping. Inert where no AnimatePresence is
+      // present, so other surfaces are unaffected.
+      layout={shouldReduceMotion ? false : true}
+      exit={{
+        opacity: 0,
+        transition: { duration: durations.fast, ease: easings.standard },
+      }}
       className={cn(
         "group border-b border-border-subtle last:border-0",
         isSelected && "rounded-md bg-surface/60",
