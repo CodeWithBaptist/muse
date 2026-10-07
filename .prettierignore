@@ -1,0 +1,23 @@
+# Build output and dependencies
+node_modules
+.next
+out
+build
+coverage
+playwright-report
+test-results
+blob-report
+
+# Lockfiles and generated files
+package-lock.json
+pnpm-lock.yaml
+next-env.d.ts
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+
+# Binary and generated assets
+public/*.png
+public/*.ico

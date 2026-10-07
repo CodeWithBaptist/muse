@@ -1,8 +1,17 @@
 {
   "name": "muse",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
+    "dev:stack": "node scripts/dev.mjs",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:push": "drizzle-kit push",
+    "verify": "npm run typecheck && npm run lint && npm run test",
+    "format:check": "prettier --check .",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",

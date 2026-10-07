@@ -16,6 +16,12 @@ MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App 
 ## Scripts
 
 * `npm run dev`: start the local Next.js development server
+* `npm run dev:stack`: start the local PostgreSQL container, apply the schema, and start Next.js in one command
+* `npm run db:up`: start the local PostgreSQL container from `docker-compose.yml`
+* `npm run db:down`: stop the local PostgreSQL container (data is kept in a named volume)
+* `npm run db:push`: apply the Drizzle schema to the database in `DATABASE_URL`
+* `npm run verify`: run TypeScript checks, ESLint, and the Vitest suite in one pass
+* `npm run format:check`: report Prettier formatting differences without writing files
 * `npm run build`: create a production build
 * `npm run start`: start the production server
 * `npm run typecheck`: run TypeScript checks
@@ -26,6 +32,8 @@ MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App 
 * `npm run format`: format files with Prettier
 
 ## Local setup
+
+You need Node.js 22 (see `.nvmrc`), npm, and either Docker (for the bundled PostgreSQL container) or your own PostgreSQL 16 server.
 
 1. Install the locked dependencies:
 
@@ -39,13 +47,22 @@ MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App 
    cp .env.example .env.local
    ```
 
-3. Point `DATABASE_URL` at a development database, then apply the Drizzle schema after reviewing the target database:
+   The example `DATABASE_URL` already points at the local Docker database (`postgresql://muse:muse@127.0.0.1:5432/muse`). If port 5432 is taken, set `MUSE_DB_PORT` to another port and change the port in `DATABASE_URL` to match. To use a hosted database instead, replace `DATABASE_URL` with its connection string.
+
+3. Start PostgreSQL and apply the Drizzle schema:
 
    ```bash
-   npx drizzle-kit push
+   npm run db:up
+   npm run db:push
    ```
 
-4. Start the application and open `http://127.0.0.1:3000`:
+   Or do everything in one command. `npm run dev:stack` starts the container when Docker is available, waits for PostgreSQL, applies the schema, and then starts Next.js. It only applies the schema automatically to loopback databases (`127.0.0.1`, `localhost`); for a hosted database it skips that step so you can review the target first and run `npm run db:push` deliberately.
+
+   ```bash
+   npm run dev:stack
+   ```
+
+4. If you did not use `npm run dev:stack`, start the application and open `http://127.0.0.1:3000`:
 
    ```bash
    npm run dev
