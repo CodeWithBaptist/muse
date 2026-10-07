@@ -81,6 +81,18 @@ export const recommendations = pgTable("recommendations", {
   conversationId: uuid("conversation_id").references(() => conversations.id, { onDelete: 'set null' }),
   spotifyTrackId: text("spotify_track_id").notNull(),
   reason: text("reason"),
+  // Denormalised track metadata, mirroring playlist_tracks. A refinement turn
+  // re-evaluates the rows the user is currently looking at and keeps the ones
+  // that still fit, so re-rendering them must not depend on another Spotify
+  // call. There is no verified batch resolver, and adding one MUSE has not
+  // checked against the current documentation is not worth it for this.
+  // Nullable, because rows written before these columns existed have no
+  // metadata; a survivor without metadata is treated as not renderable.
+  title: text("title"),
+  artist: text("artist"),
+  albumName: text("album_name"),
+  albumArtUrl: text("album_art_url"),
+  durationMs: integer("duration_ms"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

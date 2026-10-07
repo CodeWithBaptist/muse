@@ -8,6 +8,13 @@
       "when": 1791357588424,
       "tag": "0000_flat_omega_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791359201971,
+      "tag": "0001_oval_mentallo",
+      "breakpoints": true
     }
   ]
 }
