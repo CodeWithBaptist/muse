@@ -23,6 +23,8 @@ export const PREVIEW_ROWS_DELAY_MS = 220;
 export const PREVIEW_CREATE_MS = 900;
 export const PREVIEW_ACTION_DELAY_MS = 200;
 export const PREVIEW_CREATED_MS = SUCCESS_HOLD_MS;
+/** Pause between the open control and the first row starting to play. */
+export const PREVIEW_PLAY_DELAY_MS = 500;
 /** How much of the preview has to be visible before it starts. */
 export const PREVIEW_VISIBLE_THRESHOLD = 0.4;
 
@@ -34,7 +36,8 @@ export type PreviewPhase =
   | 'rows'
   | 'creating'
   | 'created'
-  | 'open';
+  | 'open'
+  | 'playing';
 
 export type PreviewCreateStatus = 'idle' | 'loading' | 'success' | 'open';
 
@@ -42,6 +45,10 @@ export interface PreviewState {
   phase: PreviewPhase;
   /** The part of the prompt that has typed in so far. */
   typedPrompt: string;
+  /** True once the prompt has left the input and joined the thread. */
+  promptInThread: boolean;
+  /** True once the first row shows the playing state. */
+  playing: boolean;
   /** Index into the sample thinking lines, or -1 when the row is hidden. */
   thinkingLineIndex: number;
   /** How many words of the reply are visible. */
@@ -61,6 +68,7 @@ export interface PreviewTimeline {
   rowsEnd: number;
   creatingEnd: number;
   createdEnd: number;
+  playingAt: number;
   totalMs: number;
 }
 
@@ -78,6 +86,7 @@ export function previewTimeline(sample: LandingSample): PreviewTimeline {
     replyEnd + PREVIEW_ROWS_DELAY_MS + sample.tracks.length * PREVIEW_ROW_STAGGER_MS;
   const creatingEnd = rowsEnd + PREVIEW_ACTION_DELAY_MS + PREVIEW_CREATE_MS;
   const createdEnd = creatingEnd + PREVIEW_CREATED_MS;
+  const playingAt = createdEnd + PREVIEW_PLAY_DELAY_MS;
 
   return {
     typingEnd,
@@ -86,7 +95,8 @@ export function previewTimeline(sample: LandingSample): PreviewTimeline {
     rowsEnd,
     creatingEnd,
     createdEnd,
-    totalMs: createdEnd,
+    playingAt,
+    totalMs: playingAt,
   };
 }
 
@@ -97,12 +107,25 @@ function clampCount(value: number, max: number): number {
 export const IDLE_PREVIEW_STATE: PreviewState = {
   phase: 'idle',
   typedPrompt: '',
+  promptInThread: false,
+  playing: false,
   thinkingLineIndex: -1,
   replyWords: 0,
   visibleTracks: 0,
   createStatus: 'idle',
   done: false,
 };
+
+/** Every phase from thinking onward shows the prompt in the thread. */
+const PHASES_WITH_PROMPT: readonly PreviewPhase[] = [
+  'thinking',
+  'replying',
+  'rows',
+  'creating',
+  'created',
+  'open',
+  'playing',
+];
 
 /** The state for one elapsed time. Elapsed 0 is the first frame of typing. */
 export function previewStateAt(
@@ -122,55 +145,44 @@ export function previewStateAt(
     ),
   };
 
-  if (time >= timeline.createdEnd) {
+  /** Everything after the typing phase shares the same completed thread. */
+  const settled = (phase: PreviewPhase): PreviewState => ({
+    ...base,
+    typedPrompt: sample.prompt,
+    promptInThread: true,
+    phase,
+    replyWords: wordCount,
+    visibleTracks: trackCount,
+  });
+
+  if (time >= timeline.playingAt) {
     return {
-      ...base,
-      typedPrompt: sample.prompt,
-      phase: 'open',
-      replyWords: wordCount,
-      visibleTracks: trackCount,
+      ...settled('playing'),
       createStatus: 'open',
+      playing: true,
       done: true,
     };
   }
 
+  if (time >= timeline.createdEnd) {
+    return { ...settled('open'), createStatus: 'open' };
+  }
+
   if (time >= timeline.creatingEnd) {
-    return {
-      ...base,
-      typedPrompt: sample.prompt,
-      phase: 'created',
-      replyWords: wordCount,
-      visibleTracks: trackCount,
-      createStatus: 'success',
-    };
+    return { ...settled('created'), createStatus: 'success' };
   }
 
   if (time >= timeline.rowsEnd + PREVIEW_ACTION_DELAY_MS) {
-    return {
-      ...base,
-      typedPrompt: sample.prompt,
-      phase: 'creating',
-      replyWords: wordCount,
-      visibleTracks: trackCount,
-      createStatus: 'loading',
-    };
+    return { ...settled('creating'), createStatus: 'loading' };
   }
 
   if (time >= timeline.rowsEnd) {
-    return {
-      ...base,
-      typedPrompt: sample.prompt,
-      phase: 'rows',
-      replyWords: wordCount,
-      visibleTracks: trackCount,
-    };
+    return settled('rows');
   }
 
   if (time >= timeline.replyEnd + PREVIEW_ROWS_DELAY_MS) {
     return {
-      ...base,
-      typedPrompt: sample.prompt,
-      phase: 'rows',
+      ...settled('rows'),
       replyWords: wordCount,
       visibleTracks: clampCount(
         1 + (time - timeline.replyEnd - PREVIEW_ROWS_DELAY_MS) / PREVIEW_ROW_STAGGER_MS,
@@ -183,6 +195,7 @@ export function previewStateAt(
     return {
       ...base,
       typedPrompt: sample.prompt,
+      promptInThread: true,
       phase: 'replying',
       replyWords: clampCount(
         (time - timeline.thinkingEnd) / PREVIEW_REPLY_WORD_MS,
@@ -195,6 +208,7 @@ export function previewStateAt(
     return {
       ...base,
       typedPrompt: sample.prompt,
+      promptInThread: true,
       phase: 'thinking',
       thinkingLineIndex: clampCount(
         (time - timeline.typingEnd) / PREVIEW_THINKING_LINE_MS,
@@ -224,6 +238,11 @@ export function previewStartState(
 
 export function previewReplayState(): PreviewState {
   return { ...IDLE_PREVIEW_STATE };
+}
+
+/** True while the phase shows the prompt as a message in the thread. */
+export function promptIsInThread(phase: PreviewPhase): boolean {
+  return PHASES_WITH_PROMPT.includes(phase);
 }
 
 /**

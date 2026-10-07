@@ -1,6 +1,10 @@
+import { SiteHeader } from '@/components/landing/SiteHeader';
 import { Hero } from '@/components/landing/Hero';
 import { ProductPreview } from '@/components/landing/ProductPreview';
-import { HowItWorks, Features, Footer } from '@/components/landing/LandingSections';
+import { HowItWorks } from '@/components/landing/HowItWorks';
+import { WhatItDoes } from '@/components/landing/WhatItDoes';
+import { ClosingBand } from '@/components/landing/ClosingBand';
+import { SiteFooter } from '@/components/landing/SiteFooter';
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +17,15 @@ export default function HomePage() {
       >
         Skip to main content
       </a>
+      <SiteHeader />
       <main id="main-content" tabIndex={-1}>
         <Hero />
         <ProductPreview />
         <HowItWorks />
-        <Features />
+        <WhatItDoes />
+        <ClosingBand />
       </main>
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }

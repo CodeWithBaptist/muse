@@ -27,6 +27,9 @@
 
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Height of the sticky landing header. The hero sizes itself against it. */
+  --muse-header-height: 64px;
 }
 
 @layer base {
@@ -189,10 +192,11 @@
   animation-delay: var(--muse-hero-delay, 420ms);
 }
 
-/* The loop writes a scale here on the shared beat, from the same clock as the
- * canvas. Outside the loop the element carries no transform at all. */
-.muse-hero-dot-pulse {
+/* The shared loop writes a scale here on the beat. Outside the loop the
+ * element carries no transform at all. */
+.muse-dot-pulse {
   transform-origin: center;
+  display: inline-block;
 }
 
 /* Headline lines rise from behind their overflow mask. */
@@ -252,29 +256,65 @@
 }
 
 /*
- * Section reveal for the numbered steps. The stagger comes from an inline
- * custom property, so reduced motion can zero it without any JavaScript.
+ * Reveal once. The server renders the element fully visible, and it is only
+ * armed hidden after hydration when it is still below the fold, so nothing
+ * already on screen moves. The stagger is an inline custom property, which
+ * reduced motion can zero without any JavaScript.
  */
-.muse-step {
+.muse-reveal {
   transition-property: opacity, transform;
-  transition-duration: 500ms;
+  transition-duration: 700ms;
   transition-timing-function: var(--ease-emphasized);
-  transition-delay: var(--muse-step-delay, 0ms);
+  transition-delay: var(--muse-reveal-delay, 0ms);
 }
 
-/* The final mark pulses once when it enters view, then rests. */
-@keyframes muse-cta-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.06);
-  }
+.muse-reveal[data-armed="true"] {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
 }
 
-.muse-cta-pulse {
-  animation: muse-cta-pulse 700ms var(--ease-emphasized) 1;
+/*
+ * The vertical rail. The fill is a transform, so growing it never moves a step,
+ * and the step dimming is opacity only.
+ */
+.muse-rail-fill {
+  transform-origin: top center;
+  transition-property: transform;
+  transition-duration: 600ms;
+  transition-timing-function: var(--ease-emphasized);
+}
+
+.muse-step {
+  transition-property: opacity;
+  transition-duration: 400ms;
+  transition-timing-function: var(--ease-standard);
+}
+
+/*
+ * The rolling word. One line tall window, a column of phrases, and a repeated
+ * first phrase at the end so the loop can jump back with the transition off.
+ * Transform only.
+ */
+.muse-roll-window {
+  overflow: hidden;
+}
+
+.muse-roll-column {
+  transition-property: transform;
+  transition-duration: 600ms;
+  transition-timing-function: var(--ease-emphasized);
+  will-change: transform;
+}
+
+.muse-roll-column[data-instant="true"] {
+  transition-duration: 0ms;
+}
+
+.muse-roll-phrase {
+  display: block;
+  height: 1em;
+  line-height: 1;
+  overflow: hidden;
 }
 
 /*
@@ -347,13 +387,33 @@
   .muse-hero-letter,
   .muse-hero-dot-drop,
   .muse-hero-line,
-  .muse-hero-fade,
-  .muse-cta-pulse {
+  .muse-hero-fade {
     animation: none !important;
+  }
+
+  /* The shared loop never subscribes under reduced motion, and the dot never
+   * carries a leftover scale if the preference changes mid session. */
+  .muse-dot-pulse {
+    transform: none !important;
+  }
+
+  .muse-reveal {
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms;
+  }
+
+  /* Nothing stays hidden because motion was turned off. */
+  .muse-reveal[data-armed="true"] {
+    opacity: 1;
+    transform: none;
   }
 
   .muse-step {
     transition-delay: 0ms;
+  }
+
+  .muse-roll-column {
+    transition-duration: 0ms !important;
   }
 
   .muse-equalizer-bar {

@@ -9,9 +9,10 @@ import {
 } from '@/lib/landing-preview';
 
 /**
- * The scripted preview in the DOM: the first paint is the finished frame, one
- * intersection starts the sequence, the real components walk through their
- * states, Replay starts it over, and reduced motion keeps the finished frame.
+ * The scripted demo in the DOM: the server paints the finished frame, the
+ * window is armed as soon as any of it is visible, one intersection past 40
+ * percent starts the sequence, the real components walk through their states,
+ * Replay starts it over, and reduced motion keeps the finished frame.
  */
 
 const timeline = previewTimeline(LANDING_SAMPLE);
@@ -66,13 +67,34 @@ async function advance(ms: number) {
 }
 
 function phase(): string | null {
-  return document
-    .querySelector('[data-preview-phase]')
-    ?.getAttribute('data-preview-phase') ?? null;
+  return (
+    document
+      .querySelector('[data-preview-phase]')
+      ?.getAttribute('data-preview-phase') ?? null
+  );
 }
 
-function progress(ms: number) {
-  return advance(ms);
+function input(): HTMLInputElement | null {
+  return document.querySelector('[data-testid="sample-input"]');
+}
+
+/** The arm observer (any part visible), then the start observer (40 percent). */
+function arm() {
+  act(() => {
+    FakeIntersectionObserver.instances[0].trigger(true);
+  });
+}
+
+function start() {
+  act(() => {
+    FakeIntersectionObserver.instances[1].trigger(true);
+  });
+}
+
+function leave() {
+  act(() => {
+    FakeIntersectionObserver.instances[1].trigger(false);
+  });
 }
 
 describe('ProductPreview', () => {
@@ -105,80 +127,114 @@ describe('ProductPreview', () => {
   it('renders the finished sample frame on the first paint, with no animation', () => {
     render(<ProductPreview />);
 
-    expect(phase()).toBe('open');
+    expect(phase()).toBe('playing');
     expect(screen.getByText('Sample')).toBeDefined();
     // The sample ids are not Spotify ids, so no row renders a link.
     expect(screen.queryByTestId('track-row-open-in-spotify')).toBeNull();
-    expect(document.querySelector('[data-testid="create-in-spotify-primary"]'))
-      .not.toBeNull();
+    expect(
+      document.querySelector('[data-testid="create-in-spotify-primary"]'),
+    ).not.toBeNull();
   });
 
-  it('plays the sequence once when the preview is 40 percent visible', async () => {
+  it('never looks empty: the hint and the placeholder are there before it starts', () => {
     render(<ProductPreview />);
-    expect(FakeIntersectionObserver.instances).toHaveLength(1);
 
-    act(() => {
-      FakeIntersectionObserver.instances[0].trigger(true);
-    });
-    // The observer stays on: the preview pauses when it leaves the viewport.
-    expect(FakeIntersectionObserver.instances[0].disconnected).toBe(false);
+    expect(document.body.textContent).toContain(LANDING_SAMPLE.hint);
+    expect(input()).not.toBeNull();
+    expect(input()?.getAttribute('placeholder')).toBe(
+      LANDING_SAMPLE.inputPlaceholder,
+    );
+    // The input is decorative: read only, out of the tab order, and inert.
+    expect(input()?.readOnly).toBe(true);
+    expect(input()?.getAttribute('tabindex')).toBe('-1');
+    expect(input()?.closest('[inert]')).not.toBeNull();
+  });
+
+  it('plays the sequence once when the window is 40 percent visible', async () => {
+    render(<ProductPreview />);
+    expect(FakeIntersectionObserver.instances).toHaveLength(2);
+
+    arm();
     expect(phase()).toBe('typing');
+    start();
+    // The start observer stays on: the preview pauses when it leaves the view.
+    expect(FakeIntersectionObserver.instances[1].disconnected).toBe(false);
 
-    // Typing: the prompt arrives about 42ms per character.
-    const typedTarget = LANDING_SAMPLE.prompt.length * 42;
-    await progress(420);
-    const typedText = document.body.textContent ?? '';
-    // About 42ms per character: a partial prompt, never the whole thing yet.
-    expect(typedText).toContain(LANDING_SAMPLE.prompt.slice(0, 8));
-    expect(typedText).not.toContain(LANDING_SAMPLE.prompt);
+    // Typing: the prompt arrives about 42ms per character, in the input. The
+    // timeline is sampled every 40ms, so the exact character count is the last
+    // sample that has run.
+    await advance(420);
+    const typed = input()?.value ?? '';
+    expect(typed).toBe(LANDING_SAMPLE.prompt.slice(0, 9));
+    expect(typed).not.toBe(LANDING_SAMPLE.prompt);
 
-    await progress(typedTarget);
+    await advance(LANDING_SAMPLE.prompt.length * 42);
     expect(phase()).toBe('thinking');
-    expect(document.body.textContent).toContain(
-      LANDING_SAMPLE.thinkingLines[0],
-    );
+    // The text has left the input and joined the thread.
+    expect(input()?.value).toBe('');
+    expect(document.body.textContent).toContain(LANDING_SAMPLE.thinkingLines[0]);
 
-    await progress(PREVIEW_THINKING_LINE_MS);
-    expect(document.body.textContent).toContain(
-      LANDING_SAMPLE.thinkingLines[1],
-    );
+    await advance(PREVIEW_THINKING_LINE_MS);
+    expect(document.body.textContent).toContain(LANDING_SAMPLE.thinkingLines[1]);
 
-    // Replying: the first words of the reply fade in.
-    await progress(
-      timeline.thinkingEnd - typedTarget - 420 - PREVIEW_THINKING_LINE_MS + 200,
+    await advance(
+      timeline.thinkingEnd -
+        LANDING_SAMPLE.prompt.length * 42 -
+        420 -
+        PREVIEW_THINKING_LINE_MS +
+        200,
     );
     expect(phase()).toBe('replying');
 
-    // Rows then rise, the create control runs, and the control ends open.
-    // Advancing past the end is safe: the sequence holds its finished frame.
-    await progress(timeline.totalMs - timeline.replyEnd + 1200);
-    expect(phase()).toBe('open');
+    // Rows rise, the create control runs, and the first row starts playing.
+    await advance(timeline.totalMs - timeline.replyEnd + 1200);
+    expect(phase()).toBe('playing');
     expect(document.body.textContent).toContain('Playlist created.');
     expect(document.body.textContent).toContain('Open in Spotify');
 
     // The sequence stops on its own: time passing changes nothing.
-    await progress(5000);
-    expect(phase()).toBe('open');
+    await advance(5000);
+    expect(phase()).toBe('playing');
+  });
+
+  it('labels the sample window and keeps the reply selectable', () => {
+    render(<ProductPreview />);
+
+    expect(document.body.textContent).toContain('Late Night Lagos');
+    expect(document.body.textContent).toContain('3 tracks');
+    expect(
+      document.body.textContent?.includes('Nothing here contacts Spotify or OpenAI'),
+    ).toBe(true);
+
+    const conversation = document.querySelector('[inert]');
+    expect(conversation).not.toBeNull();
+    expect(conversation?.className).not.toContain('select-none');
   });
 
   it('walks the real create control through creating, created, then open', async () => {
     render(<ProductPreview />);
-    act(() => {
-      FakeIntersectionObserver.instances[0].trigger(true);
-    });
-    await progress(timeline.rowsEnd + 1);
+    arm();
+    start();
+
+    let elapsed = 0;
+    const advanceTo = async (target: number) => {
+      await advance(target - elapsed);
+      elapsed = target;
+    };
+
+    await advanceTo(timeline.rowsEnd + 40);
     expect(phase()).toBe('rows');
     expect(document.body.textContent).toContain('Create in Spotify');
 
-    await progress(600);
+    await advanceTo(timeline.rowsEnd + 600);
     expect(phase()).toBe('creating');
     expect(document.body.textContent).toContain('Creating this in Spotify');
 
-    await progress(timeline.creatingEnd - timeline.rowsEnd);
+    await advanceTo(timeline.creatingEnd + 40);
     expect(phase()).toBe('created');
     expect(document.body.textContent).toContain('Playlist created.');
 
-    await progress(timeline.createdEnd - timeline.creatingEnd);
+    await advanceTo(timeline.createdEnd + 40);
     expect(phase()).toBe('open');
     expect(document.body.textContent).toContain('Open in Spotify');
 
@@ -195,90 +251,123 @@ describe('ProductPreview', () => {
     const newest = primaries[primaries.length - 1];
     expect(newest.tagName).toBe('SPAN');
     expect(
-      document.querySelector('[data-testid="create-in-spotify"]')?.getAttribute(
-        'data-status',
-      ),
+      document
+        .querySelector('[data-testid="create-in-spotify"]')
+        ?.getAttribute('data-status'),
     ).toBe('open');
-    expect(document.querySelector('a[href^="https://open.spotify.com"]')).toBeNull();
+    expect(
+      document.querySelector('a[href^="https://open.spotify.com"]'),
+    ).toBeNull();
   });
 
-  it('waits below the fold, plays when 40 percent visible, and pauses offscreen', async () => {
+  it('plays the first row last, with a live equalizer instead of a number', async () => {
     render(<ProductPreview />);
-    const observer = FakeIntersectionObserver.instances[0];
+    arm();
+    start();
 
-    // The first record of an observed element is its current state: still the
-    // finished frame, so nothing has started.
-    act(() => {
-      observer.trigger(false);
-    });
-    await progress(3000);
+    await advance(timeline.createdEnd + 60);
     expect(phase()).toBe('open');
+    expect(
+      screen.queryByRole('img', { name: /now playing/i, hidden: true }),
+    ).toBeNull();
 
+    await advance(timeline.totalMs - timeline.createdEnd + 100);
+    expect(phase()).toBe('playing');
+    expect(
+      screen.getByRole('img', {
+        name: `Now playing ${LANDING_SAMPLE.tracks[0].name}`,
+        hidden: true,
+      }),
+    ).toBeDefined();
+  });
+
+  it('waits below the fold, plays at 40 percent, and pauses offscreen', async () => {
+    render(<ProductPreview />);
+
+    // Still below the fold: nothing has started, the finished frame is showing.
     act(() => {
-      observer.trigger(true);
+      FakeIntersectionObserver.instances[0].trigger(false);
+      FakeIntersectionObserver.instances[1].trigger(false);
     });
+    await advance(3000);
+    expect(phase()).toBe('playing');
+
+    arm();
+    expect(phase()).toBe('typing');
+    start();
+
+    await advance(600);
     expect(phase()).toBe('typing');
 
-    await progress(600);
-    const beforePause = phase();
-    expect(beforePause).toBe('typing');
-
     // Leaving the viewport pauses the sequence: no progress while away.
-    act(() => {
-      observer.trigger(false);
-    });
-    await progress(4000);
+    leave();
+    await advance(4000);
     expect(phase()).toBe('typing');
 
     // Coming back resumes it, and it still finishes on its own.
-    act(() => {
-      observer.trigger(true);
-    });
-    await progress(timeline.totalMs + 400);
-    expect(phase()).toBe('open');
+    start();
+    await advance(timeline.totalMs + 400);
+    expect(phase()).toBe('playing');
 
-    // Finished is finished: no loop.
-    await progress(5000);
-    expect(phase()).toBe('open');
+    await advance(5000);
+    expect(phase()).toBe('playing');
   });
 
   it('pauses while the tab is hidden', async () => {
     render(<ProductPreview />);
-    act(() => {
-      FakeIntersectionObserver.instances[0].trigger(true);
-    });
-    await progress(600);
+    arm();
+    start();
+    await advance(600);
 
     act(() => {
-      Object.defineProperty(document, 'hidden', { value: true, configurable: true });
+      Object.defineProperty(document, 'hidden', {
+        value: true,
+        configurable: true,
+      });
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    await progress(3000);
+    await advance(3000);
     expect(phase()).toBe('typing');
 
-    Object.defineProperty(document, 'hidden', { value: false, configurable: true });
+    Object.defineProperty(document, 'hidden', {
+      value: false,
+      configurable: true,
+    });
     act(() => {
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    await progress(timeline.totalMs + 400);
-    expect(phase()).toBe('open');
+    await advance(timeline.totalMs + 400);
+    expect(phase()).toBe('playing');
   });
 
   it('replays from the start when Replay is pressed', async () => {
     render(<ProductPreview />);
-    act(() => {
-      FakeIntersectionObserver.instances[0].trigger(true);
-    });
-    await progress(timeline.totalMs + 200);
-    expect(phase()).toBe('open');
+    arm();
+    start();
+    await advance(timeline.totalMs + 200);
+    expect(phase()).toBe('playing');
 
     act(() => {
       screen.getByRole('button', { name: 'Replay' }).click();
     });
     expect(phase()).toBe('typing');
 
-    await progress(timeline.totalMs + 200);
-    expect(phase()).toBe('open');
+    await advance(timeline.totalMs + 200);
+    expect(phase()).toBe('playing');
+  });
+
+  it('cleans up every observer and timer on unmount', async () => {
+    const view = render(<ProductPreview />);
+    arm();
+    start();
+    await advance(400);
+
+    view.unmount();
+
+    expect(FakeIntersectionObserver.instances[0].disconnected).toBe(true);
+    expect(FakeIntersectionObserver.instances[1].disconnected).toBe(true);
+    await advance(timeline.totalMs);
+    expect(document.querySelector('[data-preview-phase]')).toBeNull();
   });
 
   it('keeps the finished frame and does not animate when motion is reduced', async () => {
@@ -292,13 +381,13 @@ describe('ProductPreview', () => {
     );
 
     expect(FakeIntersectionObserver.instances).toHaveLength(0);
-    expect(phase()).toBe('open');
+    expect(phase()).toBe('playing');
 
     // Even if something tried to start it, the finished frame stays put.
     act(() => {
       screen.getByRole('button', { name: 'Replay' }).click();
     });
-    await progress(2000);
-    expect(phase()).toBe('open');
+    await advance(2000);
+    expect(phase()).toBe('playing');
   });
 });
