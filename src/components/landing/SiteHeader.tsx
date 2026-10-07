@@ -3,7 +3,11 @@
 import * as React from 'react';
 import { HERO_DOT_PULSE_SCALE } from '@/lib/hero-entrance';
 import { useBrandDotPulse } from '@/hooks/use-brand-dot-pulse';
-import { landingNavClickHandler } from '@/lib/landing-scroll';
+import {
+  LANDING_TOP_FRAGMENT,
+  landingNavClickHandler,
+  landingTopClickHandler,
+} from '@/lib/landing-scroll';
 import { LandingMark } from './LandingMark';
 import { SpotifyPrimaryAction } from './SpotifyPrimaryAction';
 
@@ -31,7 +35,8 @@ export function SiteHeader() {
     <header className="muse-header sticky top-0 z-40 border-b border-border-subtle bg-background">
       <div className="mx-auto flex h-[var(--muse-header-height)] max-w-6xl items-center justify-between gap-6 px-5 sm:px-6">
         <a
-          href="#main-content"
+          href={LANDING_TOP_FRAGMENT}
+          onClick={landingTopClickHandler()}
           aria-label="MUSE, back to the top"
           className="rounded-sm focus-ring"
         >

@@ -131,6 +131,23 @@ describe('Landing Page', () => {
     container.remove();
   });
 
+  it('gives the visitor two ways back to the top from the footer', () => {
+    render(<HomePage />);
+
+    const mark = screen.getByRole('link', { name: 'MUSE, back to the top of the page' });
+    const back = screen.getByTestId('back-to-top');
+
+    // `#top` needs no element to exist, so both work with no JavaScript at all.
+    expect(mark.getAttribute('href')).toBe('#top');
+    expect(back.getAttribute('href')).toBe('#top');
+    expect(back.textContent).toContain('Back to top');
+
+    // Both keep a visible focus ring, and the control stays small.
+    expect(mark.className).toContain('focus-ring');
+    expect(back.className).toContain('focus-ring');
+    expect(back.querySelector('svg')?.getAttribute('width')).toBe('12');
+  });
+
   it('still reads as a complete page with both canvases removed', () => {
     // No 2D context at all, which is what the removal test simulates: every
     // section keeps its content and nothing depends on the drawing.

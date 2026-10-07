@@ -26,7 +26,7 @@ export function SiteFooter() {
           <a
             href={LANDING_TOP_FRAGMENT}
             onClick={landingTopClickHandler()}
-            aria-label="MUSE, back to the top"
+            aria-label="MUSE, back to the top of the page"
             className="type-display rounded-sm text-lg tracking-[0.02em] transition-opacity hover:opacity-70 focus-ring"
           >
             MUSE

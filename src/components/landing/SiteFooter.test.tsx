@@ -57,7 +57,7 @@ describe('SiteFooter', () => {
   it('makes the mark a link back to the top of the page', () => {
     render(<SiteFooter />);
 
-    const mark = screen.getByRole('link', { name: 'MUSE, back to the top' });
+    const mark = screen.getByRole('link', { name: 'MUSE, back to the top of the page' });
     expect(mark.getAttribute('href')).toBe(LANDING_TOP_FRAGMENT);
     expect(mark.textContent).toBe('MUSE');
 
@@ -75,13 +75,15 @@ describe('SiteFooter', () => {
     expect(link.getAttribute('href')).toBe(LANDING_TOP_FRAGMENT);
     expect(link.textContent).toContain('Back to top');
 
-    // Small on purpose: a 12px arrow in caption type, with no box around it.
+    // Small on purpose: a 12px arrow, caption type inherited from the row it
+    // sits in, and no box around it.
     const icon = link.querySelector('svg');
     expect(icon?.getAttribute('width')).toBe('12');
     expect(icon?.getAttribute('aria-hidden')).toBe('true');
-    expect(link.className).toContain('type-caption');
+    expect(link.parentElement?.className).toContain('type-caption');
     expect(link.className).not.toContain('bg-');
     expect(link.className).not.toContain('border');
+    expect(link.className).not.toMatch(/text-(xs|sm|base|lg|xl)/);
 
     const event = click(link);
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
