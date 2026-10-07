@@ -165,8 +165,8 @@ export default function SettingsPage() {
               </div>
               <p className="text-xs text-text-secondary">
                 {aiStatus?.connected
-                  ? 'OpenAI provider is configured for natural language curation.'
-                  : 'Set OPENAI_API_KEY in your environment variables to enable AI curation.'}
+                  ? 'Anthropic Claude is configured for natural language curation.'
+                  : 'Set ANTHROPIC_API_KEY in your environment variables to enable AI curation.'}
               </p>
             </div>
           </div>
@@ -408,7 +408,7 @@ export default function SettingsPage() {
           <div className="space-y-3 text-xs leading-relaxed text-text-secondary">
             <p>
               Chat and recommendation requests send the text you enter to
-              OpenAI. For conversational replies, MUSE also sends up to nine
+              Anthropic (Claude). For conversational replies, MUSE also sends up to nine
               earlier messages from that conversation, for up to ten messages
               total. Recommendation, Discover, and Profile Insights requests
               also send selected Spotify data, including top artists, top tracks, artist genres,
@@ -426,7 +426,7 @@ export default function SettingsPage() {
                 Spotify Content into a machine-learning or AI model. It also
                 says not to analyze Spotify Content or the Spotify Service for
                 any purpose, including building user profiles. MUSE sends
-                listening-derived data to OpenAI
+                listening-derived data to Anthropic
                 and uses listening history for Profile Insights and personalized
                 recommendations, so these
                 flows appear to conflict with those restrictions. A disclosure

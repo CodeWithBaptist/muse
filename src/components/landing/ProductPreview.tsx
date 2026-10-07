@@ -207,7 +207,7 @@ export function ProductPreview() {
         An animated sample conversation. A listener asks for something like
         Brent Faiyaz but less sad. MUSE thinks for a moment, replies with a
         short recommendation, and shows three example tracks with an example
-        Create in Spotify control. Nothing here contacts Spotify or OpenAI, no
+        Create in Spotify control. Nothing here contacts Spotify or Anthropic, no
         playlist is created, and every control in the sample is inert.
       </p>
 
@@ -355,7 +355,7 @@ export function ProductPreview() {
       </Surface>
 
       <p className="mt-3 text-xs text-text-muted">
-        Sample conversation. Nothing here contacts Spotify or OpenAI and no
+        Sample conversation. Nothing here contacts Spotify or Anthropic and no
         playlist is created.
       </p>
     </section>

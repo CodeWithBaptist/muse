@@ -142,7 +142,7 @@ describe('landing quality checklist', () => {
     expect(screen.getByText('Sample')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Replay' })).toBeDefined();
     expect(
-      screen.getAllByText(/Nothing here contacts Spotify or OpenAI/i).length,
+      screen.getAllByText(/Nothing here contacts Spotify or Anthropic/i).length,
     ).toBeGreaterThan(0);
 
     const sample = container.querySelector('[inert]');

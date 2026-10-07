@@ -79,7 +79,7 @@ export default function DiscoverPage() {
           <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
             Set{' '}
             <code className="font-mono text-xs text-text-primary">
-              OPENAI_API_KEY
+              ANTHROPIC_API_KEY
             </code>{' '}
             in your environment variables to unlock AI-curated discovery
             sections tailored to your taste.

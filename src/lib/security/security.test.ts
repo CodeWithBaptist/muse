@@ -54,7 +54,7 @@ import { getValidAccessToken, SpotifyReconnectError } from '@/lib/spotify-tokens
 import { encrypt } from '@/lib/encryption';
 
 describe('Stage B Security Hardening', () => {
-  const originalOpenAiKey = process.env.OPENAI_API_KEY;
+  const originalAnthropicKey = process.env.ANTHROPIC_API_KEY;
   const originalSpotifyId = process.env.SPOTIFY_CLIENT_ID;
   const originalSpotifySecret = process.env.SPOTIFY_CLIENT_SECRET;
   const originalEncryptionKey = process.env.ENCRYPTION_KEY;
@@ -84,8 +84,8 @@ describe('Stage B Security Hardening', () => {
   });
 
   afterEach(() => {
-    if (originalOpenAiKey !== undefined) process.env.OPENAI_API_KEY = originalOpenAiKey;
-    else delete process.env.OPENAI_API_KEY;
+    if (originalAnthropicKey !== undefined) process.env.ANTHROPIC_API_KEY = originalAnthropicKey;
+    else delete process.env.ANTHROPIC_API_KEY;
     if (originalSpotifyId !== undefined) process.env.SPOTIFY_CLIENT_ID = originalSpotifyId;
     else delete process.env.SPOTIFY_CLIENT_ID;
     if (originalSpotifySecret !== undefined) process.env.SPOTIFY_CLIENT_SECRET = originalSpotifySecret;
@@ -234,7 +234,7 @@ describe('Stage B Security Hardening', () => {
     expect(deleteRes.status).toBe(404);
     expect(mockDbDeleteWhere).not.toHaveBeenCalled();
 
-    process.env.OPENAI_API_KEY = 'sk-real-key-for-test';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-real-key-for-test';
     mockDbSelectWhere.mockResolvedValueOnce([]);
     const postRes = await chatPost(
       new Request('http://127.0.0.1:3000/api/chat', {
@@ -289,7 +289,7 @@ describe('Stage B Security Hardening', () => {
   });
 
   it('keeps database error details out of the client response and logs', async () => {
-    process.env.OPENAI_API_KEY = 'sk-real-key-for-test';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-real-key-for-test';
     mockDbInsertReturning.mockRejectedValueOnce(
       new Error('SENSITIVE_DB_ERROR: connection string password=secret')
     );

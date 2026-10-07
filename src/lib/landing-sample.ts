@@ -2,7 +2,7 @@
  * Sample data for the scripted landing demo.
  *
  * This is the only scripted simulation in the product: it never contacts
- * Spotify or OpenAI, no playlist is created, and the preview labels itself
+ * Spotify or Anthropic, no playlist is created, and the preview labels itself
  * "Sample" on screen. The demo drives the real chat components with these
  * values, and every control inside it is inert.
  */

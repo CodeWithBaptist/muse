@@ -301,7 +301,7 @@ export function MemoryManager() {
           <p className="text-xs leading-relaxed text-text-secondary">
             Saved memory is stored as structured preferences with a source,
             confidence, and update time. Raw conversation text is not copied
-            into this memory list. Preferences you add may be sent to OpenAI
+            into this memory list. Preferences you add may be sent to Anthropic (Claude)
             when you use MUSE AI features.
           </p>
         </div>

@@ -1,6 +1,6 @@
 # MUSE
 
-MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App Router, PostgreSQL, Drizzle ORM, Tailwind CSS, Motion, TanStack Query, Zod, and OpenAI.
+MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App Router, PostgreSQL, Drizzle ORM, Tailwind CSS, Motion, TanStack Query, Zod, and Claude.
 
 ## Technology
 
@@ -10,7 +10,7 @@ MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App 
 * **Motion:** Motion for React
 * **Data fetching:** TanStack Query
 * **Validation:** Zod
-* **AI provider:** OpenAI, configured in `src/lib/ai/provider.ts`
+* **AI provider:** Anthropic Claude, configured in `src/lib/ai/provider.ts`. The default model is `claude-sonnet-5-5`; set `ANTHROPIC_MODEL` to pin a different Claude model.
 * **Tests:** Vitest, Testing Library, Playwright, and axe-core
 
 ## Scripts
@@ -65,7 +65,7 @@ Run the browser flows with:
 npm run test:e2e
 ```
 
-The Playwright suite covers the mocked Spotify authorization redirect, signed-out route protection, chat responses and recommendations, playlist draft saving and export, primary navigation, mobile navigation and focus, reduced-motion preference, and recoverable errors. The axe test scans the landing page and the main authenticated routes for WCAG A and AA violations. The suite mocks `/api` responses and uses sample data. It does not make real Spotify, OpenAI, or database requests, and it does not complete a real OAuth session or create a real playlist.
+The Playwright suite covers the mocked Spotify authorization redirect, signed-out route protection, chat responses and recommendations, playlist draft saving and export, primary navigation, mobile navigation and focus, reduced-motion preference, and recoverable errors. The axe test scans the landing page and the main authenticated routes for WCAG A and AA violations. The suite mocks `/api` responses and uses sample data. It does not make real Spotify, Anthropic (Claude), or database requests, and it does not complete a real OAuth session or create a real playlist.
 
 The Chromium performance test applies 2x CPU throttling through the Chrome DevTools Protocol and samples animation frame intervals during a chat response. It uses an average frame rate threshold of 58 fps and a 95th percentile frame interval threshold of 33.4 ms. This is a repeatable budget check, not a substitute for profiling on representative devices. Browser tests, axe scans, and throttled performance measurements must be run in an environment with a working Chromium installation before release.
 
@@ -81,7 +81,8 @@ Set these environment variable names in `.env.local` for local development. Conf
 * `SPOTIFY_CLIENT_ID`: Spotify application client ID.
 * `SPOTIFY_CLIENT_SECRET`: Spotify application client secret.
 * `SPOTIFY_REDIRECT_URI`: exact OAuth callback URI for the current environment.
-* `OPENAI_API_KEY`: OpenAI API key. When this is absent, MUSE shows an explicit unavailable state for AI features.
+* `ANTHROPIC_API_KEY`: Anthropic API key used for Claude chat, recommendations, Discover, and Profile Insights. When this is absent or a placeholder, MUSE shows an explicit unavailable state for AI features.
+* `ANTHROPIC_MODEL`: optional Claude model override. Defaults to `claude-sonnet-5-5`; `claude-haiku-4-5` is a cheaper, faster option for high-volume classification.
 * `ENCRYPTION_KEY`: 32-character key used to encrypt stored Spotify tokens.
 
 Do not place secrets in client code, browser storage, screenshots, logs, or source control.
@@ -96,7 +97,7 @@ The Spotify app mode and MUSE's compatibility with the current API requirements 
 
 ## Spotify policy and release review
 
-MUSE is not represented as Spotify-policy compliant. The current product sends Spotify-derived listening data to OpenAI and uses listening history for profile insights and recommendations. Spotify's [Developer Policy](https://developer.spotify.com/policy) restricts analyzing Spotify Content and using Spotify Platform or Content for AI ingestion. It also requires deletion and no further processing of a user's personal data after disconnection. MUSE currently retains Spotify account identity fields after disconnect, so the deletion flow needs review and remediation before the integration can be treated as compliant.
+MUSE is not represented as Spotify-policy compliant. The current product sends Spotify-derived listening data to Anthropic (Claude) and uses listening history for profile insights and recommendations. Spotify's [Developer Policy](https://developer.spotify.com/policy) restricts analyzing Spotify Content and using Spotify Platform or Content for AI ingestion. It also requires deletion and no further processing of a user's personal data after disconnection. MUSE currently retains Spotify account identity fields after disconnect, so the deletion flow needs review and remediation before the integration can be treated as compliant.
 
 MUSE sends playback commands to Spotify and does not stream audio itself. Spotify's playback references include Premium requirements and restrictions concerning commercial streaming integrations. Whether the current or future product use falls within those restrictions remains unresolved. Obtain appropriate policy and legal review before release. The [Spotify attribution page](/spotify-attribution) is still a review placeholder and needs final branding, artwork, links, and attribution before release.
 

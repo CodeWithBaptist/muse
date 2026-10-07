@@ -63,7 +63,7 @@ describe('Stage D Chat Quality', () => {
     ).toBe(true);
     expect(
       isAiNotConnectedMessage({
-        message: 'Set OPENAI_API_KEY to enable chat.',
+        message: 'Set ANTHROPIC_API_KEY to enable chat.',
       }),
     ).toBe(true);
     expect(isAiNotConnectedMessage(new Error('Network request failed'))).toBe(

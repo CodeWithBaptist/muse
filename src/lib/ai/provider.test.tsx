@@ -46,31 +46,31 @@ function renderWithQueryClient(ui: React.ReactElement) {
   );
 }
 
-describe('AI graceful state when OPENAI_API_KEY is not set', () => {
-  const originalKey = process.env.OPENAI_API_KEY;
+describe('AI graceful state when ANTHROPIC_API_KEY is not set', () => {
+  const originalKey = process.env.ANTHROPIC_API_KEY;
 
   beforeEach(() => {
-    delete process.env.OPENAI_API_KEY;
+    delete process.env.ANTHROPIC_API_KEY;
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
     if (originalKey !== undefined) {
-      process.env.OPENAI_API_KEY = originalKey;
+      process.env.ANTHROPIC_API_KEY = originalKey;
     } else {
-      delete process.env.OPENAI_API_KEY;
+      delete process.env.ANTHROPIC_API_KEY;
     }
   });
 
-  it('detects missing, blank, or placeholder OPENAI_API_KEY without crashing', () => {
+  it('detects missing, blank, or placeholder ANTHROPIC_API_KEY without crashing', () => {
     expect(isAIConfigured()).toBe(false);
-    process.env.OPENAI_API_KEY = '   ';
+    process.env.ANTHROPIC_API_KEY = '   ';
     expect(isAIConfigured()).toBe(false);
-    process.env.OPENAI_API_KEY = 'add-later';
+    process.env.ANTHROPIC_API_KEY = 'add-later';
     expect(isAIConfigured()).toBe(false);
-    process.env.OPENAI_API_KEY = 'ADD-LATER';
+    process.env.ANTHROPIC_API_KEY = 'ADD-LATER';
     expect(isAIConfigured()).toBe(false);
-    process.env.OPENAI_API_KEY = 'sk-test-key';
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
     expect(isAIConfigured()).toBe(true);
   });
 

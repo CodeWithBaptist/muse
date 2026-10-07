@@ -14,7 +14,7 @@ export default function PrivacyPage() {
         {
           title: 'Use and AI services',
           prompt:
-            '[Placeholder: describe what information is sent to OpenAI or other service providers, why it is sent, and how each provider processes it.]',
+            '[Placeholder: describe what information is sent to Anthropic (Claude) or other service providers, why it is sent, and how each provider processes it.]',
         },
         {
           title: 'Storage and retention',
