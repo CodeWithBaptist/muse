@@ -39,16 +39,18 @@ export const runtime = 'nodejs';
  * shown come from the recommendations already stored against it, so refinement
  * survives a reload and needs no schema change.
  *
- * The current message is stored before this runs, which makes it the last user
- * row, so it is dropped from the prior turns.
+ * This must run before the current message is stored. Reading first is what
+ * keeps the current turn out of the prior turns, and it avoids relying on
+ * `created_at` ordering to identify the newest row, since messages written in
+ * one statement share a timestamp and Postgres does not guarantee their
+ * relative order.
  *
  * A failure here degrades to treating the turn as a new request rather than
  * failing the whole turn.
  */
 async function loadRefinementContext(
   userId: string,
-  conversationId: string,
-  currentMessage: string
+  conversationId: string
 ): Promise<RefinementContext | null> {
   try {
     const [priorTurns, shown] = await Promise.all([
@@ -76,12 +78,6 @@ async function loadRefinementContext(
     ]);
 
     const priorUserMessages = priorTurns.map((row) => row.content);
-    if (
-      priorUserMessages.length > 0 &&
-      priorUserMessages[priorUserMessages.length - 1] === currentMessage
-    ) {
-      priorUserMessages.pop();
-    }
 
     // No earlier turn means this is the first request, not a refinement.
     if (priorUserMessages.length === 0) return null;
@@ -271,20 +267,22 @@ export async function POST(request: Request) {
       .filter(Boolean)
       .join('\n');
 
-    // 2. Save User Message
+    // 2. Read what has already happened in this conversation BEFORE storing the
+    // current message. Reading first means the current turn can never be
+    // mistaken for an earlier one, and it does not depend on the current
+    // message being the newest row, which timestamp ordering cannot guarantee
+    // when rows share a timestamp.
+    const refinementContext = await loadRefinementContext(
+      session.userId,
+      activeConversationId
+    );
+
+    // 3. Save User Message
     await db.insert(messages).values({
       conversationId: activeConversationId,
       role: 'user',
       content,
     });
-
-    // 2b. Load what has already happened in this conversation, so this turn
-    // narrows the previous request instead of starting from zero.
-    const refinementContext = await loadRefinementContext(
-      session.userId,
-      activeConversationId,
-      content
-    );
 
     if (wantsEventStream) {
       const stream = new ReadableStream<Uint8Array>({
