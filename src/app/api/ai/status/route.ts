@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import {
   AI_NOT_CONNECTED_CODE,
   AI_NOT_CONNECTED_MESSAGE,
+  getAIModel,
+  getAIProviderId,
+  getAIProviderLabel,
   isAIConfigured,
 } from '@/lib/ai/provider';
 
@@ -14,5 +17,8 @@ export async function GET() {
     connected,
     code: connected ? 'AI_CONNECTED' : AI_NOT_CONNECTED_CODE,
     message: connected ? 'AI is connected' : AI_NOT_CONNECTED_MESSAGE,
+    provider: connected ? getAIProviderId() : null,
+    providerLabel: connected ? getAIProviderLabel() : null,
+    model: connected ? getAIModel() : null,
   });
 }

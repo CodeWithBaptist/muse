@@ -46,23 +46,32 @@ function renderWithQueryClient(ui: React.ReactElement) {
   );
 }
 
-describe('AI graceful state when ANTHROPIC_API_KEY is not set', () => {
+describe('AI graceful state when no AI provider key is set', () => {
   const originalKey = process.env.ANTHROPIC_API_KEY;
+  const originalGeminiKey = process.env.GEMINI_API_KEY;
+  const originalGoogleKey = process.env.GOOGLE_API_KEY;
+  const originalProvider = process.env.AI_PROVIDER;
 
   beforeEach(() => {
     delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.GOOGLE_API_KEY;
+    delete process.env.AI_PROVIDER;
     vi.restoreAllMocks();
   });
 
   afterEach(() => {
-    if (originalKey !== undefined) {
-      process.env.ANTHROPIC_API_KEY = originalKey;
-    } else {
-      delete process.env.ANTHROPIC_API_KEY;
-    }
+    const restore = (key: string, value: string | undefined) => {
+      if (value !== undefined) process.env[key] = value;
+      else delete process.env[key];
+    };
+    restore('ANTHROPIC_API_KEY', originalKey);
+    restore('GEMINI_API_KEY', originalGeminiKey);
+    restore('GOOGLE_API_KEY', originalGoogleKey);
+    restore('AI_PROVIDER', originalProvider);
   });
 
-  it('detects missing, blank, or placeholder ANTHROPIC_API_KEY without crashing', () => {
+  it('detects missing, blank, or placeholder provider keys without crashing', () => {
     expect(isAIConfigured()).toBe(false);
     process.env.ANTHROPIC_API_KEY = '   ';
     expect(isAIConfigured()).toBe(false);
@@ -71,6 +80,13 @@ describe('AI graceful state when ANTHROPIC_API_KEY is not set', () => {
     process.env.ANTHROPIC_API_KEY = 'ADD-LATER';
     expect(isAIConfigured()).toBe(false);
     process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
+    expect(isAIConfigured()).toBe(true);
+
+    // A Gemini-only setup is just as valid, and the placeholder must not count.
+    delete process.env.ANTHROPIC_API_KEY;
+    process.env.GEMINI_API_KEY = 'your-gemini-api-key';
+    expect(isAIConfigured()).toBe(false);
+    process.env.GEMINI_API_KEY = 'AIza-test-key';
     expect(isAIConfigured()).toBe(true);
   });
 
@@ -101,6 +117,9 @@ describe('AI graceful state when ANTHROPIC_API_KEY is not set', () => {
       connected: false,
       code: AI_NOT_CONNECTED_CODE,
       message: AI_NOT_CONNECTED_MESSAGE,
+      provider: null,
+      providerLabel: null,
+      model: null,
     });
 
     const chatRes = await postChat(

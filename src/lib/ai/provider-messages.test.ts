@@ -18,15 +18,19 @@ import {
   getAIModel,
   isAIConfigured,
   structuredCompletion,
-  toAnthropicRequest,
 } from './provider';
+import { toAnthropicRequest } from './providers/anthropic';
 
 const ORIGINAL_KEY = process.env.ANTHROPIC_API_KEY;
 const ORIGINAL_MODEL = process.env.ANTHROPIC_MODEL;
+const ORIGINAL_PROVIDER = process.env.AI_PROVIDER;
+const ORIGINAL_GEMINI_KEY = process.env.GEMINI_API_KEY;
 
 describe('Anthropic Messages API provider', () => {
   beforeEach(() => {
     createMock.mockReset();
+    process.env.AI_PROVIDER = 'anthropic';
+    delete process.env.GEMINI_API_KEY;
     process.env.ANTHROPIC_API_KEY = 'sk-ant-api03-test';
   });
 
@@ -35,6 +39,10 @@ describe('Anthropic Messages API provider', () => {
     else delete process.env.ANTHROPIC_API_KEY;
     if (ORIGINAL_MODEL !== undefined) process.env.ANTHROPIC_MODEL = ORIGINAL_MODEL;
     else delete process.env.ANTHROPIC_MODEL;
+    if (ORIGINAL_PROVIDER !== undefined) process.env.AI_PROVIDER = ORIGINAL_PROVIDER;
+    else delete process.env.AI_PROVIDER;
+    if (ORIGINAL_GEMINI_KEY !== undefined) process.env.GEMINI_API_KEY = ORIGINAL_GEMINI_KEY;
+    else delete process.env.GEMINI_API_KEY;
   });
 
   it('hoists system turns, merges same-role turns, and drops empty or leading-assistant turns', () => {

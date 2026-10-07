@@ -1,31 +1,32 @@
-import Anthropic from '@anthropic-ai/sdk';
-import type {
-  Message as AnthropicMessage,
-  MessageParam,
-} from '@anthropic-ai/sdk/resources/messages';
+import { anthropicProvider, DEFAULT_ANTHROPIC_MODEL } from './providers/anthropic';
+import { geminiProvider, DEFAULT_GEMINI_MODEL } from './providers/gemini';
+import {
+  AI_TEMPERATURE,
+  CHAT_MAX_TOKENS,
+  isZodSchema,
+  parseJsonObject,
+  STRUCTURED_MAX_TOKENS,
+  type ChatProvider,
+  type ChatProviderId,
+  type Message,
+} from './providers/shared';
 
 export const AI_NOT_CONNECTED_CODE = 'AI_NOT_CONNECTED' as const;
 export const AI_NOT_CONNECTED_MESSAGE = 'AI is not connected yet';
 
-/** Claude model used for chat, recommendations, discovery, and profile insights. */
-export const DEFAULT_AI_MODEL = 'claude-sonnet-5-5';
+export type { ChatProviderId, Message };
 
-const CHAT_MAX_TOKENS = 2048;
-const STRUCTURED_MAX_TOKENS = 4096;
-const AI_TEMPERATURE = 0.7;
+/**
+ * Claude is the default. Google AI Studio's free tier is supported as an
+ * alternative so the app can run with no billing at all.
+ */
+export const DEFAULT_AI_MODEL = DEFAULT_ANTHROPIC_MODEL;
+export { DEFAULT_ANTHROPIC_MODEL, DEFAULT_GEMINI_MODEL };
 
-const JSON_ONLY_INSTRUCTION =
-  'Respond with a single valid JSON object and nothing else. Do not include markdown, prose, or code fences.';
-
-const PLACEHOLDER_AI_KEYS = new Set([
-  'add-later',
-  'add_later',
-  'placeholder',
-  'your-anthropic-api-key',
-  'your_anthropic_api_key',
-  'changeme',
-  'none',
-]);
+const PROVIDERS: Record<ChatProviderId, ChatProvider> = {
+  anthropic: anthropicProvider,
+  gemini: geminiProvider,
+};
 
 export class AINotConnectedError extends Error {
   readonly code = AI_NOT_CONNECTED_CODE;
@@ -36,18 +37,37 @@ export class AINotConnectedError extends Error {
   }
 }
 
-/** Override the model with ANTHROPIC_MODEL (for example claude-haiku-4-5 for cheaper classification). */
+/**
+ * Resolve the active provider: an explicit AI_PROVIDER wins, otherwise use
+ * whichever provider has a usable key, defaulting to Anthropic when neither is
+ * configured so the "not connected" state stays predictable.
+ */
+export function getAIProviderId(): ChatProviderId {
+  const explicit = process.env.AI_PROVIDER?.trim().toLowerCase();
+  if (explicit === 'anthropic' || explicit === 'gemini') {
+    return explicit;
+  }
+
+  if (anthropicProvider.isConfigured()) return 'anthropic';
+  if (geminiProvider.isConfigured()) return 'gemini';
+  return 'anthropic';
+}
+
+export function getAIProvider(): ChatProvider {
+  return PROVIDERS[getAIProviderId()];
+}
+
+export function getAIProviderLabel(): string {
+  return getAIProvider().label;
+}
+
+/** Model for the active provider; ANTHROPIC_MODEL or GEMINI_MODEL override it. */
 export function getAIModel(): string {
-  return process.env.ANTHROPIC_MODEL?.trim() || DEFAULT_AI_MODEL;
+  return getAIProvider().getModel();
 }
 
 export function isAIConfigured(): boolean {
-  const raw = process.env.ANTHROPIC_API_KEY?.trim();
-  if (!raw) return false;
-  const normalized = raw.toLowerCase();
-  if (PLACEHOLDER_AI_KEYS.has(normalized)) return false;
-  if (normalized.startsWith('<') && normalized.endsWith('>')) return false;
-  return true;
+  return getAIProvider().isConfigured();
 }
 
 export function isAINotConnectedError(error: unknown): boolean {
@@ -61,7 +81,10 @@ export function isAINotConnectedError(error: unknown): boolean {
     if (maybeCode === AI_NOT_CONNECTED_CODE || maybeName === 'AINotConnectedError') {
       return true;
     }
-    if (typeof maybeMessage === 'string' && /AI is not connected yet|ANTHROPIC_API_KEY/i.test(maybeMessage)) {
+    if (
+      typeof maybeMessage === 'string' &&
+      /AI is not connected yet|ANTHROPIC_API_KEY|GEMINI_API_KEY/i.test(maybeMessage)
+    ) {
       return true;
     }
   }
@@ -78,143 +101,44 @@ export function sanitizePromptInput(input: string, maxLength = 1000): string {
     .slice(0, maxLength);
 }
 
-let _anthropic: Anthropic | null = null;
-let _cachedKey: string | null = null;
-
-function getAnthropic(): Anthropic {
-  if (!isAIConfigured()) {
-    _anthropic = null;
-    _cachedKey = null;
+function requireProvider(): ChatProvider {
+  const provider = getAIProvider();
+  if (!provider.isConfigured()) {
     throw new AINotConnectedError();
   }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY!.trim();
-  if (!_anthropic || _cachedKey !== apiKey) {
-    _anthropic = new Anthropic({ apiKey });
-    _cachedKey = apiKey;
-  }
-  return _anthropic;
+  return provider;
 }
 
-export type Message = {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-};
+/** Flatten a provider response to text, tolerating either provider's shape. */
+export function extractTextContent(response: unknown): string {
+  const active = getAIProvider();
+  const text = active.extractText(response);
+  if (text) return text;
 
-/**
- * The Messages API takes the system prompt as a top-level parameter and requires
- * at least one user/assistant turn. Normalize the role-tagged message list the
- * routes already build: hoist system turns, drop empty turns, merge consecutive
- * same-role turns, and never start on an assistant turn.
- */
-export function toAnthropicRequest(messages: Message[]): {
-  system?: string;
-  messages: MessageParam[];
-} {
-  const system = messages
-    .filter((message) => message.role === 'system')
-    .map((message) => message.content.trim())
-    .filter(Boolean)
-    .join('\n\n');
-
-  const conversation: MessageParam[] = [];
-
-  for (const message of messages) {
-    if (message.role === 'system') continue;
-    const content = message.content.trim();
-    if (!content) continue;
-
-    const previous = conversation[conversation.length - 1];
-    if (previous && previous.role === message.role) {
-      previous.content = `${previous.content as string}\n\n${content}`;
-      continue;
-    }
-
-    conversation.push({ role: message.role, content });
-  }
-
-  while (conversation.length > 0 && conversation[0].role === 'assistant') {
-    conversation.shift();
-  }
-
-  if (conversation.length === 0) {
-    throw new Error('At least one user or assistant message is required');
-  }
-
-  return system ? { system, messages: conversation } : { messages: conversation };
-}
-
-/** Concatenate the text blocks of a response, ignoring non-text blocks. */
-export function extractTextContent(message: AnthropicMessage): string {
-  if (!message || !Array.isArray(message.content)) return '';
-  return message.content
-    .map((block) => (block.type === 'text' ? block.text : ''))
-    .join('');
-}
-
-interface ZodLikeSchema<T> {
-  parse: (data: unknown) => T;
-}
-
-function isZodSchema<T>(schema: unknown): schema is ZodLikeSchema<T> {
-  return Boolean(
-    schema &&
-      typeof schema === 'object' &&
-      typeof (schema as ZodLikeSchema<T>).parse === 'function'
-  );
-}
-
-/** Parse a JSON object from a model response, tolerating stray prose or code fences. */
-function parseJsonObject(raw: string): unknown {
-  const cleaned = raw
-    .trim()
-    .replace(/^```(?:json)?/i, '')
-    .replace(/```$/, '')
-    .trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch {
-    const start = cleaned.indexOf('{');
-    const end = cleaned.lastIndexOf('}');
-    if (start !== -1 && end > start) {
-      return JSON.parse(cleaned.slice(start, end + 1));
-    }
-    throw new Error('AI failed to generate content');
-  }
+  const fallback = active.id === 'anthropic' ? geminiProvider : anthropicProvider;
+  return fallback.extractText(response);
 }
 
 export async function chatCompletion(messages: Message[]) {
-  const anthropic = getAnthropic();
-  const request = toAnthropicRequest(messages);
+  const provider = requireProvider();
 
-  return anthropic.messages.create({
-    model: getAIModel(),
-    max_tokens: CHAT_MAX_TOKENS,
+  return provider.complete({
+    messages,
+    maxTokens: CHAT_MAX_TOKENS,
     temperature: AI_TEMPERATURE,
-    ...request,
   });
 }
 
 export async function* chatCompletionStream(
   messages: Message[]
 ): AsyncGenerator<string, void, unknown> {
-  const anthropic = getAnthropic();
-  const request = toAnthropicRequest(messages);
+  const provider = requireProvider();
 
-  const stream = await anthropic.messages.create({
-    model: getAIModel(),
-    max_tokens: CHAT_MAX_TOKENS,
+  yield* provider.stream({
+    messages,
+    maxTokens: CHAT_MAX_TOKENS,
     temperature: AI_TEMPERATURE,
-    ...request,
-    stream: true,
   });
-
-  for await (const event of stream) {
-    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
-      yield event.delta.text;
-    }
-  }
 }
 
 export async function structuredCompletion<T>(
@@ -222,13 +146,14 @@ export async function structuredCompletion<T>(
   schema: unknown,
   systemPrompt = 'You are a helpful music assistant.'
 ): Promise<T> {
-  const anthropic = getAnthropic();
+  const provider = requireProvider();
 
-  const response = await anthropic.messages.create({
-    model: getAIModel(),
-    max_tokens: STRUCTURED_MAX_TOKENS,
-    system: `${systemPrompt}\n\n${JSON_ONLY_INSTRUCTION}`,
+  const response = await provider.complete({
+    system: systemPrompt,
     messages: [{ role: 'user', content: prompt }],
+    maxTokens: STRUCTURED_MAX_TOKENS,
+    temperature: AI_TEMPERATURE,
+    json: true,
   });
 
   const content = extractTextContent(response);

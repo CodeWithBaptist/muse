@@ -41,6 +41,9 @@ export default function SettingsPage() {
   const { data: aiStatus } = useQuery<{
     connected: boolean;
     message: string;
+    provider?: 'anthropic' | 'gemini' | null;
+    providerLabel?: string | null;
+    model?: string | null;
   }>({
     queryKey: ['ai-status'],
     queryFn: async () => {
@@ -165,8 +168,8 @@ export default function SettingsPage() {
               </div>
               <p className="text-xs text-text-secondary">
                 {aiStatus?.connected
-                  ? 'Anthropic Claude is configured for natural language curation.'
-                  : 'Set ANTHROPIC_API_KEY in your environment variables to enable AI curation.'}
+                  ? `${aiStatus.providerLabel ?? 'An AI provider'} is configured for natural language curation (${aiStatus.model ?? 'default model'}).`
+                  : 'Set ANTHROPIC_API_KEY or GEMINI_API_KEY in your environment variables to enable AI curation.'}
               </p>
             </div>
           </div>

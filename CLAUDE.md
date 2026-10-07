@@ -18,7 +18,7 @@ npm run test          # Vitest unit + component tests
 npm run test:e2e      # Playwright (mocks /api, no real Spotify/Anthropic/DB calls)
 npm run test:e2e:list # list e2e tests without a browser
 npm run format        # prettier --write .
-npm run check:ai      # live smoke test of the Claude connection (1 real API call)
+npm run check:ai      # live smoke test of the configured AI provider (1 real API call)
 
 npx drizzle-kit push  # apply schema to the target DB (verify the target first)
 ```
@@ -27,7 +27,7 @@ Run `npm run typecheck && npm run lint && npm run test` after any change that to
 
 ## Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript strict · PostgreSQL + Drizzle ORM · Tailwind CSS 4 · Motion · TanStack Query · Zod 4 · Anthropic Claude SDK · Vitest + Testing Library + Playwright + axe-core.
+Next.js 16 (App Router) · React 19 · TypeScript strict · PostgreSQL + Drizzle ORM · Tailwind CSS 4 · Motion · TanStack Query · Zod 4 · Anthropic + Google Gen AI SDKs · Vitest + Testing Library + Playwright + axe-core.
 
 ## Layout
 
@@ -44,7 +44,11 @@ Next.js 16 (App Router) · React 19 · TypeScript strict · PostgreSQL + Drizzle
 - Errors: return structured JSON with a safe message. Never leak credentials, internal error text, or stack traces. The chat route keeps an allowlist of error names/codes — follow that pattern rather than forwarding raw provider errors.
 - Server-only code stays server-only: never import `src/db`, `src/lib/spotify-tokens.ts`, `src/lib/encryption.ts`, or anything reading `SPOTIFY_CLIENT_SECRET` / `OPENAI_API_KEY` into a client component.
 - Spotify OAuth tokens are encrypted at rest with AES-256-GCM (`src/lib/encryption.ts`). Do not log raw tokens.
-- AI features go through `src/lib/ai/provider.ts`, the only module that may import the Anthropic SDK. It wraps the Claude Messages API: `toAnthropicRequest()` hoists system turns into the top-level `system` parameter and normalizes history, `extractTextContent()` flattens text blocks, and `structuredCompletion()` asks for JSON-only output and validates it with the caller's Zod schema. When `ANTHROPIC_API_KEY` is missing or a placeholder, `isAIConfigured()` is false and the UI must show the explicit "AI is not connected yet" state instead of failing. User-supplied text passes through `sanitizePromptInput()`.
+- AI features go through `src/lib/ai/provider.ts`. It is a facade over one of two interchangeable providers in `src/lib/ai/providers/` (`anthropic.ts`, `gemini.ts`); those are the only modules allowed to import a vendor SDK. Keep the vendor-specific parts there and the shared contract in `providers/shared.ts`.
+- `getAIProviderId()` picks the provider: an explicit `AI_PROVIDER` wins, otherwise whichever key is configured, defaulting to Anthropic. Anything reading provider state (status route, Settings, `scripts/check-ai.mjs`) must go through that helper rather than testing for one vendor's key.
+- Providers implement `complete`/`stream`/`extractText`. `extractTextContent()` in the facade tolerates either response shape, so route code never branches on the vendor. `structuredCompletion()` asks for JSON, then validates with the caller's Zod schema — Gemini additionally sets `responseMimeType`, which is why that path must stay in the provider and the schema check must stay in the facade.
+- When no provider key is set or the value is a placeholder, `isAIConfigured()` is false and the UI must show the explicit "AI is not connected yet" state instead of failing. User-supplied text passes through `sanitizePromptInput()`.
+- `Message` includes a `system` role for callers, but no provider accepts it in the turn list: `normalizeConversation()` hoists system turns, drops empty turns, merges same-role turns, and trims a leading assistant turn. Do not build provider request bodies from raw message arrays.
 - UI: Tailwind utilities, `Surface`/`Button`/`Input` primitives from `src/components/ui/`, `clsx` + `tailwind-merge` via `src/lib/utils.ts`. Respect reduced motion.
 - Match the surrounding style and do not run `prettier --write` across the repo. There is no Prettier config, so the defaults disagree with the committed style (the codebase uses single quotes and wider lines); formatting whole files buries real changes in unrelated churn.
 
@@ -58,4 +62,4 @@ Next.js 16 (App Router) · React 19 · TypeScript strict · PostgreSQL + Drizzle
 
 ## Local setup notes
 
-Copy `.env.example` → `.env.local` and fill in `DATABASE_URL`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI`, `ANTHROPIC_API_KEY`, `ENCRYPTION_KEY`. `ANTHROPIC_MODEL` is optional and defaults to `claude-sonnet-5-5`. Spotify requires HTTPS except loopback, and rejects `localhost` — use `http://127.0.0.1:3000/api/auth/spotify/callback` for local dev. `/api/health` returns `{"ok":true}` (200) with a working database, `{"ok":false}` (500) otherwise.
+Copy `.env.example` → `.env.local` and fill in `DATABASE_URL`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI`, `ENCRYPTION_KEY`, and one AI key: `ANTHROPIC_API_KEY` (paid) or `GEMINI_API_KEY` (free tier). `AI_PROVIDER`, `ANTHROPIC_MODEL`, and `GEMINI_MODEL` are optional. Spotify requires HTTPS except loopback, and rejects `localhost` — use `http://127.0.0.1:3000/api/auth/spotify/callback` for local dev. `/api/health` returns `{"ok":true}` (200) with a working database, `{"ok":false}` (500) otherwise.
