@@ -2,13 +2,14 @@ import * as React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Suspense } from 'react';
 import { NowPlayingProvider } from '@/hooks/use-now-playing';
 import { TrackRow } from '@/components/chat/TrackRow';
 import { PlaylistPreview } from '@/components/chat/PlaylistPreview';
 import { NowPlaying } from '@/components/shell/NowPlaying';
 import PlaylistsPage from '@/app/(app)/playlists/page';
 import SettingsPage from '@/app/(app)/settings/page';
-import { Footer } from '@/components/landing/LandingSections';
+import { SiteFooter } from '@/components/landing/SiteFooter';
 import { MemoryManager } from '@/components/settings/MemoryManager';
 
 function stripMotionProps(props: Record<string, unknown>) {
@@ -509,7 +510,7 @@ describe('Stage E: Product Completeness', () => {
   });
 
   it('links the footer to real Privacy, Terms, and Spotify attribution pages', () => {
-    render(<Footer />);
+    render(<SiteFooter />);
 
     const links = screen.getAllByRole('link');
     const destinations = links.map((link) => link.getAttribute('href'));
