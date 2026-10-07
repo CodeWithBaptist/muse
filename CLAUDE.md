@@ -18,6 +18,7 @@ npm run test          # Vitest unit + component tests
 npm run test:e2e      # Playwright (mocks /api, no real Spotify/Anthropic/DB calls)
 npm run test:e2e:list # list e2e tests without a browser
 npm run format        # prettier --write .
+npm run check:ai      # live smoke test of the Claude connection (1 real API call)
 
 npx drizzle-kit push  # apply schema to the target DB (verify the target first)
 ```
