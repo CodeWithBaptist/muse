@@ -4,6 +4,67 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-07: Keep Fredoka Variable and Bagel Fat One as the typefaces
+
+**Decision**
+Keep the existing interface typeface (Fredoka Variable) and display typeface (Bagel Fat One) rather than moving to one of the typefaces listed in the master specification.
+
+**Why**
+The product owner chose to keep them when asked on 2026-10-07, with the trade-offs stated: neither is on the specification's preferred list, and neither ships tabular figures, so durations rely on the `tabular-nums` width utility rather than the font.
+
+**Alternatives considered**
+
+- Instrument Sans with Instrument Serif: the recommended editorial pairing, installable from the npm registry.
+- Geist, or Manrope, for the interface; Fraunces for display.
+- Satoshi or General Sans: not installable from this environment (Fontshare is not reachable).
+
+**Impact**
+The type scale is built around weight and size rather than a serif contrast. The width hack for numerals stays. The decision can be revisited in a later design pass; the hero wordmark is SVG and does not depend on either font.
+
+---
+
+## 2026-10-07: A development-only design system reference route
+
+**Decision**
+Add `/design-system`, rendered from the real primitives and tokens, served in development only (`notFound()` in production builds).
+
+**Why**
+Each phase requires checking the interface in a browser at desktop and mobile widths and with reduced motion. A page that renders every token, type level, button state, field state, focus style, and motion rule from the same components the product uses makes that check repeatable and keeps the design system honest. Contrast ratios on the page are computed from the tokens rather than typed in.
+
+**Alternatives considered**
+
+- Storybook or a similar tool: heavier dependency footprint and a second build pipeline for a single-package app.
+- No reference page: verification would rely on reading CSS and visiting product screens that do not yet exercise every state.
+
+**Impact**
+One extra route in development. The page is excluded from indexing and returns 404 in production, verified with `next start`.
+
+---
+
+## 2026-10-07: Two low-contrast tones, one danger tone, tighter radii, split focus rules
+
+**Decision**
+
+- Keep `--color-text-muted` at `#85858C` (5.4:1 on the background) as the darkest tone for small text, and add the specification's `#6B6B73` as `--color-text-faint` (3.7:1) for large text, disabled text, and decorative details only.
+- Add `--color-danger` (`#E8705F`, 6.5:1) for error text and invalid field edges, replacing ad hoc Tailwind reds over time.
+- Set `--radius-md` to 6px and `--radius-lg` to 8px (previously 8px and 12px) so controls stay within the 2px to 6px range.
+- Replace the single `!important` focus outline with two rules: a 2px offset accent ring for links and buttons, and an accent edge for fields. The old rule forced a floating ring onto every field, including the chat composer, which already had its own softer treatment, so fields showed two indicators.
+- Make the Tailwind theme `static` so unused tokens still reach the browser as CSS variables.
+
+**Why**
+The specification lists `#6B6B73` as the muted tone, but at that value small text fails WCAG AA, and the existing screens use the muted tone at 12px to 14px in 84 places. Keeping the AA-safe tone for small text and introducing the specification's value for large and decorative use satisfies both the palette and the accessibility requirement without a sweep across screens that belong to later phases. The screens already used Tailwind reds for errors in more than ten places, so a token is a consolidation, not an addition.
+
+**Alternatives considered**
+
+- Set muted to `#6B6B73` and move small-text usages to `secondary`: large churn across files that the open pull request #8 also edits, and a visibly brighter interface.
+- Keep radii at 8px and 12px: outside the specification's stated range for controls.
+- Keep the `!important` outline: guaranteed a ring everywhere, but produced double indicators on fields and prevented any refinement.
+
+**Impact**
+Palette and radius changes apply through the tokens with no per-screen edits. Components that disable the outline must supply their own ring; an audit found every current `outline-none` sits on a field that also sets an accent border, so nothing lost its indicator. Contrast guarantees are now unit tested.
+
+---
+
 ## 2026-10-07: Prettier is configured but not yet applied repository-wide
 
 **Decision**

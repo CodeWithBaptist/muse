@@ -27,6 +27,9 @@ export const viewport: Viewport = {
   themeColor: "#0B0B0C",
   width: "device-width",
   initialScale: 1,
+  // Lets bottom bars extend under the home indicator and pad themselves with
+  // env(safe-area-inset-bottom) through --muse-safe-bottom.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
