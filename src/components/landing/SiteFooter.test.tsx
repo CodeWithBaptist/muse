@@ -59,7 +59,10 @@ describe('SiteFooter', () => {
 
     const mark = screen.getByRole('link', { name: 'MUSE, back to the top of the page' });
     expect(mark.getAttribute('href')).toBe(LANDING_TOP_FRAGMENT);
-    expect(mark.textContent).toBe('MUSE');
+    // The real wordmark, not a word of text, and the lime dot with it.
+    expect(mark.querySelector('[role="img"][aria-label="muse"]')).not.toBeNull();
+    expect(mark.querySelector('[data-piece="dot"]')).not.toBeNull();
+    expect(mark.querySelector('[data-testid="landing-mark-dot"]')).not.toBeNull();
 
     const event = click(mark);
 

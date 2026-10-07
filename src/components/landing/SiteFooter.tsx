@@ -3,10 +3,15 @@
 import Link from 'next/link';
 import { ArrowUp } from 'lucide-react';
 import { LANDING_TOP_FRAGMENT, landingTopClickHandler } from '@/lib/landing-scroll';
+import { LandingMark } from './LandingMark';
 
 /**
  * The landing footer: a hairline, the mark, and the three real pages that
  * already exist.
+ *
+ * The mark is the same wordmark the header carries, at footer size, so the top
+ * and the bottom of the page are one shape rather than a wordmark up there and
+ * a word of text down here.
  *
  * The mark and the small control beside the copyright both take the visitor
  * back to the top of the page. They are real anchors on the `#top` fragment,
@@ -27,9 +32,9 @@ export function SiteFooter() {
             href={LANDING_TOP_FRAGMENT}
             onClick={landingTopClickHandler()}
             aria-label="MUSE, back to the top of the page"
-            className="type-display rounded-sm text-lg tracking-[0.02em] transition-opacity hover:opacity-70 focus-ring"
+            className="rounded-sm transition-opacity hover:opacity-70 focus-ring"
           >
-            MUSE
+            <LandingMark pieceHeight={14} />
           </a>
           <nav
             aria-label="Footer"
