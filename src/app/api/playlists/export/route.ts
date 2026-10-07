@@ -10,6 +10,7 @@ import { enforceRateLimit } from '@/lib/security/rate-limit';
 import {
   getValidAccessToken,
   isSpotifyReconnectError,
+  SpotifyReconnectError,
   SPOTIFY_RECONNECT_CODE,
   SPOTIFY_RECONNECT_MESSAGE,
 } from '@/lib/spotify-tokens';
@@ -34,12 +35,20 @@ function playlistUrl(playlist: SpotifyPlaylistRef): string {
   );
 }
 
+/**
+ * Adds one chunk of items and reports the HTTP status alongside success.
+ *
+ * Spotify's February 2026 Web API changes removed `POST /playlists/{id}/tracks`
+ * in favour of `POST /playlists/{id}/items`. The request body is unchanged: a
+ * JSON `uris` array, capped at 100 items per request, answered with 201 and a
+ * `snapshot_id`. The scopes are the same two MUSE already requests.
+ */
 async function addTrackChunk(
   token: string,
   playlistId: string,
   uris: string[],
-): Promise<boolean> {
-  const response = await fetch(`${SPOTIFY_API}/playlists/${playlistId}/tracks`, {
+): Promise<{ ok: boolean; status: number }> {
+  const response = await fetch(`${SPOTIFY_API}/playlists/${playlistId}/items`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -47,7 +56,56 @@ async function addTrackChunk(
     },
     body: JSON.stringify({ uris }),
   });
-  return response.ok;
+  return { ok: response.ok, status: response.status };
+}
+
+/**
+ * Statuses meaning the call itself cannot succeed.
+ *
+ * Retrying track by track after one of these would repeat the same failure for
+ * every remaining track and then report all of them as rejected, blaming the
+ * music for a problem with the request.
+ */
+const SYSTEMIC_ADD_STATUSES = new Set([401, 403, 404, 405, 429]);
+
+class PlaylistItemsError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'PlaylistItemsError';
+  }
+}
+
+function addItemsFailure(status: number): Error {
+  if (status === 401) return new SpotifyReconnectError();
+
+  if (status === 403) {
+    return new PlaylistItemsError(
+      status,
+      'Spotify refused to change this playlist. It may not be editable with the permissions MUSE was granted.'
+    );
+  }
+
+  if (status === 404 || status === 405) {
+    return new PlaylistItemsError(
+      status,
+      'Spotify no longer serves that playlist endpoint, so MUSE cannot add these tracks.'
+    );
+  }
+
+  if (status === 429) {
+    return new PlaylistItemsError(
+      status,
+      'Spotify is rate limiting MUSE right now. Try again in a moment.'
+    );
+  }
+
+  return new PlaylistItemsError(
+    status,
+    `Spotify rejected the request with status ${status}.`
+  );
 }
 
 /**
@@ -65,20 +123,27 @@ async function addTracksReportingFailures(
 
   for (let index = 0; index < uris.length; index += ADD_CHUNK_SIZE) {
     const chunk = uris.slice(index, index + ADD_CHUNK_SIZE);
-    const chunkSucceeded = await addTrackChunk(token, playlistId, chunk);
+    const chunkResult = await addTrackChunk(token, playlistId, chunk);
 
-    if (chunkSucceeded) {
+    if (chunkResult.ok) {
       addedCount += chunk.length;
       continue;
     }
 
+    if (SYSTEMIC_ADD_STATUSES.has(chunkResult.status)) {
+      throw addItemsFailure(chunkResult.status);
+    }
+
     for (const uri of chunk) {
-      const singleSucceeded = await addTrackChunk(token, playlistId, [uri]);
-      if (singleSucceeded) {
+      const singleResult = await addTrackChunk(token, playlistId, [uri]);
+      if (singleResult.ok) {
         addedCount += 1;
-      } else {
-        failedTrackUris.push(uri);
+        continue;
       }
+      if (SYSTEMIC_ADD_STATUSES.has(singleResult.status)) {
+        throw addItemsFailure(singleResult.status);
+      }
+      failedTrackUris.push(uri);
     }
   }
 
@@ -157,22 +222,21 @@ export async function POST(request: Request) {
         external_urls: playlistMeta.external_urls,
       };
     } else {
-      const profile = await spotifyService.getProfile(session.userId);
-      const createRes = await fetch(
-        `${SPOTIFY_API}/users/${profile.id}/playlists`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name,
-            description: description || 'Created with MUSE',
-            public: false,
-          }),
-        }
-      );
+      // `POST /users/{id}/playlists` was removed in the same set of changes.
+      // `POST /me/playlists` takes the identical body, which also removes the
+      // need to look the profile up just to build the URL.
+      const createRes = await fetch(`${SPOTIFY_API}/me/playlists`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          description: description || 'Created with MUSE',
+          public: false,
+        }),
+      });
 
       if (!createRes.ok) {
         throw new Error(
@@ -263,6 +327,17 @@ export async function POST(request: Request) {
         { status: 401 }
       );
     }
+    if (error instanceof PlaylistItemsError) {
+      return NextResponse.json(
+        {
+          error: error.message,
+          code: 'SPOTIFY_PLAYLIST_ITEMS_FAILED',
+          spotifyStatus: error.status,
+        },
+        { status: 502 }
+      );
+    }
+
     console.error('Playlist Export Error:', error);
     return NextResponse.json(
       { error: 'Unable to export playlist to Spotify right now.' },
