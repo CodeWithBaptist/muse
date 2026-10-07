@@ -434,9 +434,13 @@ export default function SettingsPage() {
                 Terms also contain a separate AI restriction and a conditional
                 third-party processor provision. That provision does not appear
                 to override the separate AI restriction. Disconnect clears
-                cached Spotify data but retains Spotify ID, email, and display
-                name for account identity, which also needs review under the
-                disconnection deletion requirement. The Start/Resume and Pause
+                cached Spotify data, meaning tokens, recommendations, profile
+                insights, conversations and messages, and playlists MUSE
+                created. It retains Spotify ID, email, display name, and avatar
+                for account identity, and it also retains the preferences and
+                memories you saved yourself and your active MUSE session. The
+                privacy policy lists these exactly. That retention needs review
+                under the disconnection deletion requirement. The Start/Resume and Pause
                 Playback API references say those endpoints work only for
                 Spotify Premium accounts and warn that the Spotify Platform
                 cannot be used for commercial streaming integrations. MUSE sends
