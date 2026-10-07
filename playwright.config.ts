@@ -35,5 +35,15 @@ export default defineConfig({
     timeout: 120_000,
     stdout: 'pipe',
     stderr: 'pipe',
+    // Placeholder credentials, so the landing connection action is functional
+    // during browser tests. The suite intercepts accounts.spotify.com, so no
+    // real authorization happens and no real credential is used or exposed.
+    // Without these the action renders disabled and the OAuth flow cannot be
+    // exercised at all.
+    env: {
+      ...process.env,
+      SPOTIFY_CLIENT_ID: 'playwright-placeholder-client-id',
+      SPOTIFY_REDIRECT_URI: 'http://127.0.0.1:3100/api/auth/spotify/callback',
+    },
   },
 });

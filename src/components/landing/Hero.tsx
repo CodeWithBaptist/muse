@@ -21,7 +21,7 @@ import { RadialSpectrumCanvas } from './RadialSpectrumCanvas';
  * JavaScript. The canvas measures the content block through `contentRef` and
  * scales the wordmark dot through `dotRef`, so one loop drives both.
  */
-export function Hero() {
+export function Hero({ spotifyConfigured }: { spotifyConfigured: boolean }) {
   const { authenticated } = useAuth();
   const contentRef = useRef<HTMLDivElement | null>(null);
   const dotRef = useRef<HTMLSpanElement | null>(null);
@@ -91,7 +91,7 @@ export function Hero() {
             >
               Go to Chat
             </Link>
-          ) : (
+          ) : spotifyConfigured ? (
             <Button
               data-muse-hero-action
               onClick={() => {
@@ -101,11 +101,32 @@ export function Hero() {
             >
               Connect Spotify
             </Button>
+          ) : (
+            // A disabled action rather than one that lands the visitor on a
+            // bare JSON error. The button keeps its label so the state is
+            // obvious, and it keeps the hero action hook so the spectrum
+            // canvas treats both actions the same way.
+            <Button
+              data-muse-hero-action
+              variant="primary"
+              disabled
+              aria-describedby="hero-spotify-unavailable"
+            >
+              Connect Spotify
+            </Button>
           )}
           <Button data-muse-hero-action variant="outline" onClick={scrollToHowItWorks}>
             See how it works
           </Button>
         </div>
+
+        {!authenticated && !spotifyConfigured && (
+          // Deliberately not animated. This is a state notice, not content
+          // arriving, and the trust fix adds no new landing motion.
+          <p id="hero-spotify-unavailable" className="text-sm text-text-muted">
+            Spotify connection is not configured yet.
+          </p>
+        )}
       </div>
     </section>
   );

@@ -12,6 +12,7 @@ vi.mock('motion/react', async () => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe('Landing Page', () => {
@@ -28,10 +29,40 @@ describe('Landing Page', () => {
     expect(heading.tagName).toBe('H1');
   });
 
-  it('renders an enabled Spotify connection button for unauthenticated visitors', () => {
+  it('disables and labels the connection action when Spotify is not configured', () => {
+    // The test environment sets no Spotify credentials, which is the case the
+    // landing page has to be honest about: a visitor must never be sent to a
+    // bare JSON error by an action that looks functional.
     render(<HomePage />);
-    const button = screen.getByRole('button', { name: /connect spotify/i }) as HTMLButtonElement;
+
+    const button = screen.getByRole('button', {
+      name: /connect spotify/i,
+    }) as HTMLButtonElement;
+    expect(button.disabled).toBe(true);
+    expect(button.getAttribute('aria-describedby')).toBe(
+      'hero-spotify-unavailable',
+    );
+    expect(
+      screen.getByText('Spotify connection is not configured yet.'),
+    ).toBeDefined();
+  });
+
+  it('enables the connection action once Spotify is configured', () => {
+    vi.stubEnv('SPOTIFY_CLIENT_ID', 'placeholder-client-id');
+    vi.stubEnv(
+      'SPOTIFY_REDIRECT_URI',
+      'http://127.0.0.1:3000/api/auth/spotify/callback',
+    );
+
+    render(<HomePage />);
+
+    const button = screen.getByRole('button', {
+      name: /connect spotify/i,
+    }) as HTMLButtonElement;
     expect(button.disabled).toBe(false);
+    expect(
+      screen.queryByText('Spotify connection is not configured yet.'),
+    ).toBeNull();
   });
 
   it('renders the whole page as HTML, so nothing needs JavaScript to be seen', () => {

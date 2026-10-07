@@ -4,6 +4,19 @@ import { HowItWorks, Features, Footer } from '@/components/landing/LandingSectio
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Whether Spotify OAuth can actually start.
+ *
+ * Mirrors the check the authorize route performs, so the landing page never
+ * offers a connection action that would land the visitor on a bare JSON error.
+ * Reads no secret values and exposes only a boolean to the client.
+ */
+function isSpotifyConfigured(): boolean {
+  return Boolean(
+    process.env.SPOTIFY_CLIENT_ID?.trim() && process.env.SPOTIFY_REDIRECT_URI?.trim(),
+  );
+}
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background text-text-primary">
@@ -14,7 +27,7 @@ export default function HomePage() {
         Skip to main content
       </a>
       <main id="main-content" tabIndex={-1}>
-        <Hero />
+        <Hero spotifyConfigured={isSpotifyConfigured()} />
         <ProductPreview />
         <HowItWorks />
         <Features />
