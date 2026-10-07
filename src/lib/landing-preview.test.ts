@@ -31,11 +31,20 @@ describe('landing sample data', () => {
     expect(SAMPLE_REPLY.split(/\s+/).length).toBeGreaterThan(4);
     expect(SAMPLE_THINKING_LINES).toHaveLength(2);
     expect(SAMPLE_TRACKS).toHaveLength(3);
-    // Sample ids are not Spotify ids, so the real TrackRow renders no links.
+    // Sample ids are not Spotify ids, so the real TrackRow renders no links,
+    // and durations are left out because the sample never looks them up.
     for (const track of SAMPLE_TRACKS) {
       expect(track.id).toMatch(/^sample-/);
-      expect(track.durationMs).toBeGreaterThan(0);
+      expect(track.durationMs).toBeUndefined();
+      expect(track.reason.length).toBeGreaterThan(0);
     }
+    // Real songs from more than one artist, nothing invented.
+    expect(new Set(SAMPLE_TRACKS.map((track) => track.artist)).size).toBeGreaterThanOrEqual(2);
+    expect(SAMPLE_TRACKS.map((track) => `${track.name} by ${track.artist}`)).toEqual([
+      'Free Mind by Tems',
+      'Essence by Wizkid, Tems',
+      'Calm Down by Rema',
+    ]);
     expect(PREVIEW_VISIBLE_THRESHOLD).toBe(0.4);
   });
 });

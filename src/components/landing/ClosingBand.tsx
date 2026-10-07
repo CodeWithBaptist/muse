@@ -11,7 +11,12 @@ import { ClosingBandCanvas } from './ClosingBandCanvas';
  * with a plain fade at the two edges. It is the second and last canvas on the
  * page, and it shares the one beat loop with the hero.
  */
-export function ClosingBand() {
+export interface ClosingBandProps {
+  /** Decided on the server by the page; see SpotifyPrimaryAction. */
+  spotifyLoginAvailable?: boolean;
+}
+
+export function ClosingBand({ spotifyLoginAvailable = true }: ClosingBandProps) {
   const [revealRef, revealArmed] = useRevealOnce<HTMLDivElement>();
 
   return (
@@ -34,7 +39,10 @@ export function ClosingBand() {
           Start with a feeling.
         </h2>
         <div className="pt-2">
-          <SpotifyPrimaryAction actionAttribute="data-muse-closing-action" />
+          <SpotifyPrimaryAction
+            actionAttribute="data-muse-closing-action"
+            available={spotifyLoginAvailable}
+          />
         </div>
       </div>
     </section>

@@ -4,6 +4,62 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-07: The landing decides "Connect Spotify" availability on the server
+
+**Decision**
+The landing page reads the Spotify sign-in configuration on the server for every request (`isSpotifyLoginConfigured()` in `src/lib/spotify-config.ts`, which needs `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI`, and a usable `ENCRYPTION_KEY`) and passes the result to the header, hero, and closing band. When sign-in cannot complete, the primary action renders disabled with a visible explanation. The auth start route redirects browser navigations back to `/?error=auth_not_configured` and keeps the JSON 503 for programmatic callers, and the landing now explains every `?error=` code the auth routes redirect with.
+
+**Why**
+Before this, the button navigated to a raw JSON 503 page whenever credentials were missing, and failed sign-ins landed on the homepage with no message. The page is already `force-dynamic`, so a server-side read costs nothing, needs no extra request, and never flashes between states.
+
+**Alternatives considered**
+
+- Expose a `spotifyConfigured` flag on `/api/me` and decide in the browser: works for the app shell later, but the landing would render an optimistic button during the fetch.
+- A dedicated status endpoint: an extra request for one boolean.
+- Hide the button when unconfigured: the specification requires a visibly disabled control with an explanation.
+
+**Impact**
+`src/app/page.tsx` is now an async server component that renders the sync `LandingPage` body; tests render `LandingPage` directly and call `HomePage` for the wiring. The helper is the single definition of "configured" for the start and callback routes and for any later settings screen. In this sandbox, with no credentials, the preview shows the disabled state.
+
+---
+
+## 2026-10-07: Sample conversation uses real songs, no durations, no Spotify ids
+
+**Decision**
+The landing sample shows three real songs by Nigerian artists chosen with the product owner (Free Mind by Tems, Essence by Wizkid and Tems, Calm Down by Rema) with one-line reasons, but keeps non-Spotify `sample-*` ids and omits durations.
+
+**Why**
+The previous rows were invented artists, which the trust rules forbid. Spotify is unreachable from the build environment, so durations and ids cannot be verified; showing unverified numbers or links would be invented data. The real `TrackRow` renders cleanly without a duration and without a link.
+
+**Alternatives considered**
+
+- Keep invented placeholders: rejected by the specification (A2).
+- Type durations from memory: rejected, unverifiable.
+- Fetch real ids and durations from Spotify: impossible offline; can be added later from a verified lookup if links are wanted.
+
+**Impact**
+`SampleTrack.durationMs` is optional. The "How it works" reason line is derived from the first sample track so the two never drift, and its last thinking line no longer states an invented result count.
+
+---
+
+## 2026-10-07: Legal pages are drafts derived from the code, with marked placeholders
+
+**Decision**
+Replace the bracketed prompt placeholders with full drafts of the Privacy Policy, Terms of Service, and Spotify Attribution written from the code paths that handle scopes, storage, cookies, AI requests, and data controls. Each page is labelled "Draft for review", carries a notice that it is not in force, marks unknown values (operator name, contact email, hosting provider, governing law) as visible placeholders, and ends with a list of what a reviewer must confirm.
+
+**Why**
+Honest drafts the owner can review beat empty prompts, and tying each statement to a code path keeps them accurate. The owner chose placeholders over typing the operator details during this phase.
+
+**Alternatives considered**
+
+- Keep prompts until a lawyer writes the text: leaves the footer pointing at pages with no information.
+- Publish without the draft label: would present unreviewed text as binding.
+
+**Impact**
+Tests check that every Spotify scope in `src/lib/spotify.ts` and the session cookie facts in `src/lib/session.ts` appear on the privacy page, so a scope or cookie change fails the build until the page is updated.
+
+---
+
 ## 2026-10-07: Keep Fredoka Variable and Bagel Fat One as the typefaces
 
 **Decision**

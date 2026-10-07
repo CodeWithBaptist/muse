@@ -27,7 +27,12 @@ export const LANDING_NAV: ReadonlyArray<{ label: string; id: string }> = [
  * action on the right is the same control the hero uses. The links drop out
  * below 760px, where the page reads as one column anyway.
  */
-export function SiteHeader() {
+export interface SiteHeaderProps {
+  /** Decided on the server by the page; see SpotifyPrimaryAction. */
+  spotifyLoginAvailable?: boolean;
+}
+
+export function SiteHeader({ spotifyLoginAvailable = true }: SiteHeaderProps) {
   const dotRef = React.useRef<HTMLSpanElement | null>(null);
   useBrandDotPulse(dotRef, HERO_DOT_PULSE_SCALE);
 
@@ -59,7 +64,7 @@ export function SiteHeader() {
           ))}
         </nav>
 
-        <SpotifyPrimaryAction size="sm" />
+        <SpotifyPrimaryAction size="sm" available={spotifyLoginAvailable} />
       </div>
     </header>
   );

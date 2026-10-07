@@ -260,7 +260,7 @@ describe('WhatItDoes', () => {
       ),
     ).toBeDefined();
     expect(
-      screen.getByText('A profile that describes how you listen, written for humans.'),
+      screen.getByText('A profile written from your top artists, top tracks, and recent plays.'),
     ).toBeDefined();
 
     const list = screen.getByRole('list');

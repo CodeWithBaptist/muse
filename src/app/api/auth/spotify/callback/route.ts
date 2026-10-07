@@ -6,6 +6,7 @@ import { encrypt } from '@/lib/encryption';
 import { createSession } from '@/lib/session';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { SpotifyCallbackQuerySchema } from '@/lib/validation/api-schemas';
+import { isSpotifyLoginConfigured } from '@/lib/spotify-config';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
   const storedState = cookieStore.get('spotify_auth_state')?.value;
   const codeVerifier = cookieStore.get('spotify_code_verifier')?.value;
 
-  if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+  if (!isSpotifyLoginConfigured()) {
     return NextResponse.redirect(new URL('/?error=auth_not_configured', request.url));
   }
 

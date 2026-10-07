@@ -11,7 +11,11 @@ import {
 import { scrollToLandingSection } from '@/lib/landing-scroll';
 import { HeroWordmark } from './HeroWordmark';
 import { RecordGroovesCanvas } from './RecordGroovesCanvas';
-import { SpotifyPrimaryAction } from './SpotifyPrimaryAction';
+import { AuthNotice } from './AuthNotice';
+import {
+  SPOTIFY_UNAVAILABLE_EXPLANATION,
+  SpotifyPrimaryAction,
+} from './SpotifyPrimaryAction';
 
 /**
  * The hero.
@@ -21,8 +25,19 @@ import { SpotifyPrimaryAction } from './SpotifyPrimaryAction';
  * visible without JavaScript. The canvas measures the content block through
  * `contentRef` so it can dim the lime that would cross the text, and it scales
  * the wordmark dot through `pulseRef` from the one shared beat loop.
+ *
+ * `spotifyLoginAvailable` and `authError` are decided on the server by the
+ * page, so the primary action is never a button that leads to an error body
+ * and a failed sign-in is explained right where it started.
  */
-export function Hero() {
+export interface HeroProps {
+  spotifyLoginAvailable?: boolean;
+  authError?: string;
+}
+
+const HERO_UNAVAILABLE_ID = 'hero-spotify-unavailable';
+
+export function Hero({ spotifyLoginAvailable = true, authError }: HeroProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const dotRef = useRef<HTMLSpanElement | null>(null);
 
@@ -69,7 +84,11 @@ export function Hero() {
           className="muse-hero-fade flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
           style={heroFadeStyle(HERO_ACTIONS_START_MS)}
         >
-          <SpotifyPrimaryAction actionAttribute="data-muse-hero-action" />
+          <SpotifyPrimaryAction
+            actionAttribute="data-muse-hero-action"
+            available={spotifyLoginAvailable}
+            unavailableDescriptionId={HERO_UNAVAILABLE_ID}
+          />
           <Button
             data-muse-hero-action
             variant="outline"
@@ -78,6 +97,23 @@ export function Hero() {
             See how it works
           </Button>
         </div>
+
+        {spotifyLoginAvailable ? null : (
+          <p
+            id={HERO_UNAVAILABLE_ID}
+            className="muse-hero-fade mx-auto max-w-md text-sm leading-relaxed text-text-secondary"
+            style={heroFadeStyle(HERO_ACTIONS_START_MS)}
+          >
+            {SPOTIFY_UNAVAILABLE_EXPLANATION}
+          </p>
+        )}
+
+        {authError ? (
+          <AuthNotice
+            code={authError}
+            className="muse-hero-fade"
+          />
+        ) : null}
       </div>
     </section>
   );

@@ -89,7 +89,7 @@ export const STEP_THINK_TOTAL_MS = STEP_THINK_LINE_MS * 2;
 export const STEP_THINK_LINES = [
   'Understanding your vibe',
   'Finding something that fits',
-  'Found 20 tracks',
+  'I found a few things',
 ] as const;
 
 /** Two rows rise in, then the reason line appears. */
@@ -97,8 +97,10 @@ export const STEP_ROW_STAGGER_MS = 50;
 export const STEP_ROW_RISE_MS = 320;
 export const STEP_WHY_AT_MS = 700;
 export const STEP_WHY_TOTAL_MS = STEP_WHY_AT_MS + 400;
-export const STEP_WHY_TEXT =
-  'Why this: slower and warmer, like your late night listening.';
+/** The reason line follows the first sample track, so the two never drift. */
+export const STEP_WHY_TEXT = `Why this: ${LANDING_SAMPLE.tracks[0].reason
+  .charAt(0)
+  .toLowerCase()}${LANDING_SAMPLE.tracks[0].reason.slice(1)}`;
 
 /** The create control walks its four states. */
 export const STEP_CREATE_AT_MS = 400;
@@ -131,8 +133,8 @@ export const LANDING_STEPS = [
     description: 'It reads your request and looks for real tracks on Spotify.',
   },
   {
-    title: 'Hear why',
-    description: 'Every pick can explain itself, in a sentence.',
+    title: 'See why',
+    description: 'Each pick comes with a one-line reason.',
   },
   {
     title: 'Save it',

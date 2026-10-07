@@ -19,7 +19,7 @@ const CAPABILITIES = [
   },
   {
     title: 'Why this',
-    description: 'Every recommendation can explain itself in a sentence.',
+    description: 'Each recommendation comes with a one-line reason.',
   },
   {
     title: 'Playlists in Spotify',
@@ -27,7 +27,7 @@ const CAPABILITIES = [
   },
   {
     title: 'Your taste in words',
-    description: 'A profile that describes how you listen, written for humans.',
+    description: 'A profile written from your top artists, top tracks, and recent plays.',
   },
 ] as const;
 

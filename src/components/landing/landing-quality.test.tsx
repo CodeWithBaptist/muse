@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import HomePage from '@/app/page';
+import { LandingPage } from '@/components/landing/LandingPage';
 import { HERO_WORDMARK_PIECES } from '@/components/landing/HeroWordmark';
 import { LANDING_WORDMARK_PIECES } from '@/lib/landing-wordmark';
 
@@ -28,6 +28,8 @@ const LANDING_SOURCES = [
   'src/components/landing/HeroWordmark.tsx',
   'src/components/landing/LandingMark.tsx',
   'src/components/landing/SpotifyPrimaryAction.tsx',
+  'src/components/landing/AuthNotice.tsx',
+  'src/components/landing/LandingPage.tsx',
   'src/components/landing/RecordGroovesCanvas.tsx',
   'src/components/landing/ProductPreview.tsx',
   'src/components/landing/HowItWorks.tsx',
@@ -63,7 +65,7 @@ const CANVAS_SOURCES = [
 
 describe('landing quality checklist', () => {
   it('1. keeps both canvases decorative, behind the content, and unclickable', () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const canvases = [...document.querySelectorAll('canvas')];
     expect(canvases).toHaveLength(2);
@@ -91,7 +93,7 @@ describe('landing quality checklist', () => {
   });
 
   it('2. paints the hero text without waiting for hydration', () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading.textContent).toMatch(/your music,/i);
@@ -209,7 +211,7 @@ describe('landing quality checklist', () => {
   });
 
   it('5. labels the scripted preview, keeps it inert, and never leaves it empty', () => {
-    const { container } = render(<HomePage />);
+    const { container } = render(<LandingPage />);
 
     expect(screen.getByText('Sample')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Replay' })).toBeDefined();
@@ -364,7 +366,7 @@ describe('landing quality checklist', () => {
   });
 
   it('10. keeps the first tab stop, the focus rings, and the hover attributes', () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const focusable = document.querySelectorAll(
       'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -501,18 +503,19 @@ describe('landing quality checklist', () => {
 
     const rail = read('src/components/landing/HowItWorks.tsx');
     expect(rail).toContain('late night Afrobeats but chill');
-    expect(rail).toContain('Found 20 tracks');
-    expect(rail).toContain(
-      'Why this: slower and warmer, like your late night listening.',
-    );
+    // No invented result counts: the last thinking line is the product's own.
+    expect(rail).not.toContain('Found 20 tracks');
+    expect(rail).toContain('I found a few things');
+    // The reason line is derived from the first sample track, never retyped.
+    expect(rail).toContain('LANDING_SAMPLE.tracks[0].reason');
 
     const rolling = read('src/lib/landing-sample.ts');
     for (const phrase of [
       'a late night drive',
+      'Lagos traffic',
+      'Rema, but calmer',
       'songs like Brent Faiyaz',
-      'something completely new',
       'a 2am Afrobeats mix',
-      'music to lock in',
       'slow mornings',
     ]) {
       expect(rolling).toContain(phrase);
@@ -520,7 +523,7 @@ describe('landing quality checklist', () => {
   });
 
   it('14. only claims what is built today', () => {
-    render(<HomePage />);
+    render(<LandingPage />);
     const text = document.body.textContent ?? '';
 
     for (const removed of [
