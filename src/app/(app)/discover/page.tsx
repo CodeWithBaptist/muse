@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DiscoverSection } from '@/components/discover/DiscoverSection';
+import { DiscoveryActions } from '@/components/discover/DiscoveryActions';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
 import { isAiNotConnectedMessage } from '@/hooks/use-chat';
@@ -153,6 +154,10 @@ export default function DiscoverPage() {
     );
   }
 
+  const topArtists: string[] = Array.isArray(data?.topArtists)
+    ? data.topArtists.filter((artist: unknown) => typeof artist === 'string')
+    : [];
+
   const sections: Array<{
     title: string;
     description: string;
@@ -181,6 +186,8 @@ export default function DiscoverPage() {
             </Button>
           </div>
         </Surface>
+
+        <DiscoveryActions topArtists={topArtists} />
       </div>
     );
   }
@@ -188,6 +195,8 @@ export default function DiscoverPage() {
   return (
     <div className="p-8 space-y-16 pb-32">
       <h1 className="type-page-title">Discover</h1>
+
+      <DiscoveryActions topArtists={topArtists} />
 
       <motion.div
         variants={staggerContainer(0.1)}

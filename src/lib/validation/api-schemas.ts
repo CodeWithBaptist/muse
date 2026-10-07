@@ -263,6 +263,75 @@ export const DiscoverSectionSchema = z.object({
 
 export const DiscoverResponseSchema = z.object({
   sections: z.array(DiscoverSectionSchema),
+  // Real top artist names from Spotify, so the artist exploration picker can
+  // only offer artists this user actually listens to.
+  topArtists: z.array(z.string()).default([]),
+});
+
+/**
+ * Track lists coming back from Spotify.
+ *
+ * Kept loose on purpose. They have already been validated against
+ * SpotifyCandidateTrackSchema inside the engine, and re-describing the whole
+ * track object here would only duplicate that.
+ */
+const DiscoverTrackListSchema = z.array(z.record(z.string(), z.unknown()));
+
+const NoTasteDataResponseSchema = z.object({
+  available: z.literal(false),
+  reason: z.string(),
+});
+
+export const SomewhereElseResponseSchema = z.discriminatedUnion('available', [
+  NoTasteDataResponseSchema,
+  z.object({
+    available: z.literal(true),
+    startingPoint: z.string(),
+    explanation: z.string(),
+    steps: z.array(
+      z.object({
+        title: z.string(),
+        description: z.string(),
+        tracks: DiscoverTrackListSchema,
+      })
+    ),
+  }),
+]);
+
+export const SurpriseResponseSchema = z.discriminatedUnion('available', [
+  NoTasteDataResponseSchema,
+  z.object({
+    available: z.literal(true),
+    explanation: z.string(),
+    tracks: DiscoverTrackListSchema,
+  }),
+]);
+
+export const ARTIST_ANGLE_KINDS = [
+  'start-here',
+  'go-deeper',
+  'unexpected-direction',
+  'similar-sound',
+] as const;
+
+export const ArtistExplorationResponseSchema = z.object({
+  artist: z.string(),
+  angles: z.array(
+    z.object({
+      kind: z.enum(ARTIST_ANGLE_KINDS),
+      title: z.string(),
+      description: z.string(),
+      tracks: DiscoverTrackListSchema,
+    })
+  ),
+});
+
+export const ArtistExploreInputSchema = z.object({
+  artist: z
+    .string()
+    .trim()
+    .min(1, 'Pick an artist to explore')
+    .max(120, 'That artist name is too long'),
 });
 
 export const ProfileInsightsResponseSchema = z.object({
