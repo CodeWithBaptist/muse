@@ -372,6 +372,21 @@ describe('Stage E: Product Completeness', () => {
       ).toBeDefined();
     });
     expect(screen.getByText('Spotify policy review needed')).toBeDefined();
+
+    // The note must list everything disconnect actually retains. What survives
+    // is pinned by the disconnect test in src/db/integration.test.ts, so this
+    // copy and the real behaviour are checked against the same facts.
+    const policyNote =
+      screen.getByText('Spotify policy review needed').parentElement
+        ?.textContent ?? '';
+    expect(policyNote).toContain('avatar');
+    expect(policyNote).toContain('memories you saved');
+    expect(policyNote).toContain('active MUSE session');
+    expect(policyNote).toContain('privacy policy lists these exactly');
+    expect(policyNote).not.toContain(
+      'retains Spotify ID, email, and display name for account identity'
+    );
+
     expect(
       screen
         .getByRole('link', { name: /read spotify developer policy/i })
