@@ -73,7 +73,18 @@ Everything MUSE needs to run locally is available without paying, except the Spo
    npm run dev
    ```
 
+`npm run setup` walks through the whole thing interactively: it installs dependencies, creates `.env.local`, tells you which values are still missing, verifies everything, and offers to apply the database schema. It is safe to re-run.
+
 `npm run check:setup` is the fastest way to find out why the AI features are not working. `npm run check:ai` checks only the AI provider and prints full provider errors.
+
+### Running on a modest laptop
+
+* `npm ci` downloads roughly 950 MB. Most of it is Next.js. It is a one-time cost.
+* The dev server uses roughly 1.2 GB of RAM while running.
+* Prefer a hosted database ([Neon](https://neon.tech)) over a local PostgreSQL install: it removes a process from your machine entirely.
+* Skip `npx playwright install chromium` unless you need the browser tests. They are not required for development.
+* Use `npm run dev` rather than `npm run build` while developing; the production build is significantly heavier.
+* There is no CI in this repository, so nothing runs automatically on push.
 
 Note that Spotify requires an active **Premium** subscription for Development Mode app owners, and login is required before the chat, Discover, and Profile screens can be reached. `check:setup` reports this as a warning. Without it, the app runs and the test suite passes, but the authenticated screens cannot be opened.
 

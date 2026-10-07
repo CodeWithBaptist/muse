@@ -20,6 +20,7 @@ npm run test:e2e:list # list e2e tests without a browser
 npm run format        # prettier --write .
 npm run check:ai      # live smoke test of the configured AI provider (1 real API call)
 npm run check:setup   # validate all local config: env vars, DB connection, tables, AI
+npm run setup         # guided first-run: install, create .env.local, push schema, verify
 
 npx drizzle-kit push  # apply schema to the target DB (verify the target first)
 ```

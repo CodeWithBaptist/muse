@@ -12,7 +12,8 @@
     "test:e2e:list": "playwright test --list",
     "format": "prettier --write .",
     "check:ai": "node scripts/check-ai.mjs",
-    "check:setup": "node scripts/check-setup.mjs"
+    "check:setup": "node scripts/check-setup.mjs",
+    "setup": "node scripts/setup.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
