@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useChat, type ChatErrorKind } from '@/hooks/use-chat';
 import { ChatMessage } from '@/components/chat/ChatMessage';
+import { SelectionPanel } from '@/components/chat/SelectionPanel';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ThinkingIndicator } from '@/components/chat/ThinkingIndicator';
 import {
@@ -173,6 +174,8 @@ export default function ChatPage() {
     selectConversation,
     startNewChat,
     deleteConversation,
+    selection,
+    updateSelectionTracks,
   } = useChat();
 
   const [historyOpen, setHistoryOpen] = React.useState(false);
@@ -319,6 +322,21 @@ export default function ChatPage() {
             {messages.map((msg, i) => (
               <ChatMessage key={i} message={msg} />
             ))}
+
+            {/* The list is one persistent surface rather than a block per reply,
+                so a refinement edits the rows the visitor is looking at. It sits
+                above the thinking indicator, which keeps it next to the input
+                while MUSE works on the next turn. */}
+            {selection && (
+              <SelectionPanel
+                tracks={selection.tracks}
+                refinement={selection.refinement}
+                isPlaylistSuggestion={selection.isPlaylistSuggestion}
+                suggestedPlaylistName={selection.suggestedPlaylistName}
+                noResults={selection.noResults}
+                onTracksChange={updateSelectionTracks}
+              />
+            )}
 
             {isThinking && !isAiNotConnected && (
               <div className="mr-auto">

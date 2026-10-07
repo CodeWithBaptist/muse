@@ -15,7 +15,12 @@ export interface RefinementSummary {
   excludedArtists: string[];
   excludedGenres: string[];
   avoided: string[];
+  /** Rows that were already on screen and stayed there. */
+  keptTracks: number;
+  /** Rows that are new to the screen. */
   newTracks: number;
+  /** Rows that left the screen, for any reason. */
+  removedTracks: number;
   droppedAlreadyShown: number;
   droppedExcludedArtist: number;
 }
@@ -45,7 +50,10 @@ export function parseRefinement(value: unknown): RefinementSummary | undefined {
     excludedArtists: stringArray(candidate.excludedArtists),
     excludedGenres: stringArray(candidate.excludedGenres),
     avoided: stringArray(candidate.avoided),
+    keptTracks: typeof candidate.keptTracks === 'number' ? candidate.keptTracks : 0,
     newTracks: typeof candidate.newTracks === 'number' ? candidate.newTracks : 0,
+    removedTracks:
+      typeof candidate.removedTracks === 'number' ? candidate.removedTracks : 0,
     droppedAlreadyShown:
       typeof candidate.droppedAlreadyShown === 'number'
         ? candidate.droppedAlreadyShown
@@ -57,11 +65,31 @@ export function parseRefinement(value: unknown): RefinementSummary | undefined {
   };
 }
 
+/**
+ * The living recommendation list.
+ *
+ * One selection is edited in place across refinement turns rather than a new
+ * list per reply, which is what lets rows that still fit stay where they are.
+ */
+export interface Selection {
+  tracks: SpotifyTrackItem[];
+  refinement?: RefinementSummary;
+  isPlaylistSuggestion?: boolean;
+  suggestedPlaylistName?: string;
+  noResults?: boolean;
+}
+
 export interface ConversationSummary {
   id: string;
   title: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+interface ChatMutationInput {
+  content: string;
+  /** Track ids currently on screen, in screen order. */
+  selectionIds: string[];
 }
 
 interface PersistedRecommendation {
@@ -122,6 +150,30 @@ export function classifyChatError(error: unknown): ChatErrorKind | null {
   return 'ai_error';
 }
 
+/** Attaches stored "Why this?" reasons to tracks loaded from history. */
+function hydrateTracksWithReasons(
+  rawMessages: Message[],
+  recs: PersistedRecommendation[]
+): Message[] {
+  const reasonByTrackId = new Map<string, string>();
+  for (const rec of recs) {
+    if (rec.spotifyTrackId && rec.reason) {
+      reasonByTrackId.set(rec.spotifyTrackId, rec.reason);
+    }
+  }
+
+  return rawMessages.map((msg) => {
+    if (!msg.tracks || msg.tracks.length === 0) return msg;
+    return {
+      ...msg,
+      tracks: msg.tracks.map((track) => ({
+        ...track,
+        reason: track.reason || reasonByTrackId.get(track.id),
+      })),
+    };
+  });
+}
+
 export function useChat(initialConversationId?: string) {
   const queryClient = useQueryClient();
   const [activeConversationId, setActiveConversationId] = React.useState<string | undefined>(
@@ -132,6 +184,7 @@ export function useChat(initialConversationId?: string) {
   const [thinkingStage, setThinkingStage] = React.useState<string | null>(null);
   const [lastPrompt, setLastPrompt] = React.useState<string>('');
   const [isThinking, setIsThinking] = React.useState(false);
+  const [selection, setSelection] = React.useState<Selection | null>(null);
 
   const { data: aiStatus } = useQuery({
     queryKey: ['ai-status'],
@@ -176,30 +229,18 @@ export function useChat(initialConversationId?: string) {
     retry: false,
   });
 
-  const messages = React.useMemo<Message[]>(() => {
-    const rawMessages: Message[] = Array.isArray(history?.messages) ? history.messages : [];
+  const hydratedHistory = React.useMemo<Message[]>(() => {
+    const rawMessages: Message[] = Array.isArray(history?.messages)
+      ? history.messages
+      : [];
     const recs: PersistedRecommendation[] = Array.isArray(history?.recommendations)
       ? history.recommendations
       : [];
-    const reasonByTrackId = new Map<string, string>();
-    for (const rec of recs) {
-      if (rec.spotifyTrackId && rec.reason) {
-        reasonByTrackId.set(rec.spotifyTrackId, rec.reason);
-      }
-    }
+    return hydrateTracksWithReasons(rawMessages, recs);
+  }, [history]);
 
-    const hydratedBase = rawMessages.map((msg) => {
-      if (!msg.tracks || msg.tracks.length === 0) return msg;
-      return {
-        ...msg,
-        tracks: msg.tracks.map((track) => ({
-          ...track,
-          reason: track.reason || reasonByTrackId.get(track.id),
-        })),
-      };
-    });
-
-    const combined = [...hydratedBase, ...localMessages];
+  const messages = React.useMemo<Message[]>(() => {
+    const combined = [...hydratedHistory, ...localMessages];
     if (streamingDraft !== null) {
       combined.push({
         role: 'assistant',
@@ -207,11 +248,43 @@ export function useChat(initialConversationId?: string) {
         isStreaming: true,
       });
     }
-    return combined;
-  }, [history, localMessages, streamingDraft]);
+
+    // Tracks are stripped here on purpose. The list is rendered once by the
+    // selection panel, so a reply must not draw a second copy of it.
+    return combined.map((message) =>
+      message.tracks ? { ...message, tracks: undefined } : message
+    );
+  }, [hydratedHistory, localMessages, streamingDraft]);
+
+  // A loaded conversation rebuilds its list from the most recent reply that
+  // carried tracks, so the panel is not empty after a reload. This runs during
+  // render guarded on which conversation was hydrated, which is how React asks
+  // for state to be adjusted when the data beneath it changes. An effect would
+  // paint one frame of the wrong list first.
+  const hydratedConversationId = history?.conversation?.id ?? null;
+  const [selectionHydratedFor, setSelectionHydratedFor] = React.useState<
+    string | null
+  >(null);
+
+  if (hydratedConversationId !== selectionHydratedFor) {
+    setSelectionHydratedFor(hydratedConversationId);
+
+    const withTracks = hydratedHistory.filter(
+      (message) => Array.isArray(message.tracks) && message.tracks.length > 0
+    );
+    const latest = withTracks[withTracks.length - 1];
+    setSelection(
+      latest?.tracks
+        ? {
+            tracks: latest.tracks,
+            isPlaylistSuggestion: latest.isPlaylistSuggestion,
+          }
+        : null
+    );
+  }
 
   const chatMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async ({ content, selectionIds }: ChatMutationInput) => {
       setIsThinking(true);
       setThinkingStage(null);
       setStreamingDraft(null);
@@ -233,7 +306,11 @@ export function useChat(initialConversationId?: string) {
             'Content-Type': 'application/json',
             Accept: 'text/event-stream, application/json',
           },
-          body: JSON.stringify({ content, conversationId: activeConversationId }),
+          body: JSON.stringify({
+            content,
+            conversationId: activeConversationId,
+            currentSelectionIds: selectionIds,
+          }),
         });
       } catch {
         const netErr: ChatError = new Error(
@@ -321,19 +398,34 @@ export function useChat(initialConversationId?: string) {
         setActiveConversationId(data.conversationId);
       }
 
+      const refinement = parseRefinement(data.refinement);
+      const noResults = Boolean(data.noResults);
+      const tracks = Array.isArray(data.tracks)
+        ? (data.tracks as SpotifyTrackItem[])
+        : undefined;
+
       setLocalMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
           content: typeof data.content === 'string' ? data.content : '',
-          tracks: Array.isArray(data.tracks)
-            ? (data.tracks as SpotifyTrackItem[])
-            : undefined,
-          isPlaylistSuggestion: Boolean(data.isPlaylistSuggestion),
-          noResults: Boolean(data.noResults),
-          refinement: parseRefinement(data.refinement),
         },
       ]);
+
+      // Only a discovery reply moves the list. A conversational reply leaves
+      // whatever is on screen alone.
+      if (tracks || noResults) {
+        setSelection({
+          tracks: tracks ?? [],
+          refinement,
+          isPlaylistSuggestion: Boolean(data.isPlaylistSuggestion),
+          suggestedPlaylistName:
+            typeof data.suggestedPlaylistName === 'string'
+              ? data.suggestedPlaylistName
+              : undefined,
+          noResults,
+        });
+      }
       setIsThinking(false);
       void refetchConversations();
     },
@@ -344,21 +436,30 @@ export function useChat(initialConversationId?: string) {
     },
   });
 
+  // The ids on screen are captured when the message is sent rather than read
+  // from a ref during render, so the server always learns what the visitor was
+  // actually looking at.
+  const currentSelectionIds = React.useMemo(
+    () => selection?.tracks.map((track) => track.id) ?? [],
+    [selection]
+  );
+
   const sendMessage = (content: string) => {
     setLastPrompt(content);
     setLocalMessages((prev) => [...prev, { role: 'user', content }]);
-    chatMutation.mutate(content);
+    chatMutation.mutate({ content, selectionIds: currentSelectionIds });
   };
 
   const retryLastMessage = () => {
     if (!lastPrompt || isThinking) return;
-    chatMutation.mutate(lastPrompt);
+    chatMutation.mutate({ content: lastPrompt, selectionIds: currentSelectionIds });
   };
 
   const selectConversation = (id: string) => {
     setLocalMessages([]);
     setStreamingDraft(null);
     setThinkingStage(null);
+    setSelection(null);
     chatMutation.reset();
     setActiveConversationId(id);
   };
@@ -388,6 +489,10 @@ export function useChat(initialConversationId?: string) {
 
   return {
     messages,
+    selection,
+    /** The panel reports removals so the next refinement knows what is on screen. */
+    updateSelectionTracks: (tracks: SpotifyTrackItem[]) =>
+      setSelection((previous) => (previous ? { ...previous, tracks } : previous)),
     sendMessage,
     retryLastMessage,
     isThinking,

@@ -3,43 +3,28 @@
 import * as React from 'react';
 import { motion } from 'motion/react';
 import { Logo } from '@/components/ui/Logo';
-import { TrackRow } from './TrackRow';
-import { PlaylistPreview } from './PlaylistPreview';
 import { WordReveal } from './WordReveal';
 import { fadeIn, fadeInUp, transitions } from '@/lib/motion';
 import { cn } from '@/lib/utils';
-import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
-import type { RefinementSummary } from '@/hooks/use-chat';
+
+/**
+ * One turn of conversation text.
+ *
+ * Recommended tracks are deliberately not rendered here. The list lives in
+ * SelectionPanel, which persists across turns so a refinement can keep the rows
+ * that still fit in place. Rendering rows inside a message would give every
+ * turn its own list, and rows would re-enter from nothing each time instead of
+ * staying where they were.
+ */
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
-  tracks?: SpotifyTrackItem[];
-  isPlaylistSuggestion?: boolean;
   isStreaming?: boolean;
-  noResults?: boolean;
-  refinement?: RefinementSummary;
 }
 
 export function ChatMessage({ message }: { message: Message }) {
   const isAssistant = message.role === 'assistant';
-  const [removedTrackIds, setRemovedTrackIds] = React.useState<Set<string>>(
-    () => new Set()
-  );
-
-  const localTracks = React.useMemo(() => {
-    const source = message.tracks ?? [];
-    if (removedTrackIds.size === 0) return source;
-    return source.filter((t) => !removedTrackIds.has(t.id));
-  }, [message.tracks, removedTrackIds]);
-
-  const handleRemoveTrack = (id: string) => {
-    setRemovedTrackIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
-  };
 
   return (
     <motion.div
@@ -63,19 +48,6 @@ export function ChatMessage({ message }: { message: Message }) {
         </div>
       )}
 
-      {/* A refinement turn says what changed, so the new rows read as a
-          narrowing of the last request rather than an unrelated search. The
-          accent is confined to the one word label. */}
-      {isAssistant && message.refinement && (
-        <p
-          data-testid="refinement-summary"
-          className="ml-6 flex flex-wrap items-baseline gap-2 text-[11px] leading-relaxed text-text-muted"
-        >
-          <span className="type-section-label text-accent">Refined</span>
-          <span>{message.refinement.summary}</span>
-        </p>
-      )}
-
       <motion.div
         variants={fadeIn}
         initial="initial"
@@ -94,42 +66,6 @@ export function ChatMessage({ message }: { message: Message }) {
           <span>{message.content}</span>
         )}
       </motion.div>
-
-      {isAssistant && message.noResults && localTracks.length === 0 && (
-        <div
-          data-testid="chat-no-results-state"
-          className="ml-6 p-4 rounded-lg bg-surface border border-border-subtle text-xs text-text-secondary space-y-1"
-        >
-          <p className="font-semibold text-text-primary uppercase tracking-wider text-[10px]">
-            No matching tracks found
-          </p>
-          <p>
-            Spotify search did not return tracks for those exact criteria. Try naming a specific artist, era, or broader genre.
-          </p>
-        </div>
-      )}
-
-      {isAssistant && localTracks.length > 0 && (
-        <div className="mt-2">
-          {message.isPlaylistSuggestion ? (
-            <PlaylistPreview
-              tracks={localTracks}
-              onRemoveTrack={handleRemoveTrack}
-            />
-          ) : (
-            <div role="list" aria-label="Recommended tracks" className="space-y-1">
-              {localTracks.map((track, i) => (
-                <TrackRow
-                  key={track.id || i}
-                  track={track}
-                  index={i}
-                  listItem
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </motion.div>
   );
 }
