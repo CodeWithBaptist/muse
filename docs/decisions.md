@@ -129,6 +129,33 @@ Date: 2026-10-05
 Record, rather than silently fix, that disconnecting Spotify retains MUSE account identity,
 saved memories and preferences, and the active session.
 
+### Investigated against a real engine, 2026-10-07
+
+The retention is now confirmed by integration test rather than by reading the route. Two
+clarifications matter for the eventual policy decision.
+
+Everything MUSE derived from Spotify is deleted on disconnect: tokens, recommendations,
+profile insights including inferred mood and energy, conversations and their messages, and
+playlists with their tracks. What survives falls into two groups. The identity row holds
+`spotify_id`, email, display name, and avatar URL, all of which came from Spotify, so that
+part is genuinely Spotify-derived personal data and is the substance of the compliance
+question. The memories and preferences are a different case: both tables are only ever
+written with `source: 'explicit'`, from text the user typed into MUSE, and no code path
+writes an inferred row to either. Retaining them is therefore a normal account-settings
+question rather than a Spotify data question, though under a regulation like GDPR they are
+still personal data.
+
+The gap remains open. The framing in the privacy draft is unchanged and still correct. What
+the investigation adds is that remediation could be narrow: deleting the identity row on
+disconnect would address the Spotify-derived part, while memories and preferences could
+defensibly stay, since they are the user's own words and account deletion already removes
+them. That is a legal judgement, not a technical one, and it is not made here.
+
+The in-app policy note in Settings was also corrected. It said disconnect retains only
+Spotify ID, email, and display name, which understated the behaviour by omitting the avatar
+URL, saved memories and preferences, and the active session. The privacy draft was already
+accurate; the text shown at the moment of the action was not.
+
 ### Why
 
 `DELETE /api/me/spotify` deletes recommendations, music profiles, conversations with their
@@ -298,3 +325,84 @@ a refinement shows a fresh set of rows rather than editing the previous set in p
 now collapse within a playlist preview, and new rows use the existing staggered reveal, but a
 single living list that carries rows across turns is a chat restructure that needs real browser
 verification, which is not available in this workspace.
+
+---
+
+## D-007. Verify the database with an in-process Postgres, and commit the migrations
+
+Status: **ADOPTED and APPLIED** on 2026-10-07.
+
+### Decision
+
+`@electric-sql/pglite` is added as a development dependency. It runs a real PostgreSQL engine
+compiled to WebAssembly, in process, with no server to install. `src/test/database.ts` boots it
+against the committed migrations and hands tests a Drizzle instance.
+
+The generated migrations are committed to `drizzle/`, and `db:generate`, `db:migrate`, `db:push`,
+`db:studio`, and `test:db` scripts are added to `package.json`.
+
+Production is unaffected. It still connects to the PostgreSQL server named by `DATABASE_URL`
+through `drizzle-orm/node-postgres`. PGlite is a test-time engine only.
+
+### Why
+
+The schema had never been executed by a real database. PostgreSQL cannot be installed in this
+workspace, so every query was checked only by TypeScript and by unit tests that mock the data
+layer. That combination verifies types and application logic, and says nothing about cascade
+rules, index behaviour, transaction semantics, or timestamp resolution, all of which are
+properties of the engine.
+
+The cost of that gap was concrete. Refinement context ordering assumed the newest message sorts
+last. Messages written in one statement share a `created_at`, because `now()` is the transaction
+timestamp, and PostgreSQL does not guarantee the order of tied rows. The assumption had passed
+typecheck, lint, and 208 unit tests, and the first execution of the migration against a real
+engine exposed it in minutes.
+
+Migrations were missing entirely, so nobody could create this database from the repository.
+Committing them makes the schema reproducible and gives the test engine something to apply.
+
+### Alternatives considered
+
+1. **Install a PostgreSQL server.** Not possible here. The package index is unreachable, and
+   Docker is absent. It would also make tests depend on a service, so they could not run
+   everywhere.
+2. **Keep mocking the data layer.** Rejected. It is what allowed the ordering assumption to
+   survive, and it cannot verify cascade or index behaviour at all, since those live in the
+   engine rather than in code.
+3. **Use SQLite with a compatibility layer.** Rejected. The schema uses `uuid`, `jsonb`,
+   `defaultRandom()`, and PostgreSQL cascade semantics. Translating them would test an
+   approximation of the production database, which is the exact failure mode this exists to
+   remove.
+4. **Generate migrations in test setup instead of committing them.** Rejected. The repository
+   needs migrations regardless, for deployment, and generating them at test time would hide
+   schema drift between what is committed and what the code declares.
+
+### Impact
+
+Eleven integration tests now run the real engine in about three seconds. One instance is created
+per file and truncated between tests; creating one per test cost twenty seconds, which is slow
+enough that the suite would get skipped.
+
+They verify the twelve tables the migration creates, the unique index the memory upsert depends
+on, the cascade chain account deletion relies on, the rate limit cleanup pattern, the exact
+disconnect retention described in D-003, both conversation deletion paths, and the message
+ordering behind refinement.
+
+Two of those tests assert behaviour that is a hazard rather than a bug. Deleting a conversation
+directly orphans its recommendations, because the foreign key is `on delete set null`. No live
+route does this, since both deletion paths remove recommendations explicitly first, so the risk
+is dormant. The test documents it, which means removing that explicit delete in a refactor will
+now fail loudly instead of quietly retaining data.
+
+Residual limitation, stated plainly: these tests verify the engine and the schema. They do not
+exercise the route handlers, because `src/db/index.ts` builds a module-level singleton pool that
+cannot be substituted per test. The routes use the same Drizzle calls, and those calls are what
+is verified here, but wiring the handlers to an injectable database would close the remaining
+gap. That is a follow-up, not done.
+
+### Related finding
+
+`drizzle-kit generate` fails to read `drizzle.config.ts` when `--out` is passed on the command
+line, reporting schema and dialect as undefined. Invoked without `--out` it reads the config
+correctly. The committed scripts do not pass `--out`, so this does not affect them, but it is
+worth knowing before adding a script that overrides the output folder.
