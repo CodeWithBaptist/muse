@@ -42,15 +42,15 @@ function AiNotConnectedBanner() {
           AI is not connected yet
         </h2>
         <p className="text-sm text-text-secondary leading-relaxed">
-          MUSE needs an OpenAI API key to respond in chat and curate recommendations. Add{' '}
+          MUSE needs an Anthropic API key to respond in chat and curate recommendations. Add{' '}
           <code className="text-xs font-mono text-text-primary bg-background/60 px-1.5 py-0.5 rounded">
-            OPENAI_API_KEY
+            ANTHROPIC_API_KEY or GEMINI_API_KEY
           </code>{' '}
           to your environment variables to enable AI features.
         </p>
         <div className="flex items-center gap-2 pt-1 text-[10px] text-text-muted font-mono uppercase tracking-wider">
           <Terminal size={12} />
-          <span>Set OPENAI_API_KEY in .env.local or Vercel</span>
+          <span>Set ANTHROPIC_API_KEY or GEMINI_API_KEY in .env.local or Vercel</span>
         </div>
       </div>
     </Surface>
@@ -346,7 +346,7 @@ export default function ChatPage() {
             disabled={isThinking}
             placeholder={
               isAiNotConnected
-                ? 'AI is not connected yet. Set OPENAI_API_KEY to start chatting.'
+                ? 'AI is not connected yet. Set ANTHROPIC_API_KEY or GEMINI_API_KEY to start chatting.'
                 : undefined
             }
           />

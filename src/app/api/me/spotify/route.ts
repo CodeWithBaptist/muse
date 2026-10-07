@@ -1,20 +1,14 @@
 import { db } from '@/db';
-import {
-  conversations,
-  musicProfiles,
-  playlistTracks,
-  playlists,
-  recommendations,
-  spotifyAccounts,
-} from '@/db/schema';
+import { spotifyAccounts } from '@/db/schema';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { verifySameOrigin } from '@/lib/security/csrf';
-import { getSession } from '@/lib/session';
+import { deleteSession, getSession } from '@/lib/session';
+import { deleteUserAccountData } from '@/lib/user-data';
 import {
   SpotifyConnectionResponseSchema,
   SuccessResponseSchema,
 } from '@/lib/validation/api-schemas';
-import { eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -53,6 +47,15 @@ export async function GET(request: Request) {
   }
 }
 
+/**
+ * Disconnect Spotify.
+ *
+ * Spotify's Developer Policy requires deleting a user's personal data when they
+ * disconnect, and MUSE's only user identity is the Spotify account it stores.
+ * So disconnecting deletes the whole MUSE account rather than keeping a row with
+ * the Spotify user ID, display name, email, and avatar behind. The user is
+ * signed out and a later sign-in creates a fresh account.
+ */
 export async function DELETE(request: Request) {
   const csrfError = verifySameOrigin(request);
   if (csrfError) return csrfError;
@@ -71,38 +74,8 @@ export async function DELETE(request: Request) {
   if (rateLimited) return rateLimited;
 
   try {
-    await db.transaction(async (transaction) => {
-      const userPlaylists = await transaction
-        .select({ id: playlists.id })
-        .from(playlists)
-        .where(eq(playlists.userId, session.userId));
-
-      await transaction
-        .delete(recommendations)
-        .where(eq(recommendations.userId, session.userId));
-      await transaction
-        .delete(musicProfiles)
-        .where(eq(musicProfiles.userId, session.userId));
-      await transaction
-        .delete(conversations)
-        .where(eq(conversations.userId, session.userId));
-
-      if (userPlaylists.length > 0) {
-        await transaction.delete(playlistTracks).where(
-          inArray(
-            playlistTracks.playlistId,
-            userPlaylists.map(({ id }) => id),
-          ),
-        );
-        await transaction
-          .delete(playlists)
-          .where(eq(playlists.userId, session.userId));
-      }
-
-      await transaction
-        .delete(spotifyAccounts)
-        .where(eq(spotifyAccounts.userId, session.userId));
-    });
+    await deleteUserAccountData(session.userId);
+    await deleteSession();
     return NextResponse.json(SuccessResponseSchema.parse({ success: true }), {
       headers: { 'Cache-Control': 'no-store, private' },
     });

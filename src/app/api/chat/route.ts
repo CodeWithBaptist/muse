@@ -10,6 +10,7 @@ import {
   AI_NOT_CONNECTED_MESSAGE,
   chatCompletion,
   chatCompletionStream,
+  extractTextContent,
   isAIConfigured,
   isAINotConnectedError,
   sanitizePromptInput,
@@ -452,10 +453,7 @@ export async function POST(request: Request) {
         ...chatMessages,
       ]);
 
-      const choices = (
-        response as { choices?: Array<{ message?: { content?: string | null } }> }
-      ).choices;
-      const museContent = choices?.[0]?.message?.content ?? '';
+      const museContent = extractTextContent(response);
 
       await db.insert(messages).values({
         conversationId: activeConversationId,

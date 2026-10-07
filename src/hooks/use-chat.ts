@@ -44,7 +44,10 @@ export function isAiNotConnectedMessage(error: unknown): boolean {
   const code = (error as { code?: unknown }).code;
   const message = (error as { message?: unknown }).message;
   if (code === 'AI_NOT_CONNECTED') return true;
-  if (typeof message === 'string' && /AI is not connected yet|OPENAI_API_KEY/i.test(message)) {
+  if (
+    typeof message === 'string' &&
+    /AI is not connected yet|ANTHROPIC_API_KEY|GEMINI_API_KEY/i.test(message)
+  ) {
     return true;
   }
   return false;

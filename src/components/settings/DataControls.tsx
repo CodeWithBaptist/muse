@@ -96,7 +96,7 @@ export function DataControls() {
             This removes your MUSE profile, preferences, memory, conversations,
             recommendations, playlists, and saved Spotify tokens. It does not
             delete your Spotify account or automatically remove data already
-            sent to OpenAI. Revoke MUSE access from your Spotify account
+            sent to Anthropic (Claude). Revoke MUSE access from your Spotify account
             separately. This action cannot be undone.
           </p>
         </div>

@@ -1,17 +1,32 @@
-import OpenAI from 'openai';
+import { anthropicProvider, DEFAULT_ANTHROPIC_MODEL } from './providers/anthropic';
+import { geminiProvider, DEFAULT_GEMINI_MODEL } from './providers/gemini';
+import {
+  AI_TEMPERATURE,
+  CHAT_MAX_TOKENS,
+  isZodSchema,
+  parseJsonObject,
+  STRUCTURED_MAX_TOKENS,
+  type ChatProvider,
+  type ChatProviderId,
+  type Message,
+} from './providers/shared';
 
 export const AI_NOT_CONNECTED_CODE = 'AI_NOT_CONNECTED' as const;
 export const AI_NOT_CONNECTED_MESSAGE = 'AI is not connected yet';
 
-const PLACEHOLDER_AI_KEYS = new Set([
-  'add-later',
-  'add_later',
-  'placeholder',
-  'your-openai-api-key',
-  'your_openai_api_key',
-  'changeme',
-  'none',
-]);
+export type { ChatProviderId, Message };
+
+/**
+ * Claude is the default. Google AI Studio's free tier is supported as an
+ * alternative so the app can run with no billing at all.
+ */
+export const DEFAULT_AI_MODEL = DEFAULT_ANTHROPIC_MODEL;
+export { DEFAULT_ANTHROPIC_MODEL, DEFAULT_GEMINI_MODEL };
+
+const PROVIDERS: Record<ChatProviderId, ChatProvider> = {
+  anthropic: anthropicProvider,
+  gemini: geminiProvider,
+};
 
 export class AINotConnectedError extends Error {
   readonly code = AI_NOT_CONNECTED_CODE;
@@ -22,13 +37,37 @@ export class AINotConnectedError extends Error {
   }
 }
 
+/**
+ * Resolve the active provider: an explicit AI_PROVIDER wins, otherwise use
+ * whichever provider has a usable key, defaulting to Anthropic when neither is
+ * configured so the "not connected" state stays predictable.
+ */
+export function getAIProviderId(): ChatProviderId {
+  const explicit = process.env.AI_PROVIDER?.trim().toLowerCase();
+  if (explicit === 'anthropic' || explicit === 'gemini') {
+    return explicit;
+  }
+
+  if (anthropicProvider.isConfigured()) return 'anthropic';
+  if (geminiProvider.isConfigured()) return 'gemini';
+  return 'anthropic';
+}
+
+export function getAIProvider(): ChatProvider {
+  return PROVIDERS[getAIProviderId()];
+}
+
+export function getAIProviderLabel(): string {
+  return getAIProvider().label;
+}
+
+/** Model for the active provider; ANTHROPIC_MODEL or GEMINI_MODEL override it. */
+export function getAIModel(): string {
+  return getAIProvider().getModel();
+}
+
 export function isAIConfigured(): boolean {
-  const raw = process.env.OPENAI_API_KEY?.trim();
-  if (!raw) return false;
-  const normalized = raw.toLowerCase();
-  if (PLACEHOLDER_AI_KEYS.has(normalized)) return false;
-  if (normalized.startsWith('<') && normalized.endsWith('>')) return false;
-  return true;
+  return getAIProvider().isConfigured();
 }
 
 export function isAINotConnectedError(error: unknown): boolean {
@@ -42,7 +81,10 @@ export function isAINotConnectedError(error: unknown): boolean {
     if (maybeCode === AI_NOT_CONNECTED_CODE || maybeName === 'AINotConnectedError') {
       return true;
     }
-    if (typeof maybeMessage === 'string' && /AI is not connected yet|OPENAI_API_KEY/i.test(maybeMessage)) {
+    if (
+      typeof maybeMessage === 'string' &&
+      /AI is not connected yet|ANTHROPIC_API_KEY|GEMINI_API_KEY/i.test(maybeMessage)
+    ) {
       return true;
     }
   }
@@ -59,70 +101,44 @@ export function sanitizePromptInput(input: string, maxLength = 1000): string {
     .slice(0, maxLength);
 }
 
-let _openai: OpenAI | null = null;
-let _cachedKey: string | null = null;
-
-function getOpenAI(): OpenAI {
-  if (!isAIConfigured()) {
-    _openai = null;
-    _cachedKey = null;
+function requireProvider(): ChatProvider {
+  const provider = getAIProvider();
+  if (!provider.isConfigured()) {
     throw new AINotConnectedError();
   }
-
-  const apiKey = process.env.OPENAI_API_KEY!.trim();
-  if (!_openai || _cachedKey !== apiKey) {
-    _openai = new OpenAI({ apiKey });
-    _cachedKey = apiKey;
-  }
-  return _openai;
+  return provider;
 }
 
-export type Message = {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-};
+/** Flatten a provider response to text, tolerating either provider's shape. */
+export function extractTextContent(response: unknown): string {
+  const active = getAIProvider();
+  const text = active.extractText(response);
+  if (text) return text;
 
-interface ZodLikeSchema<T> {
-  parse: (data: unknown) => T;
+  const fallback = active.id === 'anthropic' ? geminiProvider : anthropicProvider;
+  return fallback.extractText(response);
 }
 
-function isZodSchema<T>(schema: unknown): schema is ZodLikeSchema<T> {
-  return Boolean(
-    schema &&
-      typeof schema === 'object' &&
-      typeof (schema as ZodLikeSchema<T>).parse === 'function'
-  );
-}
+export async function chatCompletion(messages: Message[]) {
+  const provider = requireProvider();
 
-export async function chatCompletion(messages: Message[], stream = false) {
-  const openai = getOpenAI();
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  return provider.complete({
     messages,
-    stream,
-    temperature: 0.7,
+    maxTokens: CHAT_MAX_TOKENS,
+    temperature: AI_TEMPERATURE,
   });
-
-  return response;
 }
 
 export async function* chatCompletionStream(
   messages: Message[]
 ): AsyncGenerator<string, void, unknown> {
-  const openai = getOpenAI();
-  const stream = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages,
-    stream: true,
-    temperature: 0.7,
-  });
+  const provider = requireProvider();
 
-  for await (const chunk of stream) {
-    const delta = chunk.choices?.[0]?.delta?.content;
-    if (delta) {
-      yield delta;
-    }
-  }
+  yield* provider.stream({
+    messages,
+    maxTokens: CHAT_MAX_TOKENS,
+    temperature: AI_TEMPERATURE,
+  });
 }
 
 export async function structuredCompletion<T>(
@@ -130,20 +146,20 @@ export async function structuredCompletion<T>(
   schema: unknown,
   systemPrompt = 'You are a helpful music assistant.'
 ): Promise<T> {
-  const openai = getOpenAI();
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: prompt },
-    ],
-    response_format: { type: 'json_object' },
+  const provider = requireProvider();
+
+  const response = await provider.complete({
+    system: systemPrompt,
+    messages: [{ role: 'user', content: prompt }],
+    maxTokens: STRUCTURED_MAX_TOKENS,
+    temperature: AI_TEMPERATURE,
+    json: true,
   });
 
-  const content = response.choices[0].message.content;
-  if (!content) throw new Error('AI failed to generate content');
+  const content = extractTextContent(response);
+  if (!content.trim()) throw new Error('AI failed to generate content');
 
-  const parsed: unknown = JSON.parse(content);
+  const parsed = parseJsonObject(content);
   if (isZodSchema<T>(schema)) {
     return schema.parse(parsed);
   }

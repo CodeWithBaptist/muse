@@ -1,10 +1,8 @@
-import { db } from '@/db';
-import { playlistTracks, playlists, rateLimits, users } from '@/db/schema';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { verifySameOrigin } from '@/lib/security/csrf';
 import { deleteSession, getSession } from '@/lib/session';
+import { deleteUserAccountData } from '@/lib/user-data';
 import { SuccessResponseSchema } from '@/lib/validation/api-schemas';
-import { eq, inArray, like } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -27,26 +25,7 @@ export async function DELETE(request: Request) {
   if (rateLimited) return rateLimited;
 
   try {
-    await db.transaction(async (transaction) => {
-      const userPlaylists = await transaction
-        .select({ id: playlists.id })
-        .from(playlists)
-        .where(eq(playlists.userId, session.userId));
-
-      if (userPlaylists.length > 0) {
-        await transaction.delete(playlistTracks).where(
-          inArray(
-            playlistTracks.playlistId,
-            userPlaylists.map(({ id }) => id),
-          ),
-        );
-      }
-
-      await transaction.delete(users).where(eq(users.id, session.userId));
-      await transaction
-        .delete(rateLimits)
-        .where(like(rateLimits.key, `%:user:${session.userId}`));
-    });
+    await deleteUserAccountData(session.userId);
     await deleteSession();
     return NextResponse.json(SuccessResponseSchema.parse({ success: true }), {
       headers: { 'Cache-Control': 'no-store, private' },
