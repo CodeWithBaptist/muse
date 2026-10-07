@@ -2,7 +2,6 @@ import * as React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Suspense } from 'react';
 import { NowPlayingProvider } from '@/hooks/use-now-playing';
 import { TrackRow } from '@/components/chat/TrackRow';
 import { PlaylistPreview } from '@/components/chat/PlaylistPreview';
