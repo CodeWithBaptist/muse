@@ -98,8 +98,14 @@ export function SpotifyConnectionPanel({
         }),
       ]);
       setDisconnectMessage(
-        "MUSE's Spotify connection, Spotify-derived data, and chat history were cleared.",
+        'Disconnected. Your MUSE data has been deleted. Signing you out…',
       );
+      // The server deleted the account and session, so the UI must leave this
+      // authenticated page. logout() hard-navigates, so hold briefly to let the
+      // confirmation render first.
+      window.setTimeout(() => {
+        onLogout();
+      }, 1200);
     } catch {
       setDisconnectError('Unable to disconnect Spotify right now.');
     } finally {
@@ -175,9 +181,12 @@ export function SpotifyConnectionPanel({
       {confirmDisconnect && (
         <div className="space-y-3 rounded-md border border-border-subtle bg-surface p-4">
           <p className="text-xs leading-relaxed text-text-secondary">
-            Confirm disconnect to remove Spotify tokens and clear Spotify-based
-            profile insights, recommendations, playlist data, and chat history.
-            Explicit preferences and saved memories stay in MUSE.
+            Disconnecting deletes your MUSE account and all data MUSE holds for
+            it: Spotify tokens, your Spotify profile details, profile insights,
+            recommendations, playlist data, preferences, saved memories, and
+            chat history. Spotify&apos;s Developer Policy requires this deletion,
+            and MUSE has no account it can keep without your Spotify identity.
+            You will be signed out. This cannot be undone.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button

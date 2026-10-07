@@ -52,6 +52,12 @@ Next.js 16 (App Router) · React 19 · TypeScript strict · PostgreSQL + Drizzle
 - UI: Tailwind utilities, `Surface`/`Button`/`Input` primitives from `src/components/ui/`, `clsx` + `tailwind-merge` via `src/lib/utils.ts`. Respect reduced motion.
 - Match the surrounding style and do not run `prettier --write` across the repo. There is no Prettier config, so the defaults disagree with the committed style (the codebase uses single quotes and wider lines); formatting whole files buries real changes in unrelated churn.
 
+## Data deletion
+
+- `deleteUserAccountData()` in `src/lib/user-data.ts` is the single path for removing a user's data, used by both `DELETE /api/me/account` and `DELETE /api/me/spotify`. Do not hand-roll partial deletes in a route: two routes each deleting a different subset is exactly how MUSE previously violated Spotify's disconnect-deletion requirement by keeping the Spotify identity row.
+- `USER_SCOPED_TABLES` lists every table that routine must clear. If you add a user-scoped table, add it there and to `deleteUserAccountData`; the security test compares the actual deleted table set against that constant, so an omission fails the suite.
+- Disconnecting Spotify deletes the whole account by design, because MUSE's only user identity is the Spotify account (`users.spotifyId`). Callers must clear the session cookie afterwards; the settings panel signs the user out.
+
 ## Non-negotiables
 
 - Never commit secrets or `.env*` files (only `.env.example` is tracked). Never put secrets in client code, browser storage, logs, or screenshots.

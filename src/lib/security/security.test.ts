@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { getTableName } from 'drizzle-orm';
 
 const mockDbExecute = vi.fn();
 const mockDbSelectWhere = vi.fn();
@@ -6,6 +7,13 @@ const mockDbInsertReturning = vi.fn();
 const mockDbDeleteWhere = vi.fn();
 const mockDbUpdateWhere = vi.fn();
 const mockDbTransaction = vi.fn();
+// Every table passed to .delete(), so tests can assert the deletion set rather
+// than a call count that silently tolerates a missing table.
+const deletedTables: string[] = [];
+const recordDelete = (table: unknown) => {
+  deletedTables.push(getTableName(table as never));
+  return (...args: unknown[]) => mockDbDeleteWhere(...args);
+};
 
 vi.mock('@/db', () => ({
   db: {
@@ -20,8 +28,8 @@ vi.mock('@/db', () => ({
         returning: () => mockDbInsertReturning(),
       })),
     })),
-    delete: vi.fn(() => ({
-      where: (...args: unknown[]) => mockDbDeleteWhere(...args),
+    delete: vi.fn((table: unknown) => ({
+      where: recordDelete(table),
     })),
     update: vi.fn(() => ({
       set: vi.fn(() => ({
@@ -42,6 +50,7 @@ vi.mock('@/lib/session', () => ({
 
 import { verifySameOrigin } from './csrf';
 import { enforceRateLimit } from './rate-limit';
+import { USER_SCOPED_TABLES } from '@/lib/user-data';
 import { GET as logoutGet, POST as logoutPost } from '@/app/api/auth/logout/route';
 import { DELETE as chatClearDelete, POST as chatPost } from '@/app/api/chat/route';
 import { GET as chatByIdGet, DELETE as chatByIdDelete } from '@/app/api/chat/[id]/route';
@@ -61,6 +70,7 @@ describe('Stage B Security Hardening', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    deletedTables.length = 0;
     process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef';
     process.env.SPOTIFY_CLIENT_ID = 'test-client-id';
     process.env.SPOTIFY_CLIENT_SECRET = 'test-client-secret';
@@ -76,8 +86,8 @@ describe('Stage B Security Hardening', () => {
               where: (...whereArgs: unknown[]) => mockDbSelectWhere(...whereArgs),
             })),
           })),
-          delete: (..._deleteArgs: unknown[]) => ({
-            where: (...whereArgs: unknown[]) => mockDbDeleteWhere(...whereArgs),
+          delete: (table: unknown) => ({
+            where: recordDelete(table),
           }),
         }),
     );
@@ -259,7 +269,7 @@ describe('Stage B Security Hardening', () => {
     expect(mockDbDeleteWhere).toHaveBeenCalledTimes(2);
   });
 
-  it('deletes account data and clears playlist tracks before removing the account', async () => {
+  it('deletes the account and every user-scoped table', async () => {
     mockDbSelectWhere.mockResolvedValueOnce([
       { id: '22222222-2222-4222-8222-222222222222' },
     ]);
@@ -270,11 +280,11 @@ describe('Stage B Security Hardening', () => {
 
     expect(response.status).toBe(200);
     expect(mockDbTransaction).toHaveBeenCalledTimes(1);
-    expect(mockDbDeleteWhere).toHaveBeenCalledTimes(3);
     expect(mockDeleteSession).toHaveBeenCalledTimes(1);
+    expect(new Set(deletedTables)).toEqual(new Set([...USER_SCOPED_TABLES, 'playlist_tracks']));
   });
 
-  it('disconnects Spotify and clears Spotify-derived data and chat history transactionally', async () => {
+  it('disconnecting Spotify deletes the same data as full account deletion', async () => {
     mockDbSelectWhere.mockResolvedValueOnce([
       { id: '22222222-2222-4222-8222-222222222222' },
     ]);
@@ -285,7 +295,16 @@ describe('Stage B Security Hardening', () => {
 
     expect(response.status).toBe(200);
     expect(mockDbTransaction).toHaveBeenCalledTimes(1);
-    expect(mockDbDeleteWhere).toHaveBeenCalledTimes(6);
+    expect(mockDeleteSession).toHaveBeenCalledTimes(1);
+
+    // Spotify's Developer Policy requires deleting personal data on disconnect.
+    // The Spotify identity MUSE stores lives on `users`, so retention is a
+    // compliance bug — assert the whole set, including the identity row.
+    expect(new Set(deletedTables)).toEqual(new Set([...USER_SCOPED_TABLES, 'playlist_tracks']));
+    expect(deletedTables).toContain('users');
+    expect(deletedTables).toContain('spotify_accounts');
+    expect(deletedTables).toContain('preferences');
+    expect(deletedTables).toContain('memories');
   });
 
   it('keeps database error details out of the client response and logs', async () => {
