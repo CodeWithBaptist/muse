@@ -394,11 +394,26 @@ route does this, since both deletion paths remove recommendations explicitly fir
 is dormant. The test documents it, which means removing that explicit delete in a refactor will
 now fail loudly instead of quietly retaining data.
 
-Residual limitation, stated plainly: these tests verify the engine and the schema. They do not
-exercise the route handlers, because `src/db/index.ts` builds a module-level singleton pool that
-cannot be substituted per test. The routes use the same Drizzle calls, and those calls are what
-is verified here, but wiring the handlers to an injectable database would close the remaining
-gap. That is a follow-up, not done.
+### Route handlers are covered too, without a refactor
+
+This was first recorded as a residual limitation, on the reasoning that `src/db/index.ts` builds a
+module-level singleton pool that cannot be substituted per test, so handlers could only be tested
+by making the database injectable. That reasoning was wrong, and the limitation is closed.
+
+Mocking `@/db` with a getter that resolves at call time is enough, because Drizzle calls happen
+inside handlers rather than at module scope. Mocking `next/headers` to present a session cookie
+lets the real `getSession` run against the real sessions table, so authentication is exercised
+rather than stubbed. Building requests without an Origin header satisfies the CSRF guard, which
+deliberately allows non-browser callers.
+
+`src/app/api/routes.integration.test.ts` therefore drives real handlers end to end: conversation
+deletion and its ownership check, the refinement context the chat route passes to the
+recommendation engine, the disconnect retention described in D-003, and account deletion
+including that other users are untouched. No production code changed to allow this, so the
+dependency-injection refactor is no longer proposed.
+
+What remains genuinely unverified is anything needing Spotify, OpenAI, or a browser. Those are
+external services and cannot be reached from here.
 
 ### Related finding
 
