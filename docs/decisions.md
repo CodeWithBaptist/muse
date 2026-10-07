@@ -421,3 +421,24 @@ external services and cannot be reached from here.
 line, reporting schema and dialect as undefined. Invoked without `--out` it reads the config
 correctly. The committed scripts do not pass `--out`, so this does not affect them, but it is
 worth knowing before adding a script that overrides the output folder.
+
+## D-008: How a refinement treats the rows already on screen
+
+**Decision.** Split "tracks already shown" into two categories with different rules. Rows in the current selection are re-evaluated against the refined criteria and kept when they still fit. Rows shown in an earlier turn and since replaced are retired and never recommended again. The client sends the ids currently on screen; the server keeps those rows in the list, adds new candidates around them, and reports kept, new, and removed counts. Recommended track metadata is stored with each recommendation so a surviving row can be redrawn from stored data. The chat surface renders one persistent list rather than a list per reply, and that list is where refinement happens.
+
+**Why.** Section 26 asks for both "do not repeat tracks already shown" and "rows that remain should stay in place." The first implementation of Phase 9 satisfied the first clause by excluding every track previously shown, which made the second unreachable: every refinement returned a completely fresh list, so nothing ever remained. Asking to drop one artist threw away the other seven rows the visitor had already read and replaced them with eight different ones. That reads as MUSE ignoring the work it just did.
+
+The two clauses are not actually in conflict once the categories are separated. "Do not repeat" exists so a track the visitor already rejected does not come back, which is about retired rows. "Rows remain" is about continuity of the list being edited, which is about the current selection.
+
+A living list also requires being able to redraw a row it is keeping. `recommendations` stored a Spotify track id and a reason, enough to know what was recommended but not enough to render it. Resolving survivors through Spotify again was considered and rejected: the service has a single track endpoint and no batch resolver, so this would be one request per surviving row on every refinement turn, or would mean adding an endpoint MUSE has not verified. Section 5 forbids assuming endpoints exist, and this environment cannot reach Spotify to check. Denormalizing the five fields mirrors what `playlist_tracks` already does.
+
+**Alternatives considered.**
+1. Keep excluding all previously shown tracks. Simplest, and what Phase 9 shipped, but it makes "rows remain" impossible and wastes a list the visitor has already read.
+2. Resolve survivors through Spotify at refinement time. No schema change, but N extra requests per turn against an unverified batch capability.
+3. Store metadata as JSON rather than columns. Fewer migrations, but unqueryable and inconsistent with `playlist_tracks`.
+4. Leave the list inside each assistant message. No new component, but every turn would own its own list, so rows could never stay in place across turns, which is the whole requirement.
+5. Update the list inside the message that first produced it, keeping the list inline in the stream. Rows would stay in place, but the list drifts further from the input with every turn, which is where an iterative refinement conversation is actually happening.
+
+**Impact.** `recommendations` gains five nullable columns (migration `0001`), and the chat route writes them alongside each recommendation. `ChatPostInputSchema` accepts `currentSelectionIds`, validated so only ids this user was actually recommended in this conversation are honoured; a crafted request cannot keep a row MUSE never resolved through Spotify. `applyRefinementFilters` now excludes retired tracks rather than all shown tracks, and `partitionCurrentSelection` splits the on-screen rows into survivors, rows ruled out by an accumulated exclusion, and rows too old to render, which are dropped rather than shown blank. The ranking prompt marks survivors so the model can keep them and fill remaining slots. `ChatMessage` no longer renders tracks; `SelectionPanel` owns the one list, which also means a reply can no longer draw a second copy of it. Rows without stored metadata are never keepable, so lists recommended before migration `0001` will fully replace on their first refinement rather than partially update.
+
+**Date.** 2026-10-07
