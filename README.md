@@ -51,6 +51,32 @@ MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App 
    npm run dev
    ```
 
+## Zero-cost local setup
+
+Everything MUSE needs to run locally is available without paying, except the Spotify account used for login. If you are starting from scratch:
+
+1. **Free AI key.** Create one at [Google AI Studio](https://aistudio.google.com/apikey) (no credit card) and set `GEMINI_API_KEY` in `.env.local`. The free tier is rate limited, and Google may use free-tier data to improve its models, so treat it as development-only. See the free-tier trade-off above.
+2. **Free database.** Create a project at [Neon](https://neon.tech) and copy its connection string into `DATABASE_URL`.
+3. **Spotify app.** Create one at the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard) and copy its Client ID and Secret. Add `http://127.0.0.1:3000/api/auth/spotify/callback` as a redirect URI. Spotify requires an explicit loopback IP and rejects `localhost`.
+4. **Encryption key.** Generate one:
+   ```bash
+   node -e "console.log(require('crypto').randomBytes(16).toString('hex'))"
+   ```
+5. **Check everything at once:**
+   ```bash
+   npm run check:setup
+   ```
+   This validates each value, opens a real database connection, confirms the tables exist, and makes one live AI call. It prints exactly what is missing or wrong and exits non-zero until the setup is complete.
+6. **Apply the schema and start the app:**
+   ```bash
+   npx drizzle-kit push
+   npm run dev
+   ```
+
+`npm run check:setup` is the fastest way to find out why the AI features are not working. `npm run check:ai` checks only the AI provider and prints full provider errors.
+
+Note that Spotify requires an active **Premium** subscription for Development Mode app owners, and login is required before the chat, Discover, and Profile screens can be reached. `check:setup` reports this as a warning. Without it, the app runs and the test suite passes, but the authenticated screens cannot be opened.
+
 ## Browser and accessibility tests
 
 Install the Playwright Chromium browser once for the local machine:

@@ -19,6 +19,7 @@ npm run test:e2e      # Playwright (mocks /api, no real Spotify/Anthropic/DB cal
 npm run test:e2e:list # list e2e tests without a browser
 npm run format        # prettier --write .
 npm run check:ai      # live smoke test of the configured AI provider (1 real API call)
+npm run check:setup   # validate all local config: env vars, DB connection, tables, AI
 
 npx drizzle-kit push  # apply schema to the target DB (verify the target first)
 ```
@@ -67,5 +68,7 @@ Next.js 16 (App Router) · React 19 · TypeScript strict · PostgreSQL + Drizzle
 - Don't run destructive DB commands or point `drizzle-kit push` at anything but a development database.
 
 ## Local setup notes
+
+`npm run check:setup` is the supported way to diagnose a broken local setup. It reads the expected table names out of `src/db/schema.ts`, so keep that regex-compatible (`pgTable("name"`) if you ever change the schema style. Its AI check must keep delegating to `scripts/check-ai.mjs` rather than reimplementing provider detection, otherwise the two drift.
 
 Copy `.env.example` → `.env.local` and fill in `DATABASE_URL`, `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI`, `ENCRYPTION_KEY`, and one AI key: `ANTHROPIC_API_KEY` (paid) or `GEMINI_API_KEY` (free tier). `AI_PROVIDER`, `ANTHROPIC_MODEL`, and `GEMINI_MODEL` are optional. Spotify requires HTTPS except loopback, and rejects `localhost` — use `http://127.0.0.1:3000/api/auth/spotify/callback` for local dev. `/api/health` returns `{"ok":true}` (200) with a working database, `{"ok":false}` (500) otherwise.
