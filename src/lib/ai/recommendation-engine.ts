@@ -11,9 +11,11 @@ import {
   hasRefinementContext,
   isExplicitRepeatRequest,
   NO_NEW_MATCHES_MESSAGE,
+  partitionCurrentSelection,
   planRefinement,
   type RefinementContext,
   type RefinementExclusions,
+  type SelectionPartition,
 } from './refinement';
 import type { SpotifyArtistSummary, SpotifyTrackItem } from '../validation/api-schemas';
 
@@ -166,27 +168,46 @@ export interface OrchestrationResult {
     excludedArtists: string[];
     excludedGenres: string[];
     avoided: string[];
+    /** Rows that were already on screen and stayed there. */
+    keptTracks: number;
+    /** Rows that are new to the screen. */
     newTracks: number;
+    /** Rows that left the screen, for any reason. */
+    removedTracks: number;
     droppedAlreadyShown: number;
     droppedExcludedArtist: number;
   };
 }
 
 /** Assembles the refinement metadata returned to the client. */
-function buildRefinementMeta(
-  summary: string,
-  exclusions: RefinementExclusions,
-  filtered: { droppedAlreadyShown: number; droppedExcludedArtist: number },
-  newTracks: number
-): NonNullable<OrchestrationResult['refinement']> {
+function buildRefinementMeta(args: {
+  summary: string;
+  exclusions: RefinementExclusions;
+  filtered: { droppedAlreadyShown: number; droppedExcludedArtist: number };
+  partition: SelectionPartition;
+  keptIds: string[];
+  selectedIds: string[];
+}): NonNullable<OrchestrationResult['refinement']> {
+  const kept = new Set(args.keptIds);
+
+  // Rows that leave the screen include survivors the ranker dropped and rows
+  // removed before ranking, so the count reflects what the user sees change.
+  const removedTracks =
+    args.partition.survivors.filter((track) => !kept.has(track.id)).length +
+    args.partition.removedByExclusion +
+    args.partition.removedUnrenderable;
+
   return {
-    summary,
-    excludedArtists: exclusions.artists,
-    excludedGenres: exclusions.genres,
-    avoided: exclusions.descriptors,
-    newTracks,
-    droppedAlreadyShown: filtered.droppedAlreadyShown,
-    droppedExcludedArtist: filtered.droppedExcludedArtist,
+    summary: args.summary,
+    excludedArtists: args.exclusions.artists,
+    excludedGenres: args.exclusions.genres,
+    avoided: args.exclusions.descriptors,
+    keptTracks: args.keptIds.length,
+    newTracks: args.selectedIds.filter((id) => !kept.has(id)).length,
+    removedTracks,
+    droppedAlreadyShown: args.filtered.droppedAlreadyShown,
+    droppedExcludedArtist:
+      args.filtered.droppedExcludedArtist + args.partition.removedByExclusion,
   };
 }
 
@@ -334,33 +355,51 @@ export async function orchestrateRecommendations(
   }
 
   // 2b. Enforce the accumulated constraints before the model sees anything.
-  // Excluded artists and tracks already shown in this conversation are removed
-  // here, so a model that ignores an instruction still cannot surface them.
+  // Excluded artists and tracks already retired from the list are removed here,
+  // so a model that ignores an instruction still cannot surface them.
   const filtered = applyRefinementFilters(pool, {
     exclusions,
     shownTracks: context?.shownTracks ?? [],
+    currentSelection: context?.currentSelection ?? [],
     allowRepeat,
   });
 
-  if (filtered.kept.length === 0) {
+  // 2c. Rows already on screen are re-evaluated, not discarded. Those that
+  // survive the accumulated exclusions rejoin the pool as candidates, so the
+  // ranker can keep them in place instead of replacing the whole list. Only a
+  // refinement turn has a current selection to preserve.
+  const partition = isRefinement
+    ? partitionCurrentSelection(context?.currentSelection, exclusions)
+    : { survivors: [] as SpotifyTrackItem[], removedByExclusion: 0, removedUnrenderable: 0 };
+
+  const survivorIds = new Set(partition.survivors.map((track) => track.id));
+
+  const combined: SpotifyTrackItem[] = [
+    ...partition.survivors,
+    ...filtered.kept.filter((track) => !survivorIds.has(track.id)),
+  ];
+
+  if (combined.length === 0) {
     return {
       message: NO_NEW_MATCHES_MESSAGE,
       tracks: [] as SpotifyTrackItem[],
       ...(refinementSummary
         ? {
-            refinement: buildRefinementMeta(
-              refinementSummary,
+            refinement: buildRefinementMeta({
+              summary: refinementSummary,
               exclusions,
               filtered,
-              0
-            ),
+              partition,
+              keptIds: [],
+              selectedIds: [],
+            }),
           }
         : {}),
     };
   }
 
   // 3. AI Ranking and Selection (Strictly constrained to verified Spotify candidates)
-  const candidatePool = filtered.kept.slice(0, MAX_CANDIDATE_POOL);
+  const candidatePool = combined.slice(0, MAX_CANDIDATE_POOL);
   const candidateById = new Map<string, SpotifyTrackItem>(
     candidatePool.map((t) => [t.id, t])
   );
@@ -370,12 +409,32 @@ export async function orchestrateRecommendations(
     title: t.name,
     artist: t.artists.map((a) => a.name).join(', '),
     album: t.album?.name ?? '',
+    // Tells the ranker which rows the user is already looking at, so it can
+    // keep the ones that still fit rather than treat every row as new.
+    alreadyInList: survivorIds.has(t.id),
   }));
 
   // The exclusion clause is restated here so the intro and the reasons reflect
   // what was ruled out. It is advisory at this point: the candidates the model
   // can choose from were already filtered in step 2b.
   const exclusionClause = describeExclusions(exclusions);
+
+  // Extra instructions apply only to a refinement turn. Keeping rows that still
+  // fit is what makes the list feel edited rather than replaced.
+  const extraRules: string[] = [];
+  if (isRefinement) {
+    extraRules.push(
+      'This is a refined request, not a new one. Candidates marked "alreadyInList": true are rows the user is looking at right now. Keep every one of those that still fits the refined request, so those rows stay in place, and drop the ones that no longer fit. Fill the remaining slots from candidates that are not already in the list.'
+    );
+  }
+  if (exclusionClause) {
+    extraRules.push(
+      'Acknowledge the change briefly in the intro, and do not recommend anything the constraints rule out.'
+    );
+  }
+  const extraRuleText = extraRules
+    .map((rule, index) => `\n    ${index + 6}. ${rule}`)
+    .join('');
 
   const rankingPrompt = `
     <user_message>${safeMessage}</user_message>
@@ -388,11 +447,7 @@ export async function orchestrateRecommendations(
     2. Never invent or modify a trackId.
     3. Rank them by relevance to the user's request.
     4. Provide a warm, expert intro for the selection.
-    5. Provide a 1-sentence "Why this?" reason for each chosen track, focusing on its sonic fit or why it matches the request.${
-      exclusionClause
-        ? '\n    6. If <constraints> is present, this is a refined request. Acknowledge the change briefly in the intro and do not recommend anything the constraints rule out.'
-        : ''
-    }
+    5. Provide a 1-sentence "Why this?" reason for each chosen track, focusing on its sonic fit or why it matches the request.${extraRuleText}
 
     Return JSON matching the schema: { "explanations": [{ "trackId": string, "reason": string }], "intro": string }
   `;
@@ -432,17 +487,23 @@ export async function orchestrateRecommendations(
           reason: track.reason || 'Matched your request through Spotify catalog search.',
         }));
 
+  const selectedIds = finalTracks.map((track) => track.id);
+  // A kept row is one that was already on screen and is still on screen.
+  const keptIds = selectedIds.filter((id) => survivorIds.has(id));
+
   return {
     message: selection.intro || "Here's a curated selection based on your request:",
     tracks: finalTracks,
     ...(refinementSummary
       ? {
-          refinement: buildRefinementMeta(
-            refinementSummary,
+          refinement: buildRefinementMeta({
+            summary: refinementSummary,
             exclusions,
             filtered,
-            finalTracks.length
-          ),
+            partition,
+            keptIds,
+            selectedIds,
+          }),
         }
       : {}),
   };

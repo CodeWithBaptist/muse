@@ -224,8 +224,28 @@ describe('POST /api/chat refinement context', () => {
       { conversationId: conversation.id, role: 'user', content: 'Less mainstream.' },
     ]);
     await db.insert(recommendations).values([
-      { userId, conversationId: conversation.id, spotifyTrackId: 'shown-1' },
-      { userId, conversationId: conversation.id, spotifyTrackId: 'shown-2' },
+      {
+        userId,
+        conversationId: conversation.id,
+        spotifyTrackId: 'shown-1',
+        reason: 'Fits the request.',
+        title: 'Night Drive',
+        artist: 'Ayra Starr',
+        albumName: 'A',
+        albumArtUrl: 'https://i.scdn.co/image/a',
+        durationMs: 200000,
+      },
+      {
+        userId,
+        conversationId: conversation.id,
+        spotifyTrackId: 'shown-2',
+        reason: 'Fits the request.',
+        title: 'Lagos After Dark',
+        artist: 'Odumodublvck',
+        albumName: 'B',
+        albumArtUrl: null,
+        durationMs: 190000,
+      },
     ]);
 
     extractChatIntent.mockResolvedValue({
@@ -252,6 +272,8 @@ describe('POST /api/chat refinement context', () => {
       jsonRequest('/api/chat', 'POST', {
         content: 'No Burna Boy.',
         conversationId: conversation.id,
+        // Deliberately out of screen order, plus an id MUSE never recommended.
+        currentSelectionIds: ['shown-2', 'shown-1', 'never-recommended'],
       })
     );
 
@@ -272,7 +294,33 @@ describe('POST /api/chat refinement context', () => {
       'Late night Afrobeats.',
       'Less mainstream.',
     ]);
-    expect(calledContext.shownTracks).toEqual([{ id: 'shown-1' }, { id: 'shown-2' }]);
+    // Metadata comes back with the shown tracks, so a surviving row can be
+    // re-rendered without another Spotify call.
+    expect(calledContext.shownTracks).toEqual([
+      {
+        id: 'shown-1',
+        title: 'Night Drive',
+        artist: 'Ayra Starr',
+        albumName: 'A',
+        albumArtUrl: 'https://i.scdn.co/image/a',
+        durationMs: 200000,
+      },
+      {
+        id: 'shown-2',
+        title: 'Lagos After Dark',
+        artist: 'Odumodublvck',
+        albumName: 'B',
+        albumArtUrl: null,
+        durationMs: 190000,
+      },
+    ]);
+
+    // The current selection follows the client's screen order, and the id MUSE
+    // never recommended to this user is dropped rather than trusted.
+    expect(calledContext.currentSelection.map((track: { id: string }) => track.id)).toEqual([
+      'shown-2',
+      'shown-1',
+    ]);
 
     // The turn is stored, and so is what it recommended.
     const stored = await db

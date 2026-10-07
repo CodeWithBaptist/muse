@@ -50,7 +50,8 @@ export const runtime = 'nodejs';
  */
 async function loadRefinementContext(
   userId: string,
-  conversationId: string
+  conversationId: string,
+  currentSelectionIds: string[]
 ): Promise<RefinementContext | null> {
   try {
     const [priorTurns, shown] = await Promise.all([
@@ -66,7 +67,14 @@ async function loadRefinementContext(
         .orderBy(asc(messages.createdAt))
         .limit(24),
       db
-        .select({ spotifyTrackId: recommendations.spotifyTrackId })
+        .select({
+          spotifyTrackId: recommendations.spotifyTrackId,
+          title: recommendations.title,
+          artist: recommendations.artist,
+          albumName: recommendations.albumName,
+          albumArtUrl: recommendations.albumArtUrl,
+          durationMs: recommendations.durationMs,
+        })
         .from(recommendations)
         .where(
           and(
@@ -82,12 +90,27 @@ async function loadRefinementContext(
     // No earlier turn means this is the first request, not a refinement.
     if (priorUserMessages.length === 0) return null;
 
-    return {
-      priorUserMessages,
-      shownTracks: shown
-        .map((row) => ({ id: row.spotifyTrackId }))
-        .filter((track) => track.id.length > 0),
-    };
+    const shownTracks = shown
+      .map((row) => ({
+        id: row.spotifyTrackId,
+        title: row.title,
+        artist: row.artist,
+        albumName: row.albumName,
+        albumArtUrl: row.albumArtUrl,
+        durationMs: row.durationMs,
+      }))
+      .filter((track) => track.id.length > 0);
+
+    // Honour the client's screen order, but only for ids this user was actually
+    // recommended in this conversation. An id that is not in that history is
+    // dropped rather than trusted, so a crafted request cannot keep a row MUSE
+    // never resolved through Spotify.
+    const knownById = new Map(shownTracks.map((track) => [track.id, track]));
+    const currentSelection = currentSelectionIds
+      .map((id) => knownById.get(id))
+      .filter((track): track is NonNullable<typeof track> => Boolean(track));
+
+    return { priorUserMessages, shownTracks, currentSelection };
   } catch {
     console.error(
       'Refinement context could not be loaded. Treating this turn as a new request.'
@@ -202,7 +225,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { content, conversationId } = parsedInput.data;
+  const { content, conversationId, currentSelectionIds } = parsedInput.data;
 
   if (!isAIConfigured()) {
     return NextResponse.json(
@@ -274,7 +297,8 @@ export async function POST(request: Request) {
     // when rows share a timestamp.
     const refinementContext = await loadRefinementContext(
       session.userId,
-      activeConversationId
+      activeConversationId,
+      currentSelectionIds ?? []
     );
 
     // 3. Save User Message
@@ -349,6 +373,14 @@ export async function POST(request: Request) {
                   reason:
                     track.reason ||
                     'Matched your request through Spotify catalog search.',
+                  // Stored so a later refinement can keep this row on screen without
+                  // another Spotify call, and so duplicate detection has a title and
+                  // artist to match on rather than an id alone.
+                  title: track.name,
+                  artist: track.artists.map((artist) => artist.name).join(', '),
+                  albumName: track.album?.name ?? null,
+                  albumArtUrl: track.albumArtUrl ?? null,
+                  durationMs: track.duration_ms ?? null,
                 }));
                 await db.insert(recommendations).values(recs);
               }
@@ -503,6 +535,14 @@ export async function POST(request: Request) {
           reason:
             track.reason ||
             'Matched your request through Spotify catalog search.',
+          // Stored so a later refinement can keep this row on screen without
+          // another Spotify call, and so duplicate detection has a title and
+          // artist to match on rather than an id alone.
+          title: track.name,
+          artist: track.artists.map((artist) => artist.name).join(', '),
+          albumName: track.album?.name ?? null,
+          albumArtUrl: track.albumArtUrl ?? null,
+          durationMs: track.duration_ms ?? null,
         }));
         await db.insert(recommendations).values(recs);
       }

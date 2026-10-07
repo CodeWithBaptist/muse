@@ -8,7 +8,10 @@ import {
   isArtistExcluded,
   isExplicitRepeatRequest,
   normalizeForMatch,
+  partitionCurrentSelection,
   planRefinement,
+  retiredTrackIds,
+  shownTrackToItem,
   trackIdentityKey,
   MAX_PRIOR_TURNS,
   NO_NEW_MATCHES_MESSAGE,
@@ -405,5 +408,139 @@ describe('three step refinement chain', () => {
 
     expect(result.refinement).toBeUndefined();
     expect(result.tracks.length).toBeGreaterThan(0);
+  });
+});
+
+describe('living selection', () => {
+  const burnaExclusion = { ...EMPTY_EXCLUSIONS, artists: ['Burna Boy'] };
+
+  it('rebuilds a renderable track from stored metadata', () => {
+    const item = shownTrackToItem({
+      id: 'ng-1',
+      title: 'Night Drive',
+      artist: 'Ayra Starr',
+      albumName: 'A',
+      albumArtUrl: 'https://i.scdn.co/image/a',
+      durationMs: 200000,
+    });
+
+    expect(item).not.toBeNull();
+    expect(item?.name).toBe('Night Drive');
+    expect(item?.artists).toEqual([{ name: 'Ayra Starr' }]);
+    expect(item?.album).toEqual({ name: 'A' });
+    expect(item?.albumArtUrl).toBe('https://i.scdn.co/image/a');
+    expect(item?.duration_ms).toBe(200000);
+    expect(item?.uri).toBe('spotify:track:ng-1');
+  });
+
+  it('refuses to keep a row it cannot render', () => {
+    // Rows written before the metadata columns existed have only an id.
+    expect(shownTrackToItem({ id: 'ng-1' })).toBeNull();
+    expect(shownTrackToItem({ id: 'ng-1', title: 'Night Drive' })).toBeNull();
+    expect(shownTrackToItem({ id: 'ng-1', title: '   ', artist: 'Ayra Starr' })).toBeNull();
+  });
+
+  it('treats only replaced tracks as retired', () => {
+    const retired = retiredTrackIds({
+      shownTracks: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
+      currentSelection: [{ id: 'b' }],
+    });
+
+    expect([...retired].sort()).toEqual(['a', 'c']);
+  });
+
+  it('splits the current selection into rows that stay and rows that go', () => {
+    const partition = partitionCurrentSelection(
+      [
+        { id: 'ng-1', title: 'Night Drive', artist: 'Ayra Starr' },
+        { id: 'ng-5', title: 'Slow Burn', artist: 'Burna Boy' },
+        { id: 'ng-9', title: 'Ojueleganda Nights', artist: 'Fave' },
+        { id: 'legacy-row' },
+      ],
+      burnaExclusion
+    );
+
+    expect(partition.survivors.map((track) => track.id)).toEqual(['ng-1', 'ng-9']);
+    expect(partition.removedByExclusion).toBe(1);
+    expect(partition.removedUnrenderable).toBe(1);
+  });
+
+  it('keeps the whole selection when nothing was ruled out', () => {
+    const partition = partitionCurrentSelection(
+      [{ id: 'ng-1', title: 'Night Drive', artist: 'Ayra Starr' }],
+      EMPTY_EXCLUSIONS
+    );
+    expect(partition.survivors).toHaveLength(1);
+    expect(partition.removedByExclusion).toBe(0);
+  });
+});
+
+describe('refinement keeps the rows that still fit', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    installModelStub();
+
+    vi.mocked(spotifyService.getTopArtists).mockResolvedValue({ items: [] });
+    vi.mocked(spotifyService.getTopTracks).mockResolvedValue({ items: [] });
+    vi.mocked(spotifyService.search).mockResolvedValue({
+      tracks: { items: CATALOGUE },
+    });
+  });
+
+  it('keeps a surviving row in place and removes the one that was ruled out', async () => {
+    const result = await orchestrateRecommendations('user-1', 'No Burna Boy.', {
+      priorUserMessages: ['Give me late night Afrobeats.'],
+      shownTracks: [
+        { id: 'ng-1', title: 'Night Drive', artist: 'Ayra Starr' },
+        { id: 'ng-5', title: 'Slow Burn', artist: 'Burna Boy' },
+      ],
+      currentSelection: [
+        { id: 'ng-1', title: 'Night Drive', artist: 'Ayra Starr' },
+        { id: 'ng-5', title: 'Slow Burn', artist: 'Burna Boy' },
+      ],
+    });
+
+    const ids = result.tracks.map((track) => track.id);
+
+    // The row that still fits stays. The row that was ruled out goes.
+    expect(ids).toContain('ng-1');
+    expect(ids).not.toContain('ng-5');
+
+    expect(result.refinement?.keptTracks).toBe(1);
+    expect(result.refinement?.removedTracks).toBe(1);
+    expect(result.refinement?.excludedArtists).toEqual(['Burna Boy']);
+    // One slot was kept, so the rest of the list is new.
+    expect(result.refinement?.newTracks).toBe(result.tracks.length - 1);
+  });
+
+  it('never resurrects a row that was replaced in an earlier turn', async () => {
+    const result = await orchestrateRecommendations('user-1', 'Something newer.', {
+      priorUserMessages: ['Give me late night Afrobeats.', 'Less mainstream.'],
+      // ng-1 and ng-2 were shown in turn one and replaced in turn two.
+      shownTracks: [
+        { id: 'ng-1', title: 'Night Drive', artist: 'Ayra Starr' },
+        { id: 'ng-2', title: 'Lagos After Dark', artist: 'Odumodublvck' },
+        { id: 'ng-3', title: 'Third Mainland', artist: 'Victony' },
+      ],
+      currentSelection: [{ id: 'ng-3', title: 'Third Mainland', artist: 'Victony' }],
+    });
+
+    const ids = result.tracks.map((track) => track.id);
+    expect(ids).not.toContain('ng-1');
+    expect(ids).not.toContain('ng-2');
+    expect(result.refinement?.droppedAlreadyShown).toBe(2);
+  });
+
+  it('still returns a full list when no survivor can be kept', async () => {
+    const result = await orchestrateRecommendations('user-1', 'No Burna Boy.', {
+      priorUserMessages: ['Give me late night Afrobeats.'],
+      shownTracks: [{ id: 'ng-5', title: 'Slow Burn', artist: 'Burna Boy' }],
+      currentSelection: [{ id: 'ng-5', title: 'Slow Burn', artist: 'Burna Boy' }],
+    });
+
+    expect(result.refinement?.keptTracks).toBe(0);
+    expect(result.refinement?.removedTracks).toBe(1);
+    expect(result.tracks.length).toBeGreaterThan(0);
+    expect(result.tracks.every((track) => track.id !== 'ng-5')).toBe(true);
   });
 });

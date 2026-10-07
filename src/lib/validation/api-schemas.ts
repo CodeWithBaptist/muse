@@ -37,6 +37,15 @@ export const ChatPostInputSchema = z.object({
     .min(1, 'Content is required')
     .max(2000, 'Message is too long'),
   conversationId: z.string().uuid().optional(),
+  /**
+   * Spotify track ids currently on screen, in screen order.
+   *
+   * A refinement re-evaluates these rows and keeps the ones that still fit,
+   * rather than replacing the whole list. The server only honours ids it
+   * actually recommended in this conversation, so this cannot be used to
+   * introduce a track MUSE never resolved through Spotify.
+   */
+  currentSelectionIds: z.array(z.string().trim().min(1).max(120)).max(50).optional(),
 });
 
 export const ChatIdParamSchema = z.object({

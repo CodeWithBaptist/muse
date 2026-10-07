@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { structuredCompletion } from './provider';
 import { sanitizeSpotifyQuery, sanitizeUserPromptText } from './sanitize';
+import type { SpotifyTrackItem } from '../validation/api-schemas';
 
 /**
  * Conversational refinement.
@@ -77,22 +78,39 @@ export const RefinementPlanSchema = z.object({
 export type RefinementExclusions = z.infer<typeof RefinementExclusionsSchema>;
 export type RefinementPlan = z.infer<typeof RefinementPlanSchema>;
 
-/** A track already shown in this conversation. Only the id is stored today. */
+/**
+ * A track MUSE has already shown in this conversation.
+ *
+ * The metadata is denormalised onto the recommendations row so a survivor can
+ * be re-rendered without another Spotify call. Rows written before those
+ * columns existed carry no metadata, and a track that cannot be rendered is
+ * not kept.
+ */
 export interface ShownTrack {
   id: string;
-  title?: string;
-  artist?: string;
+  title?: string | null;
+  artist?: string | null;
+  albumName?: string | null;
+  albumArtUrl?: string | null;
+  durationMs?: number | null;
 }
 
 /**
  * Everything needed to refine instead of restarting. Built by the caller from
  * stored conversation state.
+ *
+ * `shownTracks` is every track this conversation has ever recommended.
+ * `currentSelection` is the subset the user is looking at right now. The
+ * difference matters: tracks that were shown and then replaced must not come
+ * back, while tracks still on screen are re-evaluated and may stay.
  */
 export interface RefinementContext {
   /** Earlier user turns in this conversation, oldest first, excluding the current one. */
   priorUserMessages: string[];
-  /** Tracks already recommended in this conversation. */
+  /** Every track already recommended in this conversation. */
   shownTracks: ShownTrack[];
+  /** The tracks currently on screen, which a refinement re-evaluates rather than discards. */
+  currentSelection?: ShownTrack[];
 }
 
 /** The smallest track shape the filters need, so they can be tested plainly. */
@@ -150,14 +168,14 @@ export function trackArtistText(track: FilterableTrack): string {
 
 /** Title and artist folded into one key, for matching duplicates across turns. */
 export function trackIdentityKey(track: {
-  name?: string;
-  title?: string;
+  name?: string | null;
+  title?: string | null;
   artists?: Array<{ name?: string } | undefined>;
-  artist?: string;
+  artist?: string | null;
 }): string {
   const title = normalizeForMatch(track.name ?? track.title ?? '');
   const artist =
-    track.artist !== undefined
+    track.artist != null
       ? normalizeForMatch(track.artist)
       : trackArtistText(track as FilterableTrack);
   return `${title}::${artist}`;
@@ -297,31 +315,51 @@ export interface RefinementFilterOutcome<T> {
   droppedAlreadyShown: number;
 }
 
+/** Ids of tracks shown earlier and since replaced, which must not come back. */
+export function retiredTrackIds(context: {
+  shownTracks?: ShownTrack[];
+  currentSelection?: ShownTrack[];
+}): Set<string> {
+  const current = new Set(
+    (context.currentSelection ?? []).map((track) => track.id).filter(Boolean)
+  );
+  return new Set(
+    (context.shownTracks ?? [])
+      .map((track) => track.id)
+      .filter((id) => id.length > 0 && !current.has(id))
+  );
+}
+
 /**
  * Enforces the accumulated constraints against a verified candidate pool.
  *
- * Runs before ranking, so excluded artists and tracks the user has already
- * seen never reach the model. Matching is by Spotify track id and, where the
- * title and artist are known, by a folded title and artist key, so a re-issue
- * of the same recording under a different id is still caught.
+ * Runs before ranking, so excluded artists and retired tracks never reach the
+ * model. Matching is by Spotify track id and, where the title and artist are
+ * known, by a folded title and artist key, so a re-issue of the same recording
+ * under a different id is still caught.
+ *
+ * Tracks in `currentSelection` are not filtered out here even though they were
+ * shown before. They are the rows the user is looking at, and the point of a
+ * refinement is that the ones which still fit stay where they are. Only tracks
+ * shown and then replaced are excluded, so a row retired in an earlier turn
+ * cannot be resurrected as though it were new.
  */
 export function applyRefinementFilters<T extends FilterableTrack>(
   candidates: T[],
   options: {
     exclusions?: RefinementExclusions;
     shownTracks?: ShownTrack[];
+    currentSelection?: ShownTrack[];
     allowRepeat?: boolean;
   } = {}
 ): RefinementFilterOutcome<T> {
   const exclusions = options.exclusions ?? EMPTY_EXCLUSIONS;
-  const shownTracks = options.shownTracks ?? [];
   const allowRepeat = options.allowRepeat ?? false;
+  const retired = retiredTrackIds(options);
 
-  const shownIds = new Set(
-    shownTracks.map((track) => track.id).filter((id) => id.length > 0)
-  );
-  const shownKeys = new Set(
-    shownTracks
+  const retiredKeys = new Set(
+    (options.shownTracks ?? [])
+      .filter((track) => !options.currentSelection?.some((c) => c.id === track.id))
       .filter((track) => track.title || track.artist)
       .map((track) => trackIdentityKey(track))
       .filter((key) => key !== '::')
@@ -337,9 +375,9 @@ export function applyRefinementFilters<T extends FilterableTrack>(
       continue;
     }
     if (!allowRepeat) {
-      const alreadyShown =
-        shownIds.has(candidate.id) || shownKeys.has(trackIdentityKey(candidate));
-      if (alreadyShown) {
+      const retiredTrack =
+        retired.has(candidate.id) || retiredKeys.has(trackIdentityKey(candidate));
+      if (retiredTrack) {
         droppedAlreadyShown += 1;
         continue;
       }
@@ -348,6 +386,76 @@ export function applyRefinementFilters<T extends FilterableTrack>(
   }
 
   return { kept, droppedExcludedArtist, droppedAlreadyShown };
+}
+
+/**
+ * Rebuilds a renderable track from a stored recommendation row.
+ *
+ * Returns null when the row predates the metadata columns, because a row that
+ * cannot be drawn cannot stay on screen, and silently showing a blank row
+ * would be worse than letting it go.
+ */
+export function shownTrackToItem(
+  track: ShownTrack
+): SpotifyTrackItem | null {
+  const title = track.title?.trim();
+  const artist = track.artist?.trim();
+  if (!title || !artist) return null;
+
+  return {
+    id: track.id,
+    name: title,
+    uri: `spotify:track:${track.id}`,
+    artists: [{ name: artist }],
+    ...(track.albumName ? { album: { name: track.albumName } } : {}),
+    ...(track.albumArtUrl ? { albumArtUrl: track.albumArtUrl } : {}),
+    ...(typeof track.durationMs === 'number' ? { duration_ms: track.durationMs } : {}),
+  };
+}
+
+export interface SelectionPartition {
+  /** Still on screen, still allowed, and renderable. These rows stay put. */
+  survivors: SpotifyTrackItem[];
+  /** Ruled out by an exclusion accumulated in this conversation. */
+  removedByExclusion: number;
+  /** On screen but no longer renderable from stored data. */
+  removedUnrenderable: number;
+}
+
+/**
+ * Splits the current selection into rows that may stay and rows that must go.
+ *
+ * Hard exclusions are applied here rather than left to the ranker, for the same
+ * reason they are applied to search results: the model is told about them, but
+ * AI output is untrusted, so "No Burna Boy" is enforced by removing him.
+ */
+export function partitionCurrentSelection(
+  currentSelection: ShownTrack[] | undefined,
+  exclusions: RefinementExclusions
+): SelectionPartition {
+  const survivors: SpotifyTrackItem[] = [];
+  let removedByExclusion = 0;
+  let removedUnrenderable = 0;
+
+  for (const track of currentSelection ?? []) {
+    const item = shownTrackToItem(track);
+    if (!item) {
+      removedUnrenderable += 1;
+      continue;
+    }
+    if (
+      isArtistExcluded(
+        { id: item.id, name: item.name, artists: item.artists },
+        exclusions
+      )
+    ) {
+      removedByExclusion += 1;
+      continue;
+    }
+    survivors.push(item);
+  }
+
+  return { survivors, removedByExclusion, removedUnrenderable };
 }
 
 /** Renders the exclusions as a short clause for the ranking prompt. */
