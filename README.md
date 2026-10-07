@@ -13,6 +13,13 @@ MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App 
 * **AI provider:** OpenAI, configured in `src/lib/ai/provider.ts`
 * **Tests:** Vitest, Testing Library, Playwright, and axe-core
 
+## Project documentation
+
+* `docs/decisions.md` records meaningful architectural decisions with the reasoning, the alternatives considered, and the impact. It also records the deliberate deviations from the original build specification, including the choice to keep Next.js and Drizzle rather than rebuild as a Vite and Express monorepo on Prisma.
+* `docs/part-a-trust-fixes.md` records the before and after copy for every landing claim that was corrected, together with the code evidence that makes each replacement true.
+
+Read `docs/decisions.md` before changing architecture, ORM, package manager, or directory layout.
+
 ## Scripts
 
 * `npm run dev`: start the local Next.js development server
@@ -98,7 +105,7 @@ The Spotify app mode and MUSE's compatibility with the current API requirements 
 
 MUSE is not represented as Spotify-policy compliant. The current product sends Spotify-derived listening data to OpenAI and uses listening history for profile insights and recommendations. Spotify's [Developer Policy](https://developer.spotify.com/policy) restricts analyzing Spotify Content and using Spotify Platform or Content for AI ingestion. It also requires deletion and no further processing of a user's personal data after disconnection. MUSE currently retains Spotify account identity fields after disconnect, so the deletion flow needs review and remediation before the integration can be treated as compliant.
 
-MUSE sends playback commands to Spotify and does not stream audio itself. Spotify's playback references include Premium requirements and restrictions concerning commercial streaming integrations. Whether the current or future product use falls within those restrictions remains unresolved. Obtain appropriate policy and legal review before release. The [Spotify attribution page](/spotify-attribution) is still a review placeholder and needs final branding, artwork, links, and attribution before release.
+MUSE sends playback commands to Spotify and does not stream audio itself. Spotify's playback references include Premium requirements and restrictions concerning commercial streaming integrations. Whether the current or future product use falls within those restrictions remains unresolved. Obtain appropriate policy and legal review before release. The [Spotify attribution page](/spotify-attribution) is a draft written from the current implementation. It inventories every screen that renders Spotify metadata or artwork and records the outbound links that already exist, but the approved attribution wording and the approved brand asset are still open and must be taken from Spotify's current Design and Branding Guidelines and checked against a running deployment. The [privacy](/privacy) and [terms](/terms) pages are drafts in the same state: they describe real behaviour, and the clauses that require counsel, including liability, governing law, and a contact address, are left visibly incomplete.
 
 ## Error monitoring recommendation
 
