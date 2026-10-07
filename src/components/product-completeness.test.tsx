@@ -23,6 +23,12 @@ function stripMotionProps(props: Record<string, unknown>) {
     whileInView,
     viewport,
     layoutId,
+    values,
+    onReorder,
+    as,
+    axis,
+    dragListener,
+    dragControls,
     ...domProps
   } = props;
   void initial;
@@ -35,6 +41,12 @@ function stripMotionProps(props: Record<string, unknown>) {
   void whileInView;
   void viewport;
   void layoutId;
+  void values;
+  void onReorder;
+  void as;
+  void axis;
+  void dragListener;
+  void dragControls;
   return domProps;
 }
 
@@ -79,7 +91,22 @@ vi.mock('motion/react', () => ({
   },
   AnimatePresence: ({ children }: React.PropsWithChildren) => <>{children}</>,
   MotionConfig: ({ children }: React.PropsWithChildren) => <>{children}</>,
-  useReducedMotion: () => false
+  useReducedMotion: () => false,
+  Reorder: {
+    Group: ({
+      children,
+      ...props
+    }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <div {...stripMotionProps(props)}>{children}</div>
+    ),
+    Item: ({
+      children,
+      ...props
+    }: React.PropsWithChildren<Record<string, unknown>>) => (
+      <div {...stripMotionProps(props)}>{children}</div>
+    ),
+  },
+  useDragControls: () => ({ start: () => undefined }),
 }));
 
 function renderWithProviders(ui: React.ReactElement) {

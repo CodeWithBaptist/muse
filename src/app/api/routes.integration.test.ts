@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeAll, beforeEach, afterAll, vi } from 'vitest';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 
 /**
  * Route handlers driven end to end against a real PostgreSQL engine.
@@ -86,6 +86,7 @@ import { DELETE as deleteConversation } from '@/app/api/chat/[id]/route';
 import { POST as postChat } from '@/app/api/chat/route';
 import { DELETE as disconnectSpotify } from '@/app/api/me/spotify/route';
 import { DELETE as deleteAccount } from '@/app/api/me/account/route';
+import { PATCH as patchPlaylist } from '@/app/api/playlists/[id]/route';
 
 let handle: TestDatabaseHandle;
 let db: TestDatabaseHandle['db'];
@@ -575,5 +576,156 @@ describe('DELETE /api/me/account', () => {
     expect(
       await db.select().from(memories).where(eq(memories.userId, other.id))
     ).toHaveLength(1);
+  });
+});
+
+describe('playlist reorder', () => {
+  async function createPlaylistWithTracks(count: number) {
+    const [playlist] = await db
+      .insert(playlists)
+      .values({ userId, name: 'Night drive' })
+      .returning();
+
+    await db.insert(playlistTracks).values(
+      Array.from({ length: count }, (_, index) => ({
+        playlistId: playlist.id,
+        spotifyTrackId: `track-${index}`,
+        position: index,
+        title: `Track ${index}`,
+        artist: 'Ayra Starr',
+        durationMs: 200_000,
+      }))
+    );
+
+    return playlist;
+  }
+
+  async function storedOrder(playlistId: string) {
+    const rows = await db
+      .select()
+      .from(playlistTracks)
+      .where(eq(playlistTracks.playlistId, playlistId))
+      .orderBy(asc(playlistTracks.position));
+    return rows.map((row) => row.spotifyTrackId);
+  }
+
+  it('persists the new order', async () => {
+    const playlist = await createPlaylistWithTracks(3);
+
+    const response = await patchPlaylist(
+      jsonRequest(`/api/playlists/${playlist.id}`, 'PATCH', {
+        trackOrder: ['track-2', 'track-0', 'track-1'],
+      }),
+      { params: Promise.resolve({ id: playlist.id }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(await storedOrder(playlist.id)).toEqual([
+      'track-2',
+      'track-0',
+      'track-1',
+    ]);
+  });
+
+  it('rejects an order that drops a track, and leaves the order alone', async () => {
+    const playlist = await createPlaylistWithTracks(3);
+
+    const response = await patchPlaylist(
+      jsonRequest(`/api/playlists/${playlist.id}`, 'PATCH', {
+        trackOrder: ['track-2', 'track-0'],
+      }),
+      { params: Promise.resolve({ id: playlist.id }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(await storedOrder(playlist.id)).toEqual([
+      'track-0',
+      'track-1',
+      'track-2',
+    ]);
+  });
+
+  it('rejects a duplicated track in the order', async () => {
+    const playlist = await createPlaylistWithTracks(3);
+
+    const response = await patchPlaylist(
+      jsonRequest(`/api/playlists/${playlist.id}`, 'PATCH', {
+        trackOrder: ['track-0', 'track-0', 'track-1'],
+      }),
+      { params: Promise.resolve({ id: playlist.id }) }
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  it('scopes the permutation check to the playlist being patched', async () => {
+    const playlist = await createPlaylistWithTracks(2);
+    const other = await createPlaylistWithTracks(2);
+
+    const response = await patchPlaylist(
+      jsonRequest(`/api/playlists/${playlist.id}`, 'PATCH', {
+        trackOrder: ['track-1', 'track-0'],
+      }),
+      { params: Promise.resolve({ id: other.id }) }
+    );
+
+    // Both playlists happen to hold track-0 and track-1, so this checks the
+    // handler scopes the permutation test to the playlist being patched rather
+    // than to any track the user owns.
+    expect(response.status).toBe(200);
+    expect(await storedOrder(other.id)).toEqual(['track-1', 'track-0']);
+    expect(await storedOrder(playlist.id)).toEqual(['track-0', 'track-1']);
+  });
+
+  it('accepts uris that arrive with the spotify:track: prefix', async () => {
+    const playlist = await createPlaylistWithTracks(2);
+
+    const response = await patchPlaylist(
+      jsonRequest(`/api/playlists/${playlist.id}`, 'PATCH', {
+        trackOrder: ['spotify:track:track-1', 'spotify:track:track-0'],
+      }),
+      { params: Promise.resolve({ id: playlist.id }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(await storedOrder(playlist.id)).toEqual(['track-1', 'track-0']);
+  });
+
+  it('returns 404 when the playlist belongs to another user', async () => {
+    const playlist = await createPlaylistWithTracks(2);
+
+    // A second user with their own session, so the ownership check is exercised
+    // rather than assumed. Patching as the owner would prove nothing.
+    const stranger = await seedUser(db, { email: 'stranger@example.com' });
+    await db.insert(sessions).values({
+      id: 'stranger-session-id',
+      userId: stranger.id,
+      expiresAt: new Date(Date.now() + 3_600_000),
+    });
+    state.sessionId = 'stranger-session-id';
+
+    const response = await patchPlaylist(
+      jsonRequest(`/api/playlists/${playlist.id}`, 'PATCH', {
+        trackOrder: ['track-1', 'track-0'],
+      }),
+      { params: Promise.resolve({ id: playlist.id }) }
+    );
+
+    expect(response.status).toBe(404);
+    expect(await storedOrder(playlist.id)).toEqual(['track-0', 'track-1']);
+  });
+
+  it('rejects an order naming a track this playlist does not have', async () => {
+    const playlist = await createPlaylistWithTracks(2);
+
+    const response = await patchPlaylist(
+      jsonRequest(`/api/playlists/${playlist.id}`, 'PATCH', {
+        trackOrder: ['track-1', 'somewhere-else'],
+      }),
+      { params: Promise.resolve({ id: playlist.id }) }
+    );
+
+    expect(response.status).toBe(400);
+    expect(await storedOrder(playlist.id)).toEqual(['track-0', 'track-1']);
   });
 });

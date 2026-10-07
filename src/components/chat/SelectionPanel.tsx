@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { AnimatePresence } from 'motion/react';
-import { TrackRow } from './TrackRow';
+import { TrackRow, type Track } from './TrackRow';
 import { PlaylistPreview } from './PlaylistPreview';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 import type { RefinementSummary } from '@/hooks/use-chat';
@@ -45,8 +45,14 @@ export function SelectionPanel({
   );
 
   // A new selection from the server replaces the list wholesale, so removals
-  // recorded against the previous selection no longer apply.
-  const signature = tracks.map((track) => track.id).join('|');
+  // recorded against the previous selection no longer apply. The signature is
+  // sorted on purpose: reordering the same rows is not a new selection, and
+  // clearing the visitor's removals because they moved a row would be wrong.
+  const signature = tracks
+    .map((track) => track.id)
+    .slice()
+    .sort()
+    .join('|');
   const [lastSignature, setLastSignature] = React.useState(signature);
   if (signature !== lastSignature) {
     setLastSignature(signature);
@@ -57,6 +63,21 @@ export function SelectionPanel({
     if (removedIds.size === 0) return tracks;
     return tracks.filter((track) => !removedIds.has(track.id));
   }, [tracks, removedIds]);
+
+  /**
+   * Reordering the playlist preview changes the order the parent holds.
+   *
+   * The new order is mapped back onto the objects this panel already has rather
+   * than passed through, which keeps the types honest and means a row cannot
+   * arrive from the child carrying data this panel never had.
+   */
+  const handleReorder = (next: Track[]) => {
+    const byId = new Map(tracks.map((track) => [track.id, track]));
+    const reordered = next
+      .map((track) => byId.get(track.id))
+      .filter((track): track is SpotifyTrackItem => track !== undefined);
+    onTracksChange?.(reordered);
+  };
 
   const handleRemove = (id: string) => {
     setRemovedIds((previous) => {
@@ -110,6 +131,7 @@ export function SelectionPanel({
         <PlaylistPreview
           tracks={visibleTracks}
           onRemoveTrack={handleRemove}
+          onReorderTracks={onTracksChange ? handleReorder : undefined}
           suggestedName={suggestedPlaylistName}
           suggestedDescription={suggestedPlaylistDescription}
         />

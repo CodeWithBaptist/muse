@@ -57,7 +57,7 @@ export async function PATCH(
   }
 
   const { id } = parsedParams.data;
-  const { name, description, removeTrackId } = parsedBody.data;
+  const { name, description, removeTrackId, trackOrder } = parsedBody.data;
 
   try {
     const [existing] = await db
@@ -81,6 +81,47 @@ export async function PATCH(
             eq(playlistTracksTable.spotifyTrackId, cleanTrackId)
           )
         );
+    }
+
+    if (trackOrder) {
+      const existingTracks = await db
+        .select()
+        .from(playlistTracksTable)
+        .where(eq(playlistTracksTable.playlistId, id));
+
+      const normalise = (value: string) => value.replace(/^spotify:track:/, '');
+      const rowByTrackId = new Map(
+        existingTracks.map((row) => [normalise(row.spotifyTrackId), row])
+      );
+
+      const requested = trackOrder.map(normalise);
+      const isPermutation =
+        requested.length === rowByTrackId.size &&
+        new Set(requested).size === requested.length &&
+        requested.every((trackId) => rowByTrackId.has(trackId));
+
+      if (!isPermutation) {
+        return NextResponse.json(
+          {
+            error:
+              'The new order must contain exactly the tracks this playlist has.',
+          },
+          { status: 400 }
+        );
+      }
+
+      // One transaction, so a failure part way through cannot leave two rows
+      // claiming the same position.
+      await db.transaction(async (tx) => {
+        for (let position = 0; position < requested.length; position += 1) {
+          const row = rowByTrackId.get(requested[position]);
+          if (!row) continue;
+          await tx
+            .update(playlistTracksTable)
+            .set({ position })
+            .where(eq(playlistTracksTable.id, row.id));
+        }
+      });
     }
 
     const updateValues: Partial<typeof playlistsTable.$inferInsert> = {

@@ -81,9 +81,35 @@ export function MotionConfig({ children }: { children?: React.ReactNode }) {
 
 export const useReducedMotion = () => false;
 
+/**
+ * Stand-ins for Motion's Reorder primitive.
+ *
+ * Dragging has no meaning in jsdom, so these render as plain elements and keep
+ * the list semantics a test would query for. The keyboard path in
+ * ReorderableTrackList still runs for real, which is the part worth testing.
+ */
+function createReorderComponent(tag: 'div' | 'li') {
+  return function ReorderStub({
+    children,
+    ...props
+  }: React.PropsWithChildren<Record<string, unknown>>) {
+    const Component = tag as unknown as React.ElementType;
+    return <Component {...stripMotionProps(props)}>{children}</Component>;
+  };
+}
+
+export const Reorder = {
+  Group: createReorderComponent('div'),
+  Item: createReorderComponent('li'),
+};
+
+export const useDragControls = () => ({ start: () => undefined });
+
 export const motionMock = {
   motion,
   AnimatePresence,
   MotionConfig,
   useReducedMotion,
+  Reorder,
+  useDragControls,
 };

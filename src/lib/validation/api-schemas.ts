@@ -136,6 +136,15 @@ export const PlaylistUpdateInputSchema = z.object({
     .optional(),
   description: z.string().trim().max(300, 'Description is too long').optional(),
   removeTrackId: z.string().trim().min(1).max(120).optional(),
+  /**
+   * The playlist's track ids in their new order.
+   *
+   * A reorder is a permutation, so this must contain exactly the tracks the
+   * playlist already has. Anything else is rejected rather than partially
+   * applied, because a half-applied order leaves positions inconsistent and the
+   * next read would return an order nobody chose.
+   */
+  trackOrder: z.array(z.string().trim().min(1).max(120)).max(100).optional(),
 });
 
 export const PlaybackStatusResponseSchema = z.object({

@@ -7,6 +7,7 @@ import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
 import { TrackRow, type Track } from '@/components/chat/TrackRow';
 import { CreateInSpotifyButton } from '@/components/playlist/CreateInSpotifyButton';
+import { ReorderableTrackList } from '@/components/playlist/ReorderableTrackList';
 import type { PlaylistExportTrackMeta } from '@/lib/playlist-export';
 import { motion } from 'motion/react';
 import { fadeIn, fadeInUp, staggerContainer, transitions } from '@/lib/motion';
@@ -128,6 +129,29 @@ export default function PlaylistsPage() {
     } catch (e: unknown) {
       setActionError(
         e instanceof Error ? e.message : 'Unable to remove track.'
+      );
+    }
+  };
+
+  const handleReorderTracks = async (
+    playlistId: string,
+    trackIds: string[]
+  ) => {
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/playlists/${playlistId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackOrder: trackIds }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || 'Failed to save the new order');
+      }
+      await queryClient.invalidateQueries({ queryKey: ['muse-playlists'] });
+    } catch (e: unknown) {
+      setActionError(
+        e instanceof Error ? e.message : 'Unable to save the new order.'
       );
     }
   };
@@ -392,13 +416,25 @@ export default function PlaylistsPage() {
                         <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-text-muted">
                           {playlist.tracks.length} Tracks
                         </div>
-                        <div
-                          role="list"
-                          aria-label={`Tracks in ${playlist.name}`}
-                        >
-                          {playlist.tracks.map((track, idx) => (
+                        {playlist.spotifyPlaylistId && (
+                          <p className="mb-2 text-[11px] leading-relaxed text-text-muted">
+                            This order is saved in MUSE. The playlist in Spotify
+                            keeps the order it was created with.
+                          </p>
+                        )}
+                        <ReorderableTrackList
+                          tracks={playlist.tracks}
+                          onReorder={(next) =>
+                            handleReorderTracks(
+                              playlist.id,
+                              next.map((track) => track.id)
+                            )
+                          }
+                          getKey={(track) => track.id}
+                          getLabel={(track) => track.name}
+                          ariaLabel={`Tracks in ${playlist.name}`}
+                          renderTrack={(track, idx) => (
                             <TrackRow
-                              key={`${playlist.id}-${track.id}-${idx}`}
                               track={track}
                               index={idx}
                               onRemove={(trackId) =>
@@ -406,8 +442,8 @@ export default function PlaylistsPage() {
                               }
                               listItem
                             />
-                          ))}
-                        </div>
+                          )}
+                        />
                       </div>
                     )}
                   </Surface>

@@ -8,10 +8,19 @@ import { Button } from '@/components/ui/Button';
 import { TrackRow, type Track } from '@/components/chat/TrackRow';
 import { CreateInSpotifyButton } from '@/components/playlist/CreateInSpotifyButton';
 import type { PlaylistExportTrackMeta } from '@/lib/playlist-export';
+import { ReorderableTrackList } from '@/components/playlist/ReorderableTrackList';
 
 interface PlaylistPreviewProps {
   tracks: Track[];
   onRemoveTrack: (id: string) => void;
+  /**
+   * Present when the parent owns track order and can persist a change to it.
+   *
+   * When it is absent the reorder handle is not rendered at all, rather than
+   * rendered and then snapping back, because a control that appears to work and
+   * does not is worse than no control.
+   */
+  onReorderTracks?: (tracks: Track[]) => void;
   suggestedName?: string;
   suggestedDescription?: string;
 }
@@ -19,6 +28,7 @@ interface PlaylistPreviewProps {
 export function PlaylistPreview({
   tracks,
   onRemoveTrack,
+  onReorderTracks,
   suggestedName = 'New MUSE Mix',
   suggestedDescription = 'Curated based on our conversation.',
 }: PlaylistPreviewProps) {
@@ -116,7 +126,9 @@ export function PlaylistPreview({
         <div className="flex justify-between items-center mb-4">
           <h3 className="type-section-label">{tracks.length} Tracks</h3>
           <span className="text-xs text-text-muted">
-            Edit title or remove tracks before exporting
+            {onReorderTracks
+              ? 'Edit title, reorder, or remove tracks before exporting'
+              : 'Edit title or remove tracks before exporting'}
           </span>
         </div>
 
@@ -125,22 +137,40 @@ export function PlaylistPreview({
             All tracks have been removed from this playlist preview.
           </p>
         ) : (
-          <div role="list" aria-label="Tracks in playlist" className="space-y-1">
-            {/* popLayout takes the leaving row out of flow immediately, so the
-                rows below move up while it fades rather than after it. initial
-                is off, so opening a preview does not replay an entrance. */}
-            <AnimatePresence initial={false} mode="popLayout">
-              {tracks.map((track, i) => (
+          onReorderTracks ? (
+            <ReorderableTrackList
+              tracks={tracks}
+              onReorder={onReorderTracks}
+              getKey={(track) => track.id}
+              getLabel={(track) => track.name}
+              ariaLabel="Tracks in playlist"
+              renderTrack={(track, i) => (
                 <TrackRow
-                  key={track.id}
                   track={track}
                   index={i}
                   onRemove={onRemoveTrack}
                   listItem
                 />
-              ))}
-            </AnimatePresence>
-          </div>
+              )}
+            />
+          ) : (
+            <div role="list" aria-label="Tracks in playlist" className="space-y-1">
+              {/* popLayout takes the leaving row out of flow immediately, so the
+                  rows below move up while it fades rather than after it. initial
+                  is off, so opening a preview does not replay an entrance. */}
+              <AnimatePresence initial={false} mode="popLayout">
+                {tracks.map((track, i) => (
+                  <TrackRow
+                    key={track.id}
+                    track={track}
+                    index={i}
+                    onRemove={onRemoveTrack}
+                    listItem
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          )
         )}
       </div>
 
