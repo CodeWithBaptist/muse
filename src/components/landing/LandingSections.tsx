@@ -7,6 +7,15 @@ import { fadeInUp, staggerContainer } from '@/lib/motion';
 import { Logo } from '@/components/ui/Logo';
 import { cn } from '@/lib/utils';
 
+/**
+ * The four steps of the flow.
+ *
+ * Each description is limited to behaviour that exists in the code today.
+ * MUSE builds Spotify search queries and recommends only tracks Spotify
+ * returned, every recommendation carries a generated reason, and a playlist
+ * is created once after the user confirms. There is no catalogue scan, no
+ * human curation, and no ongoing sync, so none of those are claimed here.
+ */
 const STEPS = [
   {
     title: 'Describe the vibe',
@@ -16,17 +25,17 @@ const STEPS = [
   {
     title: 'MUSE understands',
     description:
-      'Our AI analyzes your request and searches through millions of tracks on Spotify.',
+      'MUSE turns your request into real Spotify search queries, then recommends only tracks Spotify actually returned.',
   },
   {
-    title: 'Expert curation',
+    title: 'Explained, not guessed',
     description:
-      'Receive personalized recommendations with clear explanations for each choice.',
+      'Every recommended track carries a one-line reason for why it fits what you asked for.',
   },
   {
-    title: 'Build & sync',
+    title: 'Create in Spotify',
     description:
-      'Create and sync playlists directly to your Spotify account with one click.',
+      'Save the selection as a playlist in your Spotify account. Nothing is created until you confirm.',
   },
 ];
 
@@ -254,13 +263,22 @@ export function Features() {
     return () => observer.disconnect();
   }, []);
 
+  /**
+   * Six features, each one a behaviour that exists today.
+   *
+   * Cross-platform sync was removed because MUSE integrates with Spotify
+   * only. Memory is described as saved preferences because only preferences
+   * the user explicitly stores are ever reused. Genre exploration is
+   * described as discovery outside the usual rotation, which is what the
+   * discover engine actually generates.
+   */
   const FEATURES = [
     'Natural language discovery',
-    'Spotify playlist integration',
-    'Personalized AI explanations',
-    'Intelligent music memory',
-    'Deep genre exploration',
-    'Cross-platform sync',
+    'Spotify playlist creation',
+    'A reason for every track',
+    'Preferences you can view and delete',
+    'Discovery outside your usual rotation',
+    'Works with your Spotify library',
   ];
 
   return (
