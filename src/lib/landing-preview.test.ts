@@ -19,6 +19,7 @@ import {
   previewStartState,
   previewStateAt,
   previewTimeline,
+  promptIsInThread,
   replyWordCount,
 } from './landing-preview';
 
@@ -49,7 +50,8 @@ describe('preview timeline', () => {
     expect(timeline.rowsEnd).toBeGreaterThan(timeline.replyEnd);
     expect(timeline.creatingEnd).toBeGreaterThan(timeline.rowsEnd);
     expect(timeline.createdEnd).toBeGreaterThan(timeline.creatingEnd);
-    expect(timeline.totalMs).toBe(timeline.createdEnd);
+    expect(timeline.playingAt).toBeGreaterThan(timeline.createdEnd);
+    expect(timeline.totalMs).toBe(timeline.playingAt);
     // The whole demo stays a one-off sequence of about seven seconds.
     expect(timeline.totalMs).toBeGreaterThan(5000);
     expect(timeline.totalMs).toBeLessThan(10_000);
@@ -140,7 +142,7 @@ describe('preview state machine', () => {
     expect(allRows.createStatus).toBe('idle');
   });
 
-  it('creates, confirms, then opens', () => {
+  it('creates, confirms, opens, then plays the first row', () => {
     const creating = previewStateAt(LANDING_SAMPLE, timeline.creatingEnd - 1);
     expect(creating.phase).toBe('creating');
     expect(creating.createStatus).toBe('loading');
@@ -149,13 +151,31 @@ describe('preview state machine', () => {
     expect(created.phase).toBe('created');
     expect(created.createStatus).toBe('success');
     expect(created.done).toBe(false);
+    expect(created.playing).toBe(false);
 
-    const open = previewStateAt(LANDING_SAMPLE, timeline.totalMs);
+    const open = previewStateAt(LANDING_SAMPLE, timeline.createdEnd);
     expect(open.phase).toBe('open');
     expect(open.createStatus).toBe('open');
-    expect(open.done).toBe(true);
-    expect(open.replyWords).toBe(replyWordCount(SAMPLE_REPLY));
-    expect(open.visibleTracks).toBe(SAMPLE_TRACKS.length);
+    expect(open.done).toBe(false);
+    expect(open.playing).toBe(false);
+
+    const playing = previewStateAt(LANDING_SAMPLE, timeline.totalMs);
+    expect(playing.phase).toBe('playing');
+    expect(playing.playing).toBe(true);
+    expect(playing.done).toBe(true);
+    expect(playing.replyWords).toBe(replyWordCount(SAMPLE_REPLY));
+    expect(playing.visibleTracks).toBe(SAMPLE_TRACKS.length);
+  });
+
+  it('keeps the prompt in the thread from thinking onward', () => {
+    expect(previewStateAt(LANDING_SAMPLE, 0).promptInThread).toBe(false);
+    expect(previewStateAt(LANDING_SAMPLE, timeline.typingEnd).promptInThread).toBe(
+      true,
+    );
+    expect(promptIsInThread('idle')).toBe(false);
+    expect(promptIsInThread('typing')).toBe(false);
+    expect(promptIsInThread('thinking')).toBe(true);
+    expect(promptIsInThread('playing')).toBe(true);
   });
 
   it('holds the finished frame and never loops on its own', () => {

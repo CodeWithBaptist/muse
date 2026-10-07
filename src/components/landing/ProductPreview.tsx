@@ -18,24 +18,26 @@ import {
 
 /** How often the scripted timeline is sampled while it plays. */
 const PREVIEW_TICK_MS = 40;
+/** How long one word of the reply takes to fade in. */
+const PREVIEW_REPLY_FADE_MS = 400;
 
 /** Fixed, because the sample data is fixed: no state is derived per render. */
 const TIMELINE = previewTimeline(LANDING_SAMPLE);
 const REPLY_WORDS = LANDING_SAMPLE.reply.split(/\s+/).filter(Boolean);
+const TRACK_COUNT_LABEL = `${LANDING_SAMPLE.tracks.length} tracks`;
 
 /**
  * The scripted landing demo: the only simulated sequence in the product.
  *
- * It plays once when it is at least 40 percent visible, drives the real chat
- * components with sample data, pauses when it is offscreen or the tab is
- * hidden, and never loops on its own. Rows are mounted when the scripted
- * moment arrives, so the real TrackRow reveal does the 8px rise with its own
- * 50ms stagger. The server renders the finished frame, so the preview is
- * complete without JavaScript, and reduced motion keeps that frame with no
- * animation at all.
+ * It plays once, when the window is at least 40 percent visible, and drives the
+ * real chat components with sample data. Before it starts the window is not
+ * empty: the hint and the placeholder are already there. It pauses when it is
+ * offscreen or the tab is hidden, never loops on its own, and the server
+ * renders the finished frame so the preview is complete without JavaScript.
+ * Reduced motion keeps that frame with no animation at all.
  *
- * Everything inside the conversation is inert and hidden from assistive
- * technology: no control here can be clicked, focused, or announced.
+ * Everything inside the window is inert: no control here can be clicked,
+ * focused, or announced, and the reply text stays selectable.
  */
 export function ProductPreview() {
   const frameRef = React.useRef<HTMLDivElement | null>(null);
@@ -43,13 +45,14 @@ export function ProductPreview() {
   const startedAtRef = React.useRef(0);
   const timerRef = React.useRef<number | null>(null);
   const playingRef = React.useRef(false);
-  /** True while the preview is at least 40 percent visible. */
+  /** True while the window is at least 40 percent visible. */
   const visibleRef = React.useRef(false);
+  /** True once the window has been seen, so the idle frame replaced the final one. */
+  const armedRef = React.useRef(false);
 
   const [state, setState] = React.useState<PreviewState>(() =>
     previewFinalState(LANDING_SAMPLE),
   );
-
 
   const stopTimer = React.useCallback(() => {
     if (timerRef.current !== null) {
@@ -124,12 +127,28 @@ export function ProductPreview() {
     };
 
     let fallbackTimer = 0;
+    let armObserver: IntersectionObserver | null = null;
     let observer: IntersectionObserver | null = null;
+
     if (typeof IntersectionObserver === 'function') {
+      // The window is armed as soon as any part of it is on screen, while it is
+      // still mostly out of view, so the swap from the finished frame to the
+      // idle frame happens where it cannot be seen.
+      armObserver = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (!entry || !entry.isIntersecting || armedRef.current) return;
+          armedRef.current = true;
+          if (playingRef.current) return;
+          elapsedRef.current = 0;
+          setState(previewStateAt(LANDING_SAMPLE, 0));
+        },
+        { threshold: 0.01 },
+      );
+      armObserver.observe(node);
+
       // The observer keeps running, because the preview has to pause when it
-      // leaves the viewport and pick up from where it stopped. The first
-      // record is the current state of the preview: below the fold it is not
-      // intersecting, and the sequence has to wait for the scroll.
+      // leaves the viewport and pick up from where it stopped.
       observer = new IntersectionObserver(
         (entries) => {
           const entry = entries[0];
@@ -176,53 +195,60 @@ export function ProductPreview() {
     return () => {
       stopTimer();
       window.clearTimeout(fallbackTimer);
+      armObserver?.disconnect();
       observer?.disconnect();
       controller.abort();
     };
   }, [restart, startTimer, stopTimer]);
 
   const phase = state.phase;
-  const showPrompt = phase !== 'idle';
+  const promptInInput = !state.promptInThread;
   const thinking = phase === 'thinking';
-  const showReply = [
-    'replying',
-    'rows',
-    'creating',
-    'created',
-    'open',
-  ].includes(phase);
+  const showReply =
+    phase === 'replying' ||
+    phase === 'rows' ||
+    phase === 'creating' ||
+    phase === 'created' ||
+    phase === 'open' ||
+    phase === 'playing';
   const showRows = state.visibleTracks > 0;
-  const showAction = showReply;
 
   return (
     <section
-      aria-labelledby="product-preview-heading"
-      className="mx-auto max-w-5xl px-6 py-20"
+      id="see-it-work"
+      aria-labelledby="see-it-work-heading"
+      className="mx-auto max-w-5xl scroll-mt-24 px-5 py-20 sm:px-6 sm:py-24"
     >
-      <h2 id="product-preview-heading" className="sr-only">
-        Example MUSE conversation
-      </h2>
+      <div className="mx-auto max-w-2xl space-y-4 text-center">
+        <p className="type-section-label">See it work</p>
+        <h2
+          id="see-it-work-heading"
+          className="type-display text-[clamp(28px,5vw,48px)] text-balance"
+        >
+          Say the vibe. Get the playlist.
+        </h2>
+      </div>
 
       <p className="sr-only">
-        An animated sample conversation. A listener asks for something like
-        Brent Faiyaz but less sad. MUSE thinks for a moment, replies with a
-        short recommendation, and shows three example tracks with an example
-        Create in Spotify control. Nothing here contacts Spotify or OpenAI, no
-        playlist is created, and every control in the sample is inert.
+        An animated sample conversation. A listener asks for something for a late
+        night drive. MUSE thinks for a moment, replies with a short
+        recommendation, and shows three example tracks with an example Create in
+        Spotify control. Nothing here contacts Spotify or OpenAI, no playlist is
+        created, and every control in the sample is inert.
       </p>
 
       <Surface
         variant="flat"
-        className="overflow-hidden border border-border-strong"
+        className="mx-auto mt-10 max-w-3xl overflow-hidden rounded-lg border border-border-strong"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-border-subtle bg-surface p-4">
+        <div className="flex items-center justify-between gap-3 border-b border-border-subtle bg-surface px-4 py-3">
           <div className="flex gap-1.5" aria-hidden="true">
-            <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
-            <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
-            <span className="h-2.5 w-2.5 rounded-full bg-border-strong" />
+            <span className="h-2 w-2 rounded-full bg-border-strong" />
+            <span className="h-2 w-2 rounded-full bg-border-strong" />
+            <span className="h-2 w-2 rounded-full bg-border-strong" />
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-medium uppercase tracking-widest text-text-muted">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-text-muted">
               Sample
             </span>
             <button
@@ -235,18 +261,10 @@ export function ProductPreview() {
           </div>
         </div>
 
-        <div
-          ref={frameRef}
-          className="p-4 sm:p-6"
-          data-preview-phase={phase}
-        >
-          <div
-            inert
-            aria-hidden="true"
-            className="flex flex-col gap-4 select-none"
-          >
-            <div className="min-h-[104px] sm:min-h-[84px]">
-              {showPrompt ? (
+        <div ref={frameRef} className="p-4 sm:p-6" data-preview-phase={phase}>
+          <div inert aria-hidden="true" className="flex flex-col gap-4">
+            <div className="min-h-[76px] sm:min-h-[60px]">
+              {state.promptInThread ? (
                 <div className="ml-auto max-w-md">
                   <div className="rounded-2xl rounded-tr-none border border-accent/10 bg-accent/5 px-6 py-4 text-sm font-medium leading-relaxed">
                     {state.typedPrompt}
@@ -261,7 +279,7 @@ export function ProductPreview() {
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-subtle bg-surface">
                     <Logo variant="mark" size={20} />
                   </div>
-                  <EqualizerBars height={14} width={2} bars={4} />
+                  <EqualizerBars height={14} width={2} bars={3} />
                   <span className="text-xs font-semibold text-text-secondary">
                     {LANDING_SAMPLE.thinkingLines[state.thinkingLineIndex] ??
                       LANDING_SAMPLE.thinkingLines[0]}
@@ -270,7 +288,7 @@ export function ProductPreview() {
               ) : null}
             </div>
 
-            <div className="min-h-[128px] sm:min-h-[108px]">
+            <div className="min-h-[112px] sm:min-h-[92px]">
               {showReply ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-3">
@@ -286,9 +304,11 @@ export function ProductPreview() {
                     {REPLY_WORDS.map((word, index) => (
                       <span
                         key={`${index}-${word}`}
-                        className="transition-opacity duration-200"
                         style={{
                           opacity: index < state.replyWords ? 1 : 0,
+                          transitionProperty: 'opacity',
+                          transitionDuration: `${PREVIEW_REPLY_FADE_MS}ms`,
+                          transitionTimingFunction: 'var(--ease-emphasized)',
                         }}
                       >
                         {index < REPLY_WORDS.length - 1 ? `${word} ` : word}
@@ -299,23 +319,19 @@ export function ProductPreview() {
               ) : null}
             </div>
 
-            <div className="min-h-[326px] sm:min-h-[330px]">
+            <div className="min-h-[330px] sm:min-h-[334px]">
               {showRows ? (
                 <div className="rounded-lg border border-accent/20 bg-accent/[0.02] p-4">
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <span className="type-section-label">
-                      {LANDING_SAMPLE.tracks.length} Tracks
-                    </span>
-                    <span className="truncate text-xs font-semibold text-text-primary">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                    <span className="truncate text-sm font-semibold text-text-primary">
                       {LANDING_SAMPLE.playlistName}
+                    </span>
+                    <span className="type-section-label tabular-nums">
+                      {TRACK_COUNT_LABEL}
                     </span>
                   </div>
 
-                  <div
-                    role="list"
-                    aria-label="Sample recommended tracks"
-                    className="space-y-1"
-                  >
+                  <div role="list" className="space-y-1">
                     {LANDING_SAMPLE.tracks.map((track, index) => (
                       <TrackRow
                         key={track.id}
@@ -324,9 +340,12 @@ export function ProductPreview() {
                           name: track.name,
                           artists: track.artist,
                           duration_ms: track.durationMs,
+                          reason: track.reason,
                         }}
                         index={index}
                         listItem
+                        canPlay={state.playing && index === 0}
+                        isPlaying={state.playing && index === 0}
                       />
                     ))}
                   </div>
@@ -350,11 +369,27 @@ export function ProductPreview() {
             <div className="sr-only" data-preview-status>
               {state.done ? 'Sample sequence finished.' : 'Sample sequence.'}
             </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-text-muted">
+                {LANDING_SAMPLE.hint}
+              </p>
+              <input
+                type="text"
+                readOnly
+                tabIndex={-1}
+                aria-hidden="true"
+                data-testid="sample-input"
+                value={promptInInput ? state.typedPrompt : ''}
+                placeholder={LANDING_SAMPLE.inputPlaceholder}
+                className="h-11 w-full rounded-md border border-border-strong bg-background px-4 text-sm font-medium text-text-primary placeholder:text-text-muted"
+              />
+            </div>
           </div>
         </div>
       </Surface>
 
-      <p className="mt-3 text-xs text-text-muted">
+      <p className="mx-auto mt-4 max-w-3xl text-xs text-text-muted">
         Sample conversation. Nothing here contacts Spotify or OpenAI and no
         playlist is created.
       </p>
