@@ -487,3 +487,30 @@ Confirming an evolution re-resolves each track rather than trusting the client. 
 Still open: the confirm handler's behaviour against a real database is not covered by a handler level test, and reorder does not reach Spotify at all. Both are known gaps rather than finished work.
 
 **Date.** 2026-10-07
+
+## D-011: Taste snapshots are a deterministic diff, not a model opinion
+
+**Decision.** Section 41 is backed by a new `music_profile_snapshots` table holding verbatim readings of Spotify's `long_term` top artists and their genres. Every claim MUSE makes about how taste changed is computed by set arithmetic over two snapshots in `src/lib/profile-snapshots.ts`. No model call is involved anywhere in the comparison, and no claim is rendered unless two snapshots genuinely differ.
+
+**Why.** Section 41 says only claims supported by real data may be made. A model asked to describe how someone's taste changed will produce fluent copy whether or not the data supports it, and it will happily infer a trend from a single reading. Set arithmetic cannot overstate the arrays it is built from: if the diff is empty the summary says the rotation has been steady, and if it is not, the summary names the actual artists that appeared and disappeared.
+
+Three policy choices fall out of that and each exists to stop a specific false claim.
+
+Snapshots are taken at one fixed `long_term` range. Diffing a `long_term` reading against a `medium_term` one would report a change in the question rather than a change in taste, and the copy would attribute it to the visitor.
+
+A capture is due at most once every seven days, is skipped entirely when the artist set is unchanged, and is refused on an empty reading. The empty reading case matters most: an empty snapshot would later diff against a real one as though everything had changed, which is a claim about a failed Spotify request dressed up as a change in someone's listening.
+
+A comparison needs two snapshots at least fourteen days apart, and the baseline is the most recent snapshot far enough behind the newest one, not the oldest. Choosing the oldest would let a year old reading be described as a change "this month".
+
+**Alternatives considered.**
+1. Diff the existing `music_profiles` row. Rejected: it has a unique constraint on `userId`, so it holds exactly one overwritten reading with no history to compare against. It is also never written by application code, only read during export and deleted on disconnect.
+2. Ask the model to summarise two snapshots. More natural phrasing, but it reintroduces the failure mode the whole section exists to avoid, and the deterministic summary already reads as plain sentences.
+3. Capture on every profile view. No extra storage policy needed, but it stores near identical rows and makes the seven day gap meaningless.
+4. Capture inside the profile engine and return the readings with the insights. Fewer Spotify calls, but the engine returns only the model's output, and threading raw artist lists through it would widen its contract for no benefit. The route instead checks whether a capture is even due before fetching, so an ordinary profile view spends no extra Spotify call.
+5. Compare against the oldest snapshot always. Simpler, and produces more dramatic copy, which is precisely the problem.
+
+**Impact.** Migration `0002` adds the thirteenth table, with a cascade foreign key to `users` and an index on `(user_id, captured_at)`. `GET /api/me/profile` gained an optional `snapshots` field in its response schema, a discriminated union that either carries the diff or carries a plain language reason, the number of snapshots held, and when a comparison next becomes possible. Both the capture and the comparison are individually guarded, so a snapshot failure can never fail the profile request itself.
+
+The existing migration test caught the new table and was updated to expect thirteen, and the account deletion cascade test now seeds and counts snapshots too, so deleting a user is verified to remove them.
+
+Still open, and it belongs with D-003 rather than here: `DELETE /api/me/spotify` deletes `music_profiles` but not `music_profile_snapshots`, so a visitor who disconnects Spotify currently keeps their taste history in MUSE. Snapshots are derived from the same listening data as the row that is deleted, which argues for deleting them too, but the whole disconnect retention set is an unresolved policy decision and this should not be settled on its own.

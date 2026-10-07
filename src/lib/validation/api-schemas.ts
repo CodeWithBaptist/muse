@@ -380,6 +380,28 @@ export const ArtistExploreInputSchema = z.object({
     .max(120, 'That artist name is too long'),
 });
 
+/** Section 41. The taste comparison, or the honest reason there is not one. */
+export const TasteChangeSchema = z.discriminatedUnion('available', [
+  z.object({
+    available: z.literal(false),
+    reason: z.string(),
+    snapshotsHeld: z.number(),
+    nextComparisonAt: z.string().nullable(),
+  }),
+  z.object({
+    available: z.literal(true),
+    from: z.string(),
+    to: z.string(),
+    daysApart: z.number(),
+    newArtists: z.array(z.string()),
+    retainedArtists: z.array(z.string()),
+    droppedArtists: z.array(z.string()),
+    newGenres: z.array(z.string()),
+    droppedGenres: z.array(z.string()),
+    summary: z.string(),
+  }),
+]);
+
 export const ProfileInsightsResponseSchema = z.object({
   identity: z.object({
     dominantGenre: z.string(),
@@ -404,8 +426,11 @@ export const ProfileInsightsResponseSchema = z.object({
       }),
     )
     .optional(),
+  /** Section 41. Present once the route has compared stored snapshots. */
+  snapshots: TasteChangeSchema.optional(),
 });
 
+export type TasteChangeData = z.infer<typeof TasteChangeSchema>;
 export type DiscoverSectionData = z.infer<typeof DiscoverSectionSchema>;
 export type ProfileInsightsData = z.infer<typeof ProfileInsightsResponseSchema>;
 export type UserPreferencesData = z.infer<typeof UserPreferencesResponseSchema>;

@@ -3,6 +3,14 @@ import { db } from '@/db';
 import { preferences as preferencesTable } from '@/db/schema';
 import { orchestrateProfileInsights } from '@/lib/ai/profile-engine';
 import {
+  captureSnapshotIfDue,
+  describeTasteChange,
+  isSnapshotCaptureDue,
+  SNAPSHOT_TIME_RANGE,
+} from '@/lib/profile-snapshots';
+import { spotifyService } from '@/lib/spotify-service';
+import type { SpotifyArtistSummary } from '@/lib/validation/api-schemas';
+import {
   AI_NOT_CONNECTED_CODE,
   AI_NOT_CONNECTED_MESSAGE,
   isAIConfigured,
@@ -47,14 +55,40 @@ export async function GET(request?: Request) {
   }
 
   try {
-    const [data, savedPrefs] = await Promise.all([
+    // Checked before the fetch, so a profile view in a week that already has a
+    // reading does not spend another Spotify call to find that out.
+    const captureDue = await isSnapshotCaptureDue(session.userId);
+
+    const [data, savedPrefs, topArtists] = await Promise.all([
       orchestrateProfileInsights(session.userId),
       db
         .select()
         .from(preferencesTable)
         .where(eq(preferencesTable.userId, session.userId))
         .catch(() => []),
+      captureDue
+        ? spotifyService
+            .getTopArtists(session.userId, SNAPSHOT_TIME_RANGE, 20)
+            .then((res) => (res?.items ?? []) as SpotifyArtistSummary[])
+            .catch(() => null)
+        : Promise.resolve(null),
     ]);
+
+    // A failed capture must not fail the profile. The visitor still gets their
+    // insights, and the comparison simply stays unavailable until a reading
+    // succeeds.
+    if (topArtists) {
+      await captureSnapshotIfDue(session.userId, topArtists).catch((error) =>
+        console.warn('Profile snapshot capture failed', error)
+      );
+    }
+
+    const snapshots = await describeTasteChange(session.userId).catch(
+      (error) => {
+        console.warn('Profile snapshot comparison failed', error);
+        return null;
+      }
+    );
 
     const validated = ProfileInsightsResponseSchema.parse({
       ...data,
@@ -65,6 +99,7 @@ export async function GET(request?: Request) {
           value: p.value,
           source: p.source,
         })),
+      ...(snapshots ? { snapshots } : {}),
     });
     return NextResponse.json(validated);
   } catch (error: unknown) {

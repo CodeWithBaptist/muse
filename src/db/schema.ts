@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, integer, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, integer, jsonb, boolean, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -37,6 +37,36 @@ export const musicProfiles = pgTable("music_profiles", {
   preferredEnergy: text("preferred_energy"), // Inferred
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+// Section 41. Taste at a point in time.
+//
+// music_profiles holds one row per user and is overwritten, so it cannot answer
+// "how has this changed". A snapshot is the only record of what Spotify reported
+// on a given day, and the values are stored verbatim rather than summarised, so
+// a later comparison is between two real observations and not between two
+// interpretations of them.
+export const musicProfileSnapshots = pgTable(
+  "music_profile_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    topArtists: jsonb("top_artists").$type<string[]>().notNull().default([]),
+    topGenres: jsonb("top_genres").$type<string[]>().notNull().default([]),
+    // Which Spotify time range was asked for, because a long_term snapshot and a
+    // medium_term one are not comparable and must never be diffed against
+    // each other.
+    timeRange: text("time_range").notNull(),
+    capturedAt: timestamp("captured_at").notNull().defaultNow(),
+  },
+  (table) => [
+    index("music_profile_snapshots_user_captured_idx").on(
+      table.userId,
+      table.capturedAt
+    ),
+  ],
+);
 
 export const conversations = pgTable("conversations", {
   id: uuid("id").primaryKey().defaultRandom(),

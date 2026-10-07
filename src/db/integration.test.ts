@@ -14,6 +14,7 @@ import {
   sessions,
   spotifyAccounts,
   users,
+  musicProfileSnapshots,
 } from './schema';
 import {
   createTestDatabase,
@@ -87,6 +88,13 @@ async function seedFullAccount() {
     preferredEnergy: 'medium',
   });
 
+  await db.insert(musicProfileSnapshots).values({
+    userId: user.id,
+    topArtists: ['Burna Boy'],
+    topGenres: ['afrobeats'],
+    timeRange: 'long_term',
+  });
+
   const [conversation] = await db
     .insert(conversations)
     .values({ userId: user.id, title: 'Late night' })
@@ -143,6 +151,7 @@ async function countAll(userId: string) {
     playlistRows,
     preferenceRows,
     memoryRows,
+    snapshotRows,
   ] = await Promise.all([
     db.select().from(sessions).where(eq(sessions.userId, userId)),
     db.select().from(spotifyAccounts).where(eq(spotifyAccounts.userId, userId)),
@@ -152,6 +161,7 @@ async function countAll(userId: string) {
     db.select().from(playlists).where(eq(playlists.userId, userId)),
     db.select().from(preferences).where(eq(preferences.userId, userId)),
     db.select().from(memories).where(eq(memories.userId, userId)),
+    db.select().from(musicProfileSnapshots).where(eq(musicProfileSnapshots.userId, userId)),
   ]);
 
   const messageRows = conversationRows.length
@@ -178,11 +188,12 @@ async function countAll(userId: string) {
     playlistTracks: trackRows.length,
     preferences: preferenceRows.length,
     memories: memoryRows.length,
+    musicProfileSnapshots: snapshotRows.length,
   };
 }
 
 describe('committed migrations', () => {
-  it('creates exactly the twelve tables the schema declares', async () => {
+  it('creates exactly the thirteen tables the schema declares', async () => {
     const tables = await listTables(handle.client);
 
     expect(tables.sort()).toEqual(
@@ -190,6 +201,7 @@ describe('committed migrations', () => {
         'conversations',
         'memories',
         'messages',
+        'music_profile_snapshots',
         'music_profiles',
         'playlist_tracks',
         'playlists',
@@ -254,6 +266,7 @@ describe('account deletion', () => {
       playlistTracks: 0,
       preferences: 0,
       memories: 0,
+      musicProfileSnapshots: 0,
     });
   });
 

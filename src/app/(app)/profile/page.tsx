@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
 import { isAiNotConnectedMessage } from '@/hooks/use-chat';
+import { TasteSnapshots } from '@/components/profile/TasteSnapshots';
 import { motion } from 'motion/react';
 import { fadeInUp, staggerContainer } from '@/lib/motion';
 import {
@@ -184,6 +185,8 @@ export default function ProfilePage() {
   return (
     <div className="p-8 space-y-12 pb-32">
       <h1 className="type-page-title">Profile</h1>
+
+      <TasteSnapshots change={insights.snapshots} />
 
       <motion.div
         variants={staggerContainer(0.1)}
