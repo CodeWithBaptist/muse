@@ -25,10 +25,80 @@ import {
   getUserMemoryForPrompt,
 } from '@/lib/ai/user-memory';
 import { ChatPostInputSchema } from '@/lib/validation/api-schemas';
-import { and, eq, desc } from 'drizzle-orm';
+import type { RefinementContext } from '@/lib/ai/refinement';
+import { and, asc, eq, desc } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
+
+/**
+ * Rebuilds the refinement context for a conversation turn.
+ *
+ * Nothing extra is persisted for this. The earlier user turns come from the
+ * messages already stored against the conversation, and the tracks already
+ * shown come from the recommendations already stored against it, so refinement
+ * survives a reload and needs no schema change.
+ *
+ * The current message is stored before this runs, which makes it the last user
+ * row, so it is dropped from the prior turns.
+ *
+ * A failure here degrades to treating the turn as a new request rather than
+ * failing the whole turn.
+ */
+async function loadRefinementContext(
+  userId: string,
+  conversationId: string,
+  currentMessage: string
+): Promise<RefinementContext | null> {
+  try {
+    const [priorTurns, shown] = await Promise.all([
+      db
+        .select({ content: messages.content })
+        .from(messages)
+        .where(
+          and(
+            eq(messages.conversationId, conversationId),
+            eq(messages.role, 'user')
+          )
+        )
+        .orderBy(asc(messages.createdAt))
+        .limit(24),
+      db
+        .select({ spotifyTrackId: recommendations.spotifyTrackId })
+        .from(recommendations)
+        .where(
+          and(
+            eq(recommendations.conversationId, conversationId),
+            eq(recommendations.userId, userId)
+          )
+        )
+        .limit(400),
+    ]);
+
+    const priorUserMessages = priorTurns.map((row) => row.content);
+    if (
+      priorUserMessages.length > 0 &&
+      priorUserMessages[priorUserMessages.length - 1] === currentMessage
+    ) {
+      priorUserMessages.pop();
+    }
+
+    // No earlier turn means this is the first request, not a refinement.
+    if (priorUserMessages.length === 0) return null;
+
+    return {
+      priorUserMessages,
+      shownTracks: shown
+        .map((row) => ({ id: row.spotifyTrackId }))
+        .filter((track) => track.id.length > 0),
+    };
+  } catch {
+    console.error(
+      'Refinement context could not be loaded. Treating this turn as a new request.'
+    );
+    return null;
+  }
+}
 
 const SAFE_ERROR_NAMES = new Set([
   'Error',
@@ -208,6 +278,14 @@ export async function POST(request: Request) {
       content,
     });
 
+    // 2b. Load what has already happened in this conversation, so this turn
+    // narrows the previous request instead of starting from zero.
+    const refinementContext = await loadRefinementContext(
+      session.userId,
+      activeConversationId,
+      content
+    );
+
     if (wantsEventStream) {
       const stream = new ReadableStream<Uint8Array>({
         async start(controller) {
@@ -225,13 +303,18 @@ export async function POST(request: Request) {
               controller.enqueue(
                 encodeSseEvent({
                   type: 'status',
-                  stage: 'Searching Spotify catalog',
+                  // A refinement turn says so, rather than repeating the wording
+                  // used for a first request.
+                  stage: refinementContext
+                    ? 'Looking for a better fit'
+                    : 'Searching Spotify catalog',
                 })
               );
 
               const result = await orchestrateRecommendations(
                 session.userId,
-                content
+                content,
+                refinementContext
               );
               const isPlaylistSuggestion =
                 classifiedIntent.isPlaylistRequest ||
@@ -283,6 +366,7 @@ export async function POST(request: Request) {
                   isPlaylistSuggestion,
                   suggestedPlaylistName: classifiedIntent.suggestedPlaylistName,
                   noResults,
+                  refinement: result.refinement ?? null,
                 })
               );
             } else {
@@ -393,7 +477,11 @@ export async function POST(request: Request) {
     const classifiedIntent = await extractChatIntent(content);
 
     if (classifiedIntent.isDiscovery) {
-      const result = await orchestrateRecommendations(session.userId, content);
+      const result = await orchestrateRecommendations(
+        session.userId,
+        content,
+        refinementContext
+      );
       const isPlaylistSuggestion =
         classifiedIntent.isPlaylistRequest ||
         classifiedIntent.intent === 'build_playlist' ||
@@ -430,6 +518,7 @@ export async function POST(request: Request) {
         isPlaylistSuggestion,
         suggestedPlaylistName: classifiedIntent.suggestedPlaylistName,
         noResults,
+        refinement: result.refinement ?? null,
       });
     } else {
       const history = await db
