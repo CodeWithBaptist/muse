@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { TrackRow, type Track } from '@/components/chat/TrackRow';
 import { CreateInSpotifyButton } from '@/components/playlist/CreateInSpotifyButton';
 import { ReorderableTrackList } from '@/components/playlist/ReorderableTrackList';
+import { PlaylistEvolution } from '@/components/playlist/PlaylistEvolution';
 import type { PlaylistExportTrackMeta } from '@/lib/playlist-export';
 import { motion } from 'motion/react';
 import { fadeIn, fadeInUp, staggerContainer, transitions } from '@/lib/motion';
@@ -446,6 +447,18 @@ export default function PlaylistsPage() {
                         />
                       </div>
                     )}
+
+                    {/* Section 34. The offers appear once the playlist exists,
+                        and produce previews only. */}
+                    <PlaylistEvolution
+                      playlistId={playlist.id}
+                      inSpotify={Boolean(playlist.spotifyPlaylistId)}
+                      onPlaylistChanged={() =>
+                        queryClient.invalidateQueries({
+                          queryKey: ['muse-playlists'],
+                        })
+                      }
+                    />
                   </Surface>
                 </motion.div>
               );

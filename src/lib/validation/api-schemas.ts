@@ -123,6 +123,43 @@ export const PlaylistCreateDraftInputSchema = z.object({
   tracks: z.array(PlaylistTrackMetaSchema).max(100).default([]),
 });
 
+/**
+ * The four playlist evolution offers from section 34.
+ *
+ * Kept here rather than in the engine so the routes validate against the same
+ * list the engine acts on, with no chance of the two drifting apart.
+ */
+export const EVOLUTION_INTENTS = [
+  'keep-it-fresh',
+  'more-like-this',
+  'more-energetic',
+  'add-new-discoveries',
+] as const;
+
+export type EvolutionIntent = (typeof EVOLUTION_INTENTS)[number];
+
+/** The labels the visitor sees. Kept beside the ids so they cannot drift. */
+export const EVOLUTION_INTENT_LABELS: Record<EvolutionIntent, string> = {
+  'keep-it-fresh': 'Keep it fresh',
+  'more-like-this': 'More like this',
+  'more-energetic': 'Make it more energetic',
+  'add-new-discoveries': 'Add new discoveries',
+};
+
+export const PlaylistEvolveInputSchema = z.object({
+  intent: z.enum(EVOLUTION_INTENTS),
+});
+
+export const PlaylistEvolveConfirmInputSchema = z.object({
+  /**
+   * Spotify track ids from a preview the visitor has just seen.
+   *
+   * These are re-resolved through Spotify before anything is stored, so a
+   * crafted request cannot put unverified metadata into a playlist.
+   */
+  trackIds: z.array(z.string().trim().min(1).max(120)).min(1).max(10),
+});
+
 export const PlaylistIdParamSchema = z.object({
   id: z.string().uuid('Invalid playlist ID'),
 });

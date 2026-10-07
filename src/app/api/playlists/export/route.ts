@@ -14,6 +14,7 @@ import {
   SPOTIFY_RECONNECT_CODE,
   SPOTIFY_RECONNECT_MESSAGE,
 } from '@/lib/spotify-tokens';
+import { addItemsToSpotifyPlaylist } from '@/lib/spotify-playlist-items';
 import { PlaylistExportInputSchema } from '@/lib/validation/api-schemas';
 import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
@@ -36,27 +37,18 @@ function playlistUrl(playlist: SpotifyPlaylistRef): string {
 }
 
 /**
- * Adds one chunk of items and reports the HTTP status alongside success.
+ * Adds one chunk of items through the shared Spotify helper.
  *
- * Spotify's February 2026 Web API changes removed `POST /playlists/{id}/tracks`
- * in favour of `POST /playlists/{id}/items`. The request body is unchanged: a
- * JSON `uris` array, capped at 100 items per request, answered with 201 and a
- * `snapshot_id`. The scopes are the same two MUSE already requests.
+ * The request body is unchanged from the endpoint it replaced: a JSON `uris`
+ * array, capped at 100 items, answered with 201 and a `snapshot_id`, under the
+ * same two playlist-modify scopes MUSE already requests.
  */
 async function addTrackChunk(
   token: string,
   playlistId: string,
-  uris: string[],
+  uris: string[]
 ): Promise<{ ok: boolean; status: number }> {
-  const response = await fetch(`${SPOTIFY_API}/playlists/${playlistId}/items`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ uris }),
-  });
-  return { ok: response.ok, status: response.status };
+  return addItemsToSpotifyPlaylist(token, playlistId, uris);
 }
 
 /**
