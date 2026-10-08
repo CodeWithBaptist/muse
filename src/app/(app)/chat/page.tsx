@@ -7,6 +7,7 @@ import { ChatInput } from '@/components/chat/ChatInput';
 import { ThinkingIndicator } from '@/components/chat/ThinkingIndicator';
 import { AlertCircle, Clock, History, MessageSquarePlus, RefreshCw, Sparkles, Terminal, Trash2, WifiOff, Moon } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
+import { HumanCheckCard } from '@/components/security/HumanCheckCard';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -47,8 +48,10 @@ function AiNotConnectedBanner() {
   );
 }
 
+type BannerErrorKind = Exclude<ChatErrorKind, 'ai_not_connected' | 'human_check'>;
+
 interface DistinctErrorBannerProps {
-  kind: Exclude<ChatErrorKind, 'ai_not_connected'>;
+  kind: BannerErrorKind;
   message: string;
   onRetry: () => void;
 }
@@ -59,7 +62,7 @@ function DistinctChatErrorBanner({
   onRetry,
 }: DistinctErrorBannerProps) {
   const meta: Record<
-    Exclude<ChatErrorKind, 'ai_not_connected'>,
+    BannerErrorKind,
     {
       title: string;
       description: string;
@@ -290,13 +293,21 @@ export default function ChatPage() {
 
             {isAiNotConnected && <AiNotConnectedBanner />}
 
-            {error && !isAiNotConnected && errorKind && errorKind !== 'ai_not_connected' && (
-              <DistinctChatErrorBanner
-                kind={errorKind}
-                message={error.message}
-                onRetry={retryLastMessage}
-              />
+            {error && errorKind === 'human_check' && (
+              <HumanCheckCard onVerified={retryLastMessage} />
             )}
+
+            {error &&
+              !isAiNotConnected &&
+              errorKind &&
+              errorKind !== 'ai_not_connected' &&
+              errorKind !== 'human_check' && (
+                <DistinctChatErrorBanner
+                  kind={errorKind as BannerErrorKind}
+                  message={error.message}
+                  onRetry={retryLastMessage}
+                />
+              )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {SUGGESTED_PROMPTS.map((prompt) => (
@@ -326,13 +337,21 @@ export default function ChatPage() {
 
             {isAiNotConnected && <AiNotConnectedBanner />}
 
-            {error && !isAiNotConnected && errorKind && errorKind !== 'ai_not_connected' && (
-              <DistinctChatErrorBanner
-                kind={errorKind}
-                message={error.message}
-                onRetry={retryLastMessage}
-              />
+            {error && errorKind === 'human_check' && (
+              <HumanCheckCard onVerified={retryLastMessage} />
             )}
+
+            {error &&
+              !isAiNotConnected &&
+              errorKind &&
+              errorKind !== 'ai_not_connected' &&
+              errorKind !== 'human_check' && (
+                <DistinctChatErrorBanner
+                  kind={errorKind as BannerErrorKind}
+                  message={error.message}
+                  onRetry={retryLastMessage}
+                />
+              )}
           </div>
         )}
       </div>

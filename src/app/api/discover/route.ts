@@ -7,6 +7,7 @@ import {
   isAINotConnectedError,
 } from '@/lib/ai/provider';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
+import { enforceHumanCheck } from '@/lib/security/turnstile';
 import {
   isSpotifyReconnectError,
   SPOTIFY_RECONNECT_CODE,
@@ -26,6 +27,9 @@ export async function GET(request?: Request) {
       windowMs: 60_000,
     });
     if (rateLimited) return rateLimited;
+
+    const humanCheck = enforceHumanCheck(request);
+    if (humanCheck) return humanCheck;
   }
 
   if (!isAIConfigured()) {

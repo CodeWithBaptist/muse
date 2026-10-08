@@ -16,6 +16,7 @@ import {
 } from '@/lib/ai/provider';
 import { verifySameOrigin } from '@/lib/security/csrf';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
+import { enforceHumanCheck } from '@/lib/security/turnstile';
 import {
   isSpotifyReconnectError,
   SPOTIFY_RECONNECT_MESSAGE,
@@ -121,6 +122,9 @@ export async function POST(request: Request) {
     windowMs: 60_000,
   });
   if (rateLimited) return rateLimited;
+
+  const humanCheck = enforceHumanCheck(request);
+  if (humanCheck) return humanCheck;
 
   let rawBody: unknown;
   try {
