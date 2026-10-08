@@ -25,6 +25,7 @@ import {
   getUserMemoryForPrompt,
 } from '@/lib/ai/user-memory';
 import { ChatPostInputSchema } from '@/lib/validation/api-schemas';
+import { enforceAiBudget } from '@/lib/ai/budget';
 import { and, eq, desc } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
@@ -156,6 +157,10 @@ export async function POST(request: Request) {
       { status: 401 }
     );
   }
+
+  // Counted after authentication so anonymous probes never spend the budget.
+  const resting = await enforceAiBudget();
+  if (resting) return resting;
 
   const wantsEventStream = Boolean(
     request.headers.get('accept')?.includes('text/event-stream')

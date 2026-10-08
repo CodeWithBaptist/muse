@@ -9,6 +9,7 @@ import {
   isAINotConnectedError,
 } from '@/lib/ai/provider';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
+import { enforceAiBudget } from '@/lib/ai/budget';
 import {
   isSpotifyReconnectError,
   SPOTIFY_RECONNECT_CODE,
@@ -45,6 +46,9 @@ export async function GET(request?: Request) {
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const resting = await enforceAiBudget();
+  if (resting) return resting;
 
   try {
     const [data, savedPrefs] = await Promise.all([

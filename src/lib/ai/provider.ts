@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { recordAiTokens } from './budget';
 
 export const AI_NOT_CONNECTED_CODE = 'AI_NOT_CONNECTED' as const;
 export const AI_NOT_CONNECTED_MESSAGE = 'AI is not connected yet';
@@ -122,6 +123,16 @@ function isZodSchema<T>(schema: unknown): schema is ZodLikeSchema<T> {
 
 export const AI_MODEL = 'gpt-4o-mini';
 
+type UsageLike = { total_tokens?: number | null } | null | undefined;
+
+/** Feeds the daily budget without ever failing the answer. */
+function noteUsage(usage: UsageLike): void {
+  const total = usage?.total_tokens;
+  if (typeof total === 'number' && total > 0) {
+    void recordAiTokens(total);
+  }
+}
+
 export async function chatCompletion(messages: Message[], options: CompletionOptions = {}) {
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
@@ -132,6 +143,7 @@ export async function chatCompletion(messages: Message[], options: CompletionOpt
     max_completion_tokens: resolveMaxOutputTokens(options.maxOutputTokens),
   });
 
+  noteUsage(response.usage);
   return response;
 }
 
@@ -144,16 +156,21 @@ export async function* chatCompletionStream(
     model: AI_MODEL,
     messages,
     stream: true,
+    // The final chunk then carries the token usage for the budget counters.
+    stream_options: { include_usage: true },
     temperature: options.temperature ?? 0.7,
     max_completion_tokens: resolveMaxOutputTokens(options.maxOutputTokens),
   });
 
+  let usage: UsageLike = null;
   for await (const chunk of stream) {
+    if (chunk.usage) usage = chunk.usage;
     const delta = chunk.choices?.[0]?.delta?.content;
     if (delta) {
       yield delta;
     }
   }
+  noteUsage(usage);
 }
 
 export async function structuredCompletion<T>(
@@ -174,6 +191,7 @@ export async function structuredCompletion<T>(
     max_completion_tokens: resolveMaxOutputTokens(options.maxOutputTokens),
   });
 
+  noteUsage(response.usage);
   const content = response.choices[0].message.content;
   if (!content) throw new Error('AI failed to generate content');
 

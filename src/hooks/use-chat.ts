@@ -27,6 +27,7 @@ interface PersistedRecommendation {
 
 export type ChatErrorKind =
   | 'ai_not_connected'
+  | 'ai_resting'
   | 'spotify_disconnected'
   | 'spotify_error'
   | 'rate_limited'
@@ -60,6 +61,9 @@ export function classifyChatError(error: unknown): ChatErrorKind | null {
 
   if (code === 'OFFLINE' || /offline|failed to fetch|networkerror/i.test(message)) {
     return 'offline';
+  }
+  if (code === 'AI_RESTING' || /MUSE is resting/i.test(message)) {
+    return 'ai_resting';
   }
   if (code === 'RATE_LIMITED' || status === 429 || /too many requests|rate limit/i.test(message)) {
     return 'rate_limited';

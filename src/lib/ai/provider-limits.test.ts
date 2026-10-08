@@ -9,6 +9,14 @@ const openaiMock = vi.hoisted(() => ({
   create: vi.fn(),
 }));
 
+const budgetMock = vi.hoisted(() => ({
+  recordAiTokens: vi.fn(async () => {}),
+}));
+
+vi.mock('./budget', () => ({
+  recordAiTokens: budgetMock.recordAiTokens,
+}));
+
 vi.mock('openai', () => ({
   default: class OpenAI {
     chat = { completions: { create: openaiMock.create } };
@@ -118,5 +126,42 @@ describe('chat input length', () => {
     ).toBe(true);
     const tooLong = ChatPostInputSchema.safeParse({ content: 'a'.repeat(501) });
     expect(tooLong.success).toBe(false);
+  });
+});
+
+describe('usage recording', () => {
+  beforeEach(() => {
+    process.env.OPENAI_API_KEY = 'sk-test-key-for-unit-tests';
+    openaiMock.create.mockReset();
+    budgetMock.recordAiTokens.mockClear();
+  });
+
+  afterEach(() => {
+    process.env = { ...originalEnv };
+  });
+
+  it('feeds total tokens from plain and streamed completions into the budget', async () => {
+    openaiMock.create.mockResolvedValueOnce({
+      choices: [{ message: { content: 'hi' } }],
+      usage: { total_tokens: 57 },
+    });
+    await chatCompletion([{ role: 'user', content: 'hello' }]);
+    expect(budgetMock.recordAiTokens).toHaveBeenCalledWith(57);
+
+    openaiMock.create.mockResolvedValueOnce(
+      (async function* () {
+        yield { choices: [{ delta: { content: 'a' } }] };
+        yield { choices: [], usage: { total_tokens: 91 } };
+      })(),
+    );
+    for await (const delta of chatCompletionStream([
+      { role: 'user', content: 'x' },
+    ])) {
+      void delta;
+    }
+    expect(openaiMock.create.mock.calls[1][0]).toMatchObject({
+      stream_options: { include_usage: true },
+    });
+    expect(budgetMock.recordAiTokens).toHaveBeenCalledWith(91);
   });
 });

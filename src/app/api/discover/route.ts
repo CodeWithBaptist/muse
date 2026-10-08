@@ -13,6 +13,7 @@ import {
   SPOTIFY_RECONNECT_MESSAGE,
 } from '@/lib/spotify-tokens';
 import { DiscoverResponseSchema } from '@/lib/validation/api-schemas';
+import { enforceAiBudget } from '@/lib/ai/budget';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -42,6 +43,9 @@ export async function GET(request?: Request) {
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  const resting = await enforceAiBudget();
+  if (resting) return resting;
 
   try {
     const data = await orchestrateDiscover(session.userId);

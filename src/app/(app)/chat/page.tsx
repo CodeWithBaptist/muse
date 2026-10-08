@@ -5,17 +5,7 @@ import { useChat, type ChatErrorKind } from '@/hooks/use-chat';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ThinkingIndicator } from '@/components/chat/ThinkingIndicator';
-import {
-  AlertCircle,
-  Clock,
-  History,
-  MessageSquarePlus,
-  RefreshCw,
-  Sparkles,
-  Terminal,
-  Trash2,
-  WifiOff,
-} from 'lucide-react';
+import { AlertCircle, Clock, History, MessageSquarePlus, RefreshCw, Sparkles, Terminal, Trash2, WifiOff, Moon } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -90,6 +80,14 @@ function DistinctChatErrorBanner({
         message || 'Spotify could not be reached right now. Please try again in a moment.',
       icon: AlertCircle,
       action: 'retry',
+    },
+    ai_resting: {
+      title: 'MUSE is resting',
+      description:
+        message ||
+        'MUSE has reached its daily limit for AI answers. It will be back after midnight, Lagos time.',
+      icon: Moon,
+      action: 'none',
     },
     rate_limited: {
       title: 'Rate limited',
