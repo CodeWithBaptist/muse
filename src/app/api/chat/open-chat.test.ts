@@ -145,6 +145,48 @@ describe('POST /api/chat without an account', () => {
     expect(done.short).toBe(false);
   });
 
+  it('passes the scope and language through to the prompts and the status lines', async () => {
+    mocks.extractChatIntent.mockResolvedValue({
+      intent: 'build_playlist',
+      isDiscovery: true,
+    });
+    mocks.jsonCompletionText.mockResolvedValue(PLAYLIST);
+
+    const response = await POST(
+      post(
+        {
+          content: 'Gym grind',
+          preferences: { scope: 'global', language: 'pidgin' },
+        },
+        'text/event-stream',
+      ),
+    );
+    const events = await readSse(response);
+    expect(events[0].stage).toBe('Dey feel your vibe...');
+    expect(events[1].stage).toBe('Dey cook your playlist...');
+
+    const [prompt, system] = mocks.jsonCompletionText.mock.calls[0] as [string, string];
+    expect(system).toContain('Scope: global.');
+    expect(system).toContain('Language: Nigerian Pidgin.');
+    expect(system).toContain('not a caricature');
+    expect(prompt).toContain('no regional lean');
+  });
+
+  it('falls back to Nigeria first in English when no preferences are sent', async () => {
+    mocks.extractChatIntent.mockResolvedValue({
+      intent: 'build_playlist',
+      isDiscovery: true,
+    });
+    mocks.jsonCompletionText.mockResolvedValue(PLAYLIST);
+
+    const response = await POST(post({ content: 'Owambe' }));
+    expect(response.status).toBe(200);
+    const [prompt, system] = mocks.jsonCompletionText.mock.calls[0] as [string, string];
+    expect(system).toContain('Scope: Nigeria first.');
+    expect(system).toContain('Language: clear, warm Nigerian English.');
+    expect(prompt).toContain('Lead with Nigerian music');
+  });
+
   it('feeds the browser-held history to the reply and never the database', async () => {
     mocks.extractChatIntent.mockResolvedValue({
       intent: 'general_chat',

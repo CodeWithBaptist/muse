@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CHAT_LANGUAGES, MUSIC_SCOPES } from '@/lib/chat-preferences';
 
 export interface SpotifyImage {
   url: string;
@@ -50,6 +51,12 @@ export const ChatHistoryTurnSchema = z.object({
 });
 export type ChatHistoryTurn = z.infer<typeof ChatHistoryTurnSchema>;
 
+/** Scope and language choices, kept on the device and sent with each message. */
+export const ChatPreferencesSchema = z.object({
+  scope: z.enum(MUSIC_SCOPES).optional(),
+  language: z.enum(CHAT_LANGUAGES).optional(),
+});
+
 export const ChatPostInputSchema = z.object({
   content: z
     .string()
@@ -58,6 +65,7 @@ export const ChatPostInputSchema = z.object({
     .max(CHAT_MESSAGE_MAX_LENGTH, `Message is too long (${CHAT_MESSAGE_MAX_LENGTH} characters max)`),
   conversationId: z.string().uuid().optional(),
   history: z.array(ChatHistoryTurnSchema).max(CHAT_HISTORY_MAX_TURNS).optional(),
+  preferences: ChatPreferencesSchema.optional(),
 });
 
 export const ChatIdParamSchema = z.object({
