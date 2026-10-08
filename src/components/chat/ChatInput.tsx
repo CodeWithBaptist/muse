@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { CHAT_MESSAGE_MAX_LENGTH } from '@/lib/validation/api-schemas';
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -57,6 +58,7 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
           onKeyDown={handleKeyDown}
           placeholder={placeholder || 'Tell MUSE what you want to hear...'}
           disabled={disabled}
+          maxLength={CHAT_MESSAGE_MAX_LENGTH}
           className={cn(
             'w-full resize-none overflow-hidden rounded-xl border border-border-subtle bg-surface py-4 pl-6 pr-14 text-sm text-text-primary placeholder:text-text-muted',
             'transition-colors focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/20',
@@ -80,9 +82,14 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
       </form>
       <p
         id="chat-input-hint"
-        className="mt-3 flex justify-between px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted"
+        className="mt-3 flex justify-between gap-4 px-2 text-[10px] font-semibold uppercase tracking-widest text-text-muted"
       >
-        Enter to send. Shift and Enter for a new line.
+        <span>Enter to send. Shift and Enter for a new line.</span>
+        {value.length >= CHAT_MESSAGE_MAX_LENGTH - 100 ? (
+          <span aria-live="polite" data-chat-input-count>
+            {value.length}/{CHAT_MESSAGE_MAX_LENGTH}
+          </span>
+        ) : null}
       </p>
     </div>
   );

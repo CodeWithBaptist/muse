@@ -30,12 +30,19 @@ export interface SpotifyTrackItem {
   reason?: string;
 }
 
+/**
+ * Longest message MUSE accepts. A mood, an artist, or a moment fits easily;
+ * anything longer mostly costs tokens. The composer enforces the same number
+ * so people are never surprised by the server.
+ */
+export const CHAT_MESSAGE_MAX_LENGTH = 500;
+
 export const ChatPostInputSchema = z.object({
   content: z
     .string()
     .trim()
     .min(1, 'Content is required')
-    .max(2000, 'Message is too long'),
+    .max(CHAT_MESSAGE_MAX_LENGTH, `Message is too long (${CHAT_MESSAGE_MAX_LENGTH} characters max)`),
   conversationId: z.string().uuid().optional(),
 });
 

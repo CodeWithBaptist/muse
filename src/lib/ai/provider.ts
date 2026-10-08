@@ -59,6 +59,32 @@ export function sanitizePromptInput(input: string, maxLength = 1000): string {
     .slice(0, maxLength);
 }
 
+/**
+ * Output token cap. Every completion carries max_completion_tokens so a
+ * runaway answer cannot bill more than this. AI_MAX_OUTPUT_TOKENS raises or
+ * lowers the ceiling per deployment; callers may ask for less, never more.
+ */
+export const DEFAULT_MAX_OUTPUT_TOKENS = 1200;
+export const HARD_MAX_OUTPUT_TOKENS = 4096;
+
+export function getOutputTokenCap(env: Record<string, string | undefined> = process.env): number {
+  const raw = Number.parseInt(env.AI_MAX_OUTPUT_TOKENS ?? '', 10);
+  if (!Number.isFinite(raw) || raw <= 0) return DEFAULT_MAX_OUTPUT_TOKENS;
+  return Math.min(raw, HARD_MAX_OUTPUT_TOKENS);
+}
+
+export function resolveMaxOutputTokens(requested?: number): number {
+  const cap = getOutputTokenCap();
+  if (!requested || !Number.isFinite(requested) || requested <= 0) return cap;
+  return Math.min(Math.floor(requested), cap);
+}
+
+export interface CompletionOptions {
+  /** Upper bound for this call; clamped to the deployment cap. */
+  maxOutputTokens?: number;
+  temperature?: number;
+}
+
 let _openai: OpenAI | null = null;
 let _cachedKey: string | null = null;
 
@@ -94,27 +120,32 @@ function isZodSchema<T>(schema: unknown): schema is ZodLikeSchema<T> {
   );
 }
 
-export async function chatCompletion(messages: Message[], stream = false) {
+export const AI_MODEL = 'gpt-4o-mini';
+
+export async function chatCompletion(messages: Message[], options: CompletionOptions = {}) {
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: AI_MODEL,
     messages,
-    stream,
-    temperature: 0.7,
+    stream: false,
+    temperature: options.temperature ?? 0.7,
+    max_completion_tokens: resolveMaxOutputTokens(options.maxOutputTokens),
   });
 
   return response;
 }
 
 export async function* chatCompletionStream(
-  messages: Message[]
+  messages: Message[],
+  options: CompletionOptions = {}
 ): AsyncGenerator<string, void, unknown> {
   const openai = getOpenAI();
   const stream = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: AI_MODEL,
     messages,
     stream: true,
-    temperature: 0.7,
+    temperature: options.temperature ?? 0.7,
+    max_completion_tokens: resolveMaxOutputTokens(options.maxOutputTokens),
   });
 
   for await (const chunk of stream) {
@@ -128,16 +159,19 @@ export async function* chatCompletionStream(
 export async function structuredCompletion<T>(
   prompt: string,
   schema: unknown,
-  systemPrompt = 'You are a helpful music assistant.'
+  systemPrompt = 'You are a helpful music assistant.',
+  options: CompletionOptions = {}
 ): Promise<T> {
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: AI_MODEL,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: prompt },
     ],
     response_format: { type: 'json_object' },
+    ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+    max_completion_tokens: resolveMaxOutputTokens(options.maxOutputTokens),
   });
 
   const content = response.choices[0].message.content;
