@@ -4,6 +4,27 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: AI endpoints are protected by shared counters, hard caps, a daily budget, and an optional human check
+
+**Decision**
+Every AI route (`/api/chat`, `/api/discover`, `/api/me/profile`) now passes four gates before a model call. (1) Per-IP rate limits counted in Upstash Redis when `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, otherwise in the existing Postgres `rate_limits` table, through one `CounterStore` interface in `src/lib/security/counter-store.ts`; the limiter fails open and logs when neither store answers. (2) Input and output caps: chat messages are limited to 500 characters at the schema and in the input box, and every completion sends `max_completion_tokens` (default 1200, `AI_MAX_OUTPUT_TOKENS` can lower or raise it up to 4096). (3) A daily budget in the Africa/Lagos day (`AI_DAILY_BUDGET_REQUESTS`, default 1500, and `AI_DAILY_BUDGET_TOKENS`, default 2,000,000; 0 disables either) kept in the same counter store; when it is spent the routes answer 503 `AI_RESTING` with "MUSE is resting, try again soon." and the UI shows that instead of an error. Token usage is fed from the provider's `usage` field, including on streams. (4) Cloudflare Turnstile, active only when both `TURNSTILE_SECRET_KEY` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` exist: a solved challenge is exchanged at `POST /api/human` for a two hour HttpOnly cookie signed with HMAC-SHA256, the AI routes answer 403 `HUMAN_CHECK_REQUIRED` without it, and the chat screen mounts the widget on that code and retries the blocked message once verified.
+
+**Why**
+The product is about to open to visitors without a Spotify login (Task 2), so the only things standing between a script and the OpenAI bill are these gates. The owner chose Upstash with a Postgres fallback so a missing Redis never takes the limiter down, and chose to keep anonymous visitors as counters only, never rows of history. A pass cookie keeps Turnstile to one interaction per couple of hours instead of one per message, which matters on a mid-range phone on a metered connection. The budget replies with a calm sentence rather than a failure because running out of budget is expected behaviour, not a bug.
+
+**Alternatives considered**
+
+- Vercel WAF or edge rate limiting only: not visible in code, not testable locally, and tied to a plan.
+- Counting rate limits in process memory: resets on every cold start and is per instance, which on Vercel means almost no limit at all.
+- A spend-based budget in dollars: the API does not report cost; requests and tokens are the honest units we can count.
+- Requiring Turnstile on every request without a pass cookie: the widget sometimes needs a tap, and tapping once per message is hostile.
+- Hiding the limits behind a generic error: the UI now has a distinct state for each, with a retry only where a retry can work.
+
+**Impact**
+New env names for the Vercel dashboard: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `AI_MAX_OUTPUT_TOKENS`, `AI_DAILY_BUDGET_REQUESTS`, `AI_DAILY_BUDGET_TOKENS`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, all optional. The CSP allows `challenges.cloudflare.com` for script, frame, and connect. `src/lib/security/turnstile-shared.ts` holds the values the browser widget needs so client bundles never import the database driver. Live Upstash, live Turnstile, and real OpenAI usage figures could not be exercised in the sandbox; the Postgres path, the signed pass, and every status code were exercised against a local server, and the remote services are covered by unit tests with fakes.
+
+---
+
 ## 2026-10-08: Sign-in has its own page, a validated return path, and one error code per failure
 
 **Decision**
