@@ -6,14 +6,19 @@ import { Logo } from '@/components/ui/Logo';
 import { TrackRow } from './TrackRow';
 import { PlaylistPreview } from './PlaylistPreview';
 import { WordReveal } from './WordReveal';
+import { RecommendationList } from './RecommendationList';
 import { fadeIn, fadeInUp, transitions } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
+import type { RecommendedTrack } from '@/lib/ai/playlist-engine';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   tracks?: SpotifyTrackItem[];
+  recommendations?: RecommendedTrack[];
+  playlistTitle?: string;
+  short?: boolean;
   isPlaylistSuggestion?: boolean;
   isStreaming?: boolean;
   noResults?: boolean;
@@ -80,7 +85,17 @@ export function ChatMessage({ message }: { message: Message }) {
         )}
       </motion.div>
 
-      {isAssistant && message.noResults && localTracks.length === 0 && (
+      {isAssistant && message.recommendations && message.recommendations.length > 0 && (
+        <div className="mt-2">
+          <RecommendationList
+            tracks={message.recommendations}
+            title={message.playlistTitle}
+            short={message.short}
+          />
+        </div>
+      )}
+
+      {isAssistant && message.noResults && localTracks.length === 0 && !message.recommendations && (
         <div
           data-testid="chat-no-results-state"
           className="ml-6 p-4 rounded-lg bg-surface border border-border-subtle text-xs text-text-secondary space-y-1"

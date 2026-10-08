@@ -5,7 +5,7 @@ import { useChat, type ChatErrorKind } from '@/hooks/use-chat';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ThinkingIndicator } from '@/components/chat/ThinkingIndicator';
-import { AlertCircle, Clock, History, MessageSquarePlus, RefreshCw, Sparkles, Terminal, Trash2, WifiOff, Moon } from 'lucide-react';
+import { AlertCircle, Clock, History, MessageSquarePlus, RefreshCw, Smartphone, Sparkles, Terminal, Trash2, WifiOff, Moon } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { HumanCheckCard } from '@/components/security/HumanCheckCard';
 import { Button } from '@/components/ui/Button';
@@ -161,6 +161,7 @@ function DistinctChatErrorBanner({
 export default function ChatPage() {
   const {
     messages,
+    isGuest,
     sendMessage,
     retryLastMessage,
     isThinking,
@@ -190,16 +191,26 @@ export default function ChatPage() {
       {/* Top conversation history bar */}
       <div className="px-6 py-3 border-b border-border-subtle flex items-center justify-between gap-4 bg-background">
         <div className="flex items-center gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={() => setHistoryOpen((prev) => !prev)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface border border-border-subtle transition-colors"
-            aria-expanded={historyOpen}
-            aria-controls="conversation-history-panel"
-          >
-            <History size={14} />
-            <span>History ({conversations.length})</span>
-          </button>
+          {isGuest ? (
+            <span
+              data-testid="chat-on-device-note"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary border border-border-subtle"
+            >
+              <Smartphone size={14} aria-hidden="true" />
+              <span>Saved on this device only</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setHistoryOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface border border-border-subtle transition-colors"
+              aria-expanded={historyOpen}
+              aria-controls="conversation-history-panel"
+            >
+              <History size={14} />
+              <span>History ({conversations.length})</span>
+            </button>
+          )}
           {activeConversationId && (
             <span className="text-xs text-text-muted truncate">
               {conversations.find((c) => c.id === activeConversationId)?.title ||
@@ -224,7 +235,7 @@ export default function ChatPage() {
       <div
         id="conversation-history-panel"
         data-testid="conversation-history-panel"
-        hidden={!historyOpen}
+        hidden={!historyOpen || isGuest}
         className="max-h-60 overflow-y-auto border-b border-border-subtle bg-surface/60 px-6 py-4"
       >
         <div className="mx-auto max-w-4xl space-y-2">

@@ -12,6 +12,17 @@ import {
 } from './ThinkingIndicator';
 import ChatPage from '@/app/(app)/chat/page';
 
+const auth = vi.hoisted(() => ({ authenticated: false, isLoading: false }));
+
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({
+    user: null,
+    authenticated: auth.authenticated,
+    isLoading: auth.isLoading,
+    logout: async () => ({ ok: true }),
+  }),
+}));
+
 function renderWithQueryClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -37,6 +48,9 @@ function hasRevealedText(text: string): boolean {
 describe('Stage D Chat Quality', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    auth.authenticated = false;
+    auth.isLoading = false;
+    window.localStorage.clear();
   });
 
   it('provides contextual loading messages and renders the equalizer thinking indicator', () => {
@@ -193,6 +207,7 @@ describe('Stage D Chat Quality', () => {
   });
 
   it('loads and switches conversation history on ChatPage', async () => {
+    auth.authenticated = true;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = typeof input === 'string' ? input : input.toString();
       if (url.includes('/api/ai/status')) {
@@ -252,6 +267,7 @@ describe('Stage D Chat Quality', () => {
   });
 
   it('keeps the history disclosure target mounted and marks the conversation log', async () => {
+    auth.authenticated = true;
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = typeof input === 'string' ? input : input.toString();
       if (url.includes('/api/ai/status')) {
@@ -324,5 +340,126 @@ describe('Stage D Chat Quality', () => {
     });
     expect(screen.getByText('Spotify disconnected')).toBeDefined();
     expect(screen.getByText('Reconnect Spotify')).toBeDefined();
+  });
+
+  it('lets a guest get a list with region tags, keeps the chat on the device, and sends it back as context', async () => {
+    const encoder = new TextEncoder();
+    const bodies: unknown[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('/api/ai/status')) {
+        return new Response(JSON.stringify({ connected: true }), { status: 200 });
+      }
+      if (url === '/api/chat' && init?.method === 'POST') {
+        bodies.push(JSON.parse(String(init.body)));
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: 'status', stage: 'Building your list' })}\n\n`),
+            );
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({
+                  type: 'done',
+                  role: 'assistant',
+                  content: 'Windows down for this one.',
+                  playlistTitle: 'Third Mainland at 1am',
+                  isPlaylistSuggestion: true,
+                  recommendations: [
+                    { id: 'wizkid--essence', title: 'Essence', artist: 'Wizkid', why: 'Slow heat.', region: 'Nigeria' },
+                    { id: 'focalistic--ke-star', title: 'Ke Star', artist: 'Focalistic', why: 'Log drums.', region: 'Africa' },
+                    { id: 'frank-ocean--nights', title: 'Nights', artist: 'Frank Ocean', why: 'The quiet stretch.', region: 'Global' },
+                  ],
+                  short: true,
+                })}\n\n`,
+              ),
+            );
+            controller.close();
+          },
+        });
+        return new Response(stream, { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderWithQueryClient(<ChatPage />);
+
+    // No server history for guests, just a note about where the chat lives.
+    expect(screen.getByTestId('chat-on-device-note').textContent).toContain('Saved on this device only');
+    expect(screen.queryByRole('button', { name: /History \(/ })).toBeNull();
+
+    fireEvent.click(screen.getByText('Late night Afrobeats'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('recommendation-list')).toBeDefined();
+    });
+    expect(hasRevealedText('Windows down for this one.')).toBe(true);
+    expect(screen.getByRole('heading', { name: 'Third Mainland at 1am' })).toBeDefined();
+    const rows = screen.getAllByTestId('recommendation-row');
+    expect(rows).toHaveLength(3);
+    expect(rows[0].textContent).toContain('Essence');
+    expect(rows[0].textContent).toContain('Wizkid');
+    expect(rows[0].textContent).toContain('Slow heat.');
+    expect(
+      rows.map((row) => row.querySelector('[data-region]')?.getAttribute('data-region')),
+    ).toEqual(['Nigeria', 'Africa', 'Global']);
+    expect(screen.getByText(/only the ones MUSE was sure about/)).toBeDefined();
+    expect(screen.getByText(/not been checked against a music catalogue yet/)).toBeDefined();
+
+    // The first request carries no history; nothing is sent that the guest did not type.
+    expect(bodies[0]).toEqual({ content: 'Late night Afrobeats', history: [] });
+
+    // The exchange is kept on the device, without any streaming leftovers.
+    await waitFor(() => {
+      const stored = JSON.parse(window.localStorage.getItem('muse.chat.local.v1') ?? '[]');
+      expect(stored).toHaveLength(2);
+    });
+    const stored = JSON.parse(window.localStorage.getItem('muse.chat.local.v1') ?? '[]');
+    expect(stored[0]).toEqual({ role: 'user', content: 'Late night Afrobeats' });
+    expect(stored[1].recommendations).toHaveLength(3);
+    expect(stored[1].isStreaming).toBeUndefined();
+
+    // The next message sends the earlier turns back as context.
+    const composer = screen.getByRole('textbox');
+    fireEvent.change(composer, { target: { value: 'More like the first one' } });
+    fireEvent.submit(composer.closest('form') as HTMLFormElement);
+    await waitFor(() => expect(bodies).toHaveLength(2));
+    expect(bodies[1]).toEqual({
+      content: 'More like the first one',
+      history: [
+        { role: 'user', content: 'Late night Afrobeats' },
+        { role: 'assistant', content: 'Windows down for this one.' },
+      ],
+    });
+  });
+
+  it('restores a guest chat from the device on the next visit', async () => {
+    window.localStorage.setItem(
+      'muse.chat.local.v1',
+      JSON.stringify([
+        { role: 'user', content: 'Owambe energy' },
+        { role: 'assistant', content: 'Aso ebi ready.' },
+      ]),
+    );
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('/api/ai/status')) {
+        return new Response(JSON.stringify({ connected: true }), { status: 200 });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderWithQueryClient(<ChatPage />);
+
+    await waitFor(() => {
+      expect(hasRevealedText('Aso ebi ready.')).toBe(true);
+    });
+    expect(screen.getByText('Owambe energy')).toBeDefined();
+
+    fireEvent.click(screen.getByRole('button', { name: /New chat/ }));
+    await waitFor(() => {
+      expect(window.localStorage.getItem('muse.chat.local.v1')).toBeNull();
+    });
+    expect(screen.getByText('What are we listening to?')).toBeDefined();
   });
 });

@@ -3,15 +3,55 @@
 import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
+import type { RecommendedTrack } from '@/lib/ai/playlist-engine';
+import { useAuth } from '@/hooks/use-auth';
+import {
+  appendGuestMessage,
+  clearGuestMessages,
+  getGuestMessages,
+  getServerGuestMessages,
+  subscribeGuestMessages,
+} from '@/lib/guest-chat-store';
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  /** Spotify-backed tracks from the signed-in path. */
   tracks?: SpotifyTrackItem[];
+  /** Model-picked tracks from the open path (title, artist, why, region). */
+  recommendations?: RecommendedTrack[];
+  playlistTitle?: string;
+  /** True when the open engine returned fewer than it aims for. */
+  short?: boolean;
   isPlaylistSuggestion?: boolean;
   isStreaming?: boolean;
   noResults?: boolean;
 }
+
+/**
+ * The recent turns to send with a message. A trailing copy of the message
+ * itself (already shown optimistically, or left over from a failed attempt)
+ * is dropped so the model does not read the question twice.
+ */
+export function historyForRequest(
+  messages: readonly Message[],
+  content: string,
+): Array<{ role: 'user' | 'assistant'; content: string }> {
+  const turns = messages.filter(
+    (message): message is Message & { role: 'user' | 'assistant' } =>
+      (message.role === 'user' || message.role === 'assistant') &&
+      !message.isStreaming &&
+      message.content.trim().length > 0,
+  );
+  const last = turns[turns.length - 1];
+  const trimmed = last && last.role === 'user' && last.content === content ? turns.slice(0, -1) : turns;
+  return trimmed.slice(-HISTORY_TURNS_FOR_CONTEXT).map((turn) => ({
+    role: turn.role,
+    content: turn.content.slice(0, 1000),
+  }));
+}
+
+const HISTORY_TURNS_FOR_CONTEXT = 10;
 
 export interface ConversationSummary {
   id: string;
@@ -88,6 +128,15 @@ export function classifyChatError(error: unknown): ChatErrorKind | null {
 
 export function useChat(initialConversationId?: string) {
   const queryClient = useQueryClient();
+  const { authenticated, isLoading: authLoading } = useAuth();
+  // A guest is anyone without an account once the session check has answered.
+  const isGuest = !authLoading && !authenticated;
+  // Without an account the conversation lives on the device, not in state.
+  const guestMessages = React.useSyncExternalStore(
+    subscribeGuestMessages,
+    getGuestMessages,
+    getServerGuestMessages,
+  );
   const [activeConversationId, setActiveConversationId] = React.useState<string | undefined>(
     initialConversationId
   );
@@ -125,6 +174,7 @@ export function useChat(initialConversationId?: string) {
         return [];
       }
     },
+    enabled: authenticated,
     retry: false,
   });
 
@@ -136,7 +186,7 @@ export function useChat(initialConversationId?: string) {
       if (!res || !res.ok) return null;
       return res.json();
     },
-    enabled: !!activeConversationId,
+    enabled: authenticated && !!activeConversationId,
     retry: false,
   });
 
@@ -163,7 +213,9 @@ export function useChat(initialConversationId?: string) {
       };
     });
 
-    const combined = [...hydratedBase, ...localMessages];
+    const combined = authenticated
+      ? [...hydratedBase, ...localMessages]
+      : [...guestMessages];
     if (streamingDraft !== null) {
       combined.push({
         role: 'assistant',
@@ -172,7 +224,7 @@ export function useChat(initialConversationId?: string) {
       });
     }
     return combined;
-  }, [history, localMessages, streamingDraft]);
+  }, [authenticated, guestMessages, history, localMessages, streamingDraft]);
 
   const chatMutation = useMutation({
     mutationFn: async (content: string) => {
@@ -197,7 +249,11 @@ export function useChat(initialConversationId?: string) {
             'Content-Type': 'application/json',
             Accept: 'text/event-stream, application/json',
           },
-          body: JSON.stringify({ content, conversationId: activeConversationId }),
+          body: JSON.stringify(
+            authenticated
+              ? { content, conversationId: activeConversationId }
+              : { content, history: historyForRequest(getGuestMessages(), content) },
+          ),
         });
       } catch {
         const netErr: ChatError = new Error(
@@ -285,20 +341,28 @@ export function useChat(initialConversationId?: string) {
         setActiveConversationId(data.conversationId);
       }
 
-      setLocalMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: typeof data.content === 'string' ? data.content : '',
-          tracks: Array.isArray(data.tracks)
-            ? (data.tracks as SpotifyTrackItem[])
-            : undefined,
-          isPlaylistSuggestion: Boolean(data.isPlaylistSuggestion),
-          noResults: Boolean(data.noResults),
-        },
-      ]);
+      const reply: Message = {
+        role: 'assistant',
+        content: typeof data.content === 'string' ? data.content : '',
+        tracks: Array.isArray(data.tracks)
+          ? (data.tracks as SpotifyTrackItem[])
+          : undefined,
+        recommendations: Array.isArray(data.recommendations)
+          ? (data.recommendations as RecommendedTrack[])
+          : undefined,
+        playlistTitle:
+          typeof data.playlistTitle === 'string' ? data.playlistTitle : undefined,
+        short: Boolean(data.short),
+        isPlaylistSuggestion: Boolean(data.isPlaylistSuggestion),
+        noResults: Boolean(data.noResults),
+      };
+      if (authenticated) {
+        setLocalMessages((prev) => [...prev, reply]);
+        void refetchConversations();
+      } else {
+        appendGuestMessage(reply);
+      }
       setIsThinking(false);
-      void refetchConversations();
     },
     onError: () => {
       setStreamingDraft(null);
@@ -309,7 +373,11 @@ export function useChat(initialConversationId?: string) {
 
   const sendMessage = (content: string) => {
     setLastPrompt(content);
-    setLocalMessages((prev) => [...prev, { role: 'user', content }]);
+    if (authenticated) {
+      setLocalMessages((prev) => [...prev, { role: 'user', content }]);
+    } else {
+      appendGuestMessage({ role: 'user', content });
+    }
     chatMutation.mutate(content);
   };
 
@@ -328,6 +396,7 @@ export function useChat(initialConversationId?: string) {
 
   const startNewChat = () => {
     setLocalMessages([]);
+    if (!authenticated) clearGuestMessages();
     setStreamingDraft(null);
     setThinkingStage(null);
     chatMutation.reset();
@@ -351,6 +420,7 @@ export function useChat(initialConversationId?: string) {
 
   return {
     messages,
+    isGuest,
     sendMessage,
     retryLastMessage,
     isThinking,
