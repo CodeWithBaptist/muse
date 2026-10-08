@@ -1,6 +1,15 @@
-import { db } from '@/db';
-import { sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+import { withCounterStore } from './counter-store';
+
+/**
+ * Per-client, fixed-window rate limiting for API routes.
+ *
+ * Counters live in Upstash Redis when it is configured and in the Postgres
+ * rate_limits table otherwise (see counter-store.ts). When no store can be
+ * reached the request is allowed through and the failure is logged: the AI
+ * routes still have the daily budget guard behind this check, and refusing
+ * every visitor because a counter was unreachable would be the worse outcome.
+ */
 
 export interface RateLimitOptions {
   scope: string;
@@ -15,20 +24,9 @@ export interface RateLimitResult {
   resetAt: Date;
 }
 
-let tableInitialized = false;
-
-async function ensureRateLimitTable(): Promise<void> {
-  if (tableInitialized) return;
-  if (typeof db.execute !== 'function') return;
-  await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS rate_limits (
-      key text PRIMARY KEY,
-      count integer NOT NULL DEFAULT 1,
-      reset_at timestamp NOT NULL
-    )
-  `);
-  tableInitialized = true;
-}
+export const RATE_LIMITED_CODE = 'RATE_LIMITED' as const;
+export const RATE_LIMITED_MESSAGE =
+  'Too many requests. Please wait a moment and try again.';
 
 export function getClientIdentifier(request: Request, userId?: string): string {
   if (userId) {
@@ -48,93 +46,61 @@ export function getClientIdentifier(request: Request, userId?: string): string {
 
 export async function checkRateLimit(
   request: Request,
-  options: RateLimitOptions
+  options: RateLimitOptions,
 ): Promise<RateLimitResult> {
   const identifier = options.identifier ?? getClientIdentifier(request);
   const bucketKey = `${options.scope}:${identifier}`;
-  const now = Date.now();
-  const nextReset = new Date(now + options.windowMs);
-
-  if (typeof db.execute !== 'function') {
-    return {
-      allowed: true,
-      remaining: options.limit - 1,
-      resetAt: nextReset,
-    };
-  }
+  const fallbackReset = new Date(Date.now() + options.windowMs);
 
   try {
-    await ensureRateLimitTable();
-    const result = await db.execute(sql`
-      INSERT INTO rate_limits (key, count, reset_at)
-      VALUES (${bucketKey}, 1, ${nextReset.toISOString()})
-      ON CONFLICT (key) DO UPDATE SET
-        count = CASE
-          WHEN rate_limits.reset_at <= NOW() THEN 1
-          ELSE rate_limits.count + 1
-        END,
-        reset_at = CASE
-          WHEN rate_limits.reset_at <= NOW() THEN ${nextReset.toISOString()}::timestamp
-          ELSE rate_limits.reset_at
-        END
-      RETURNING count, reset_at
-    `);
-
-    const rows = (result as unknown as { rows?: Array<{ count: number; reset_at: string | Date }> })?.rows;
-    const row = rows?.[0];
-    if (!row) {
-      return {
-        allowed: true,
-        remaining: options.limit - 1,
-        resetAt: nextReset,
-      };
-    }
-
-    const currentCount = Number(row.count);
-    const resetAt = row.reset_at instanceof Date ? row.reset_at : new Date(row.reset_at);
-    const allowed = currentCount <= options.limit;
-    const remaining = Math.max(0, options.limit - currentCount);
-
+    const hit = await withCounterStore((store) =>
+      store.increment(bucketKey, 1, { windowMs: options.windowMs }),
+    );
     return {
-      allowed,
-      remaining,
-      resetAt,
+      allowed: hit.count <= options.limit,
+      remaining: Math.max(0, options.limit - hit.count),
+      resetAt: hit.resetAt,
     };
-  } catch {
-    // If the database is unconfigured or mocked in unit tests without rate_limits rows,
-    // allow the request to proceed to route handlers where DB/AI availability is handled.
+  } catch (error) {
+    // Unit tests mock the database without rate_limits rows; production only
+    // lands here when both stores are down, which is worth a log line.
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('Rate limit store unavailable; allowing request.', {
+        scope: options.scope,
+        errorType: error instanceof Error ? error.name : typeof error,
+      });
+    }
     return {
       allowed: true,
       remaining: options.limit - 1,
-      resetAt: nextReset,
+      resetAt: fallbackReset,
     };
   }
 }
 
+export function retryAfterSeconds(resetAt: Date, now = Date.now()): number {
+  return Math.max(1, Math.ceil((resetAt.getTime() - now) / 1000));
+}
+
 export async function enforceRateLimit(
   request: Request,
-  options: RateLimitOptions
+  options: RateLimitOptions,
 ): Promise<NextResponse | null> {
   const result = await checkRateLimit(request, options);
   if (result.allowed) {
     return null;
   }
 
-  const retryAfterSeconds = Math.max(
-    1,
-    Math.ceil((result.resetAt.getTime() - Date.now()) / 1000)
-  );
-
   return NextResponse.json(
     {
-      error: 'Too many requests. Please wait a moment and try again.',
-      code: 'RATE_LIMITED',
+      error: RATE_LIMITED_MESSAGE,
+      code: RATE_LIMITED_CODE,
     },
     {
       status: 429,
       headers: {
-        'Retry-After': String(retryAfterSeconds),
+        'Retry-After': String(retryAfterSeconds(result.resetAt)),
       },
-    }
+    },
   );
 }
