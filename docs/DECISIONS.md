@@ -4,6 +4,26 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: Chat needs no account; guests get a model-built, region-tagged list and keep their chat on the device
+
+**Decision**
+`/chat` is open to everyone and every landing "Connect Spotify" action is now "Start", a plain link into it. Without a session, `POST /api/chat` answers from the turns the browser sends (at most ten, validated) and writes nothing to the database. Discovery requests go to a new open engine (`src/lib/ai/playlist-engine.ts`) that asks the model for a strict JSON playlist of eight to twelve real songs, each with a title, an artist, one sentence on why, and a region tag of Nigeria, Africa, or Global, parsed defensively (aliases, fences, duplicates, lists cut off by the token cap) and never padded; an answer with no usable song is retried once, then reported honestly. Other messages get a streamed reply whose prompt states that MUSE has no listening data for this visitor. On the client, a guest's conversation lives in `localStorage` behind a small external store read through `useSyncExternalStore`; the account-only pages (Discover, Library, Playlists, Profile, Settings) keep their sign-in redirect and disappear from a guest's navigation. The signed-in path, with its Spotify-backed engine and saved conversations, is unchanged for now.
+
+**Why**
+The owner's brief: the product must work for a visitor in Lagos with no Spotify account and no sign-up, and the server must return a strict, safely parsed list rather than prose. The owner also chose, at the start of this rebuild, that anonymous visitors leave only counters on the server, so the browser is the only honest place for their history. A separate engine, rather than a rewrite of the Spotify one, keeps the tester path working while verification (Task 4) and links (Task 5) are built on the new list; the two converge once the open list can be verified.
+
+**Alternatives considered**
+
+- Reuse the Spotify-candidate engine with an app token: Spotify search without a user still needs Spotify credentials and terms, and the brief is explicit that no normal path may depend on Spotify.
+- Keep guest history on the server under an anonymous id: contradicts the counters-only decision and creates data to protect for people who never agreed to anything.
+- One structured call for both chat and lists: cheaper, but it loses streamed replies and the clear status stages that make waiting on a slow connection bearable.
+- A bottom tab bar with a single tab for guests: a bar that navigates nowhere; the chat gets the space back instead.
+
+**Impact**
+New files: `src/lib/ai/playlist-engine.ts`, `src/app/api/chat/open-chat.ts`, `src/lib/guest-chat-store.ts`, `src/components/chat/RecommendationList.tsx`, `src/components/landing/StartAction.tsx` (replacing `SpotifyPrimaryAction.tsx`). `ChatPostInputSchema` accepts `history`; the done event carries `recommendations`, `playlistTitle`, and `short`. The daily budget is now reserved for guests too, after validation, behind the rate limit and the human check. The list shows a note that its picks are not yet checked against a catalogue; that note is replaced by real verification in Task 4. Landing copy still describes the Spotify flow in places (How it works, What it does, the sample conversation); that is Task 10. No new environment variables.
+
+---
+
 ## 2026-10-08: AI endpoints are protected by shared counters, hard caps, a daily budget, and an optional human check
 
 **Decision**
