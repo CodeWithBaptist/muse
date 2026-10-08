@@ -11,6 +11,7 @@ import {
   ThinkingIndicator,
 } from './ThinkingIndicator';
 import ChatPage from '@/app/(app)/chat/page';
+import { setChatPreferences } from '@/lib/chat-preferences-store';
 
 const auth = vi.hoisted(() => ({ authenticated: false, isLoading: false }));
 
@@ -51,6 +52,7 @@ describe('Stage D Chat Quality', () => {
     auth.authenticated = false;
     auth.isLoading = false;
     window.localStorage.clear();
+    setChatPreferences({ scope: 'nigeria', language: 'english' });
   });
 
   it('provides contextual loading messages and renders the equalizer thinking indicator', () => {
@@ -197,7 +199,7 @@ describe('Stage D Chat Quality', () => {
 
     renderWithQueryClient(<ChatPage />);
 
-    fireEvent.click(screen.getByText('Late night Afrobeats'));
+    fireEvent.click(screen.getByText('Lagos traffic'));
 
     await waitFor(() => {
       expect(hasRevealedText('I searched across the catalog.')).toBe(true);
@@ -333,7 +335,7 @@ describe('Stage D Chat Quality', () => {
 
     renderWithQueryClient(<ChatPage />);
 
-    fireEvent.click(screen.getByText('Ambient study session'));
+    fireEvent.click(screen.getByText('Owambe'));
 
     await waitFor(() => {
       expect(screen.getByTestId('chat-error-spotify_disconnected')).toBeDefined();
@@ -388,7 +390,7 @@ describe('Stage D Chat Quality', () => {
     expect(screen.getByTestId('chat-on-device-note').textContent).toContain('Saved on this device only');
     expect(screen.queryByRole('button', { name: /History \(/ })).toBeNull();
 
-    fireEvent.click(screen.getByText('Late night Afrobeats'));
+    fireEvent.click(screen.getByText('Lagos traffic'));
 
     await waitFor(() => {
       expect(screen.getByTestId('recommendation-list')).toBeDefined();
@@ -407,7 +409,11 @@ describe('Stage D Chat Quality', () => {
     expect(screen.getByText(/not been checked against a music catalogue yet/)).toBeDefined();
 
     // The first request carries no history; nothing is sent that the guest did not type.
-    expect(bodies[0]).toEqual({ content: 'Late night Afrobeats', history: [] });
+    expect(bodies[0]).toEqual({
+      content: 'Lagos traffic',
+      history: [],
+      preferences: { scope: 'nigeria', language: 'english' },
+    });
 
     // The exchange is kept on the device, without any streaming leftovers.
     await waitFor(() => {
@@ -415,7 +421,7 @@ describe('Stage D Chat Quality', () => {
       expect(stored).toHaveLength(2);
     });
     const stored = JSON.parse(window.localStorage.getItem('muse.chat.local.v1') ?? '[]');
-    expect(stored[0]).toEqual({ role: 'user', content: 'Late night Afrobeats' });
+    expect(stored[0]).toEqual({ role: 'user', content: 'Lagos traffic' });
     expect(stored[1].recommendations).toHaveLength(3);
     expect(stored[1].isStreaming).toBeUndefined();
 
@@ -427,10 +433,68 @@ describe('Stage D Chat Quality', () => {
     expect(bodies[1]).toEqual({
       content: 'More like the first one',
       history: [
-        { role: 'user', content: 'Late night Afrobeats' },
+        { role: 'user', content: 'Lagos traffic' },
         { role: 'assistant', content: 'Windows down for this one.' },
       ],
+      preferences: { scope: 'nigeria', language: 'english' },
     });
+  });
+
+  it('offers the nine vibes and remembers the scope and language choices on the device', async () => {
+    const bodies: unknown[] = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('/api/ai/status')) {
+        return new Response(JSON.stringify({ connected: true }), { status: 200 });
+      }
+      if (url === '/api/chat' && init?.method === 'POST') {
+        bodies.push(JSON.parse(String(init.body)));
+        return new Response(
+          JSON.stringify({ role: 'assistant', content: 'Oya.', intent: 'general_chat' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderWithQueryClient(<ChatPage />);
+
+    const chips = screen.getAllByRole('button', { name: /./ }).filter((b) => b.hasAttribute('data-vibe-chip'));
+    expect(chips.map((chip) => chip.textContent)).toEqual([
+      'Detty December',
+      'Lagos traffic',
+      'Owambe',
+      'Sunday rice and stew',
+      'Late-night drive on the Third Mainland',
+      'Campus read-and-cram',
+      'Morning devotion',
+      'Gym grind',
+      'Heartbreak but make it danceable',
+    ]);
+    for (const chip of chips) expect(chip.className).toContain('min-h-11');
+
+    const scope = screen.getByRole('group', { name: 'Music scope' });
+    const language = screen.getByRole('group', { name: 'Language' });
+    expect(scope.querySelector('[aria-pressed="true"]')?.textContent).toBe('Naija first');
+    expect(language.querySelector('[aria-pressed="true"]')?.textContent).toBe('English');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Global' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pidgin' }));
+    expect(scope.querySelector('[aria-pressed="true"]')?.textContent).toBe('Global');
+    expect(language.querySelector('[aria-pressed="true"]')?.textContent).toBe('Pidgin');
+    expect(JSON.parse(window.localStorage.getItem('muse.chat.prefs.v1') ?? '{}')).toEqual({
+      scope: 'global',
+      language: 'pidgin',
+    });
+
+    fireEvent.click(screen.getByText('Detty December'));
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toEqual({
+      content: 'Detty December',
+      history: [],
+      preferences: { scope: 'global', language: 'pidgin' },
+    });
+    await waitFor(() => expect(hasRevealedText('Oya.')).toBe(true));
   });
 
   it('restores a guest chat from the device on the next visit', async () => {

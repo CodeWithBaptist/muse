@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 import type { RecommendedTrack } from '@/lib/ai/playlist-engine';
 import { useAuth } from '@/hooks/use-auth';
+import { useChatPreferences } from '@/hooks/use-chat-preferences';
 import {
   appendGuestMessage,
   clearGuestMessages,
@@ -137,6 +138,7 @@ export function useChat(initialConversationId?: string) {
     getGuestMessages,
     getServerGuestMessages,
   );
+  const [preferences, setPreferences] = useChatPreferences();
   const [activeConversationId, setActiveConversationId] = React.useState<string | undefined>(
     initialConversationId
   );
@@ -251,8 +253,12 @@ export function useChat(initialConversationId?: string) {
           },
           body: JSON.stringify(
             authenticated
-              ? { content, conversationId: activeConversationId }
-              : { content, history: historyForRequest(getGuestMessages(), content) },
+              ? { content, conversationId: activeConversationId, preferences }
+              : {
+                  content,
+                  history: historyForRequest(getGuestMessages(), content),
+                  preferences,
+                },
           ),
         });
       } catch {
@@ -421,6 +427,8 @@ export function useChat(initialConversationId?: string) {
   return {
     messages,
     isGuest,
+    preferences,
+    setPreferences,
     sendMessage,
     retryLastMessage,
     isThinking,

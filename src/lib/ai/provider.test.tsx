@@ -166,7 +166,7 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
       expect(screen.getByText('AI is not connected yet')).toBeDefined();
     });
 
-    fireEvent.click(screen.getByText('Late night Afrobeats'));
+    fireEvent.click(screen.getByText('Lagos traffic'));
 
     await waitFor(() => {
       expect(screen.getByText('AI is not connected yet')).toBeDefined();

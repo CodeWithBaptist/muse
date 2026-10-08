@@ -8,17 +8,10 @@ import { ThinkingIndicator } from '@/components/chat/ThinkingIndicator';
 import { AlertCircle, Clock, History, MessageSquarePlus, RefreshCw, Smartphone, Sparkles, Terminal, Trash2, WifiOff, Moon } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { HumanCheckCard } from '@/components/security/HumanCheckCard';
+import { ChatPreferenceControls } from '@/components/chat/ChatPreferenceControls';
+import { VibeChips } from '@/components/chat/VibeChips';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
-
-const SUGGESTED_PROMPTS = [
-  'Late night Afrobeats',
-  'Something completely new',
-  'Songs like Brent Faiyaz but less sad',
-  'Music for a 2am drive',
-  'Ambient study session',
-  '90s Hip Hop deep cuts',
-];
 
 function AiNotConnectedBanner() {
   return (
@@ -162,6 +155,8 @@ export default function ChatPage() {
   const {
     messages,
     isGuest,
+    preferences,
+    setPreferences,
     sendMessage,
     retryLastMessage,
     isThinking,
@@ -189,7 +184,7 @@ export default function ChatPage() {
   return (
     <div className="h-full flex flex-col relative">
       {/* Top conversation history bar */}
-      <div className="px-6 py-3 border-b border-border-subtle flex items-center justify-between gap-4 bg-background">
+      <div className="px-4 sm:px-6 py-3 border-b border-border-subtle flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-background">
         <div className="flex items-center gap-3 min-w-0">
           {isGuest ? (
             <span
@@ -219,16 +214,19 @@ export default function ChatPage() {
           )}
         </div>
 
-        {(messages.length > 0 || activeConversationId) && (
-          <button
-            type="button"
-            onClick={startNewChat}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-accent hover:bg-surface transition-colors"
-          >
-            <MessageSquarePlus size={14} />
-            <span>New chat</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <ChatPreferenceControls preferences={preferences} onChange={setPreferences} />
+          {(messages.length > 0 || activeConversationId) && (
+            <button
+              type="button"
+              onClick={startNewChat}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-accent hover:bg-surface transition-colors"
+            >
+              <MessageSquarePlus size={14} />
+              <span>New chat</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Collapsible conversation history drawer */}
@@ -320,19 +318,7 @@ export default function ChatPage() {
                 />
               )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {SUGGESTED_PROMPTS.map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => sendMessage(prompt)}
-                  className="p-6 text-left rounded-xl bg-surface border border-border-subtle hover:border-accent/50 hover:bg-surface/80 transition-all group"
-                >
-                  <div className="text-sm font-semibold text-text-secondary group-hover:text-text-primary transition-colors">
-                    {prompt}
-                  </div>
-                </button>
-              ))}
-            </div>
+            <VibeChips onPick={sendMessage} disabled={isThinking} />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-12 pb-24">

@@ -7,9 +7,9 @@ import { EqualizerBars } from '@/components/motion/EqualizerBars';
 
 const DEFAULT_MESSAGES = [
   'Understanding your vibe',
-  'Looking through your music',
+  'Thinking through the sound',
   'Finding something that fits',
-  'Building your mix',
+  'Building your list',
 ];
 
 /** How long each contextual line stays on screen while the request runs. */
@@ -22,16 +22,16 @@ export function getContextualLoadingMessages(prompt?: string): string[] {
   if (/playlist|mix|collection|setlist/.test(normalized)) {
     return [
       'Shaping your playlist concept',
-      'Searching Spotify catalog',
+      'Pulling songs that fit',
       'Sequencing tracks that flow together',
-      'Building your mix',
+      'Building your list',
     ];
   }
 
   if (/like|similar|artist|band|sound of/.test(normalized)) {
     return [
       'Mapping artist sonic textures',
-      'Searching Spotify catalog',
+      'Pulling songs that fit',
       'Selecting standout cuts',
       'Writing track notes',
     ];
@@ -40,7 +40,7 @@ export function getContextualLoadingMessages(prompt?: string): string[] {
   if (/why|history|who|what|explain|taste/.test(normalized)) {
     return [
       'Reading your question',
-      'Checking your listening context',
+      'Thinking it through',
       'Composing response',
     ];
   }
