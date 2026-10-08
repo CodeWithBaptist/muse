@@ -4,6 +4,26 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: MUSE speaks from Lagos by default, with scope and language the visitor controls on the device
+
+**Decision**
+The model prompts for chat and lists are assembled per request in `src/lib/ai/muse-prompt.ts` from a shared identity, a genre map that puts Nigerian music at the centre (Afrobeats, Afro-fusion, Amapiano, Alte, Street-pop, Highlife, Fuji, Juju, Apala, Naija hip-hop, Gospel, and the classics, each with real anchor artists), a glossary of Lagos moments, a Nigeria context (West Africa Time, Naira, Lagos as the default city), an honesty rule (only songs the model is confident exist; leave the rest out and say so; never claim anything was created), and two choices sent with every message: scope, `nigeria` by default (lead with Nigerian music, at least six of the songs, while honouring explicit requests for anything else) or `global` (no lean), and language, `english`, `pidgin`, or `mix`, with the instruction that Pidgin is written as a Lagos friend talks and never as a caricature, and that titles and artist names stay as released. The choices live in `localStorage` (`muse.chat.prefs.v1`) behind an external store, are shown as two compact segmented controls in the chat header, and are validated on the server (`ChatPreferencesSchema`), falling back to the defaults for anything unknown. The empty chat offers the nine vibes from the brief as chips; a chip sends its own label as the message because the prompt already understands what each one means. Stream status lines follow the language ("Dey cook your playlist...").
+
+**Why**
+The brief: Nigeria first by default, a Global toggle, an English / Pidgin / mix toggle, the nine vibes, Naira and WAT context, and no invented songs. The owner chose the chat header over a settings page so a guest never needs an account to set either choice, and chose on-device memory consistent with the counters-only rule for anonymous visitors. Sending the choices with each request, rather than storing them server-side, keeps the server stateless for guests and makes the same request work for accounts. Explaining the vibes in the prompt instead of expanding chips into hidden prompts keeps what the visitor sees equal to what was asked, which matters for trust and for the chat history they later read back.
+
+**Alternatives considered**
+
+- A settings page for guests: an account-shaped surface for people without accounts; rejected by the owner.
+- Separate prompts per language, fully rewritten: three copies to keep in sync; one prompt with a language instruction is enough for the model and easy to tune.
+- Chips that expand into long hidden prompts: better first answers in theory, but the visitor would see a message they did not write.
+- Detecting Pidgin from the message: unreliable and surprising; an explicit control is one tap.
+
+**Impact**
+New files: `src/lib/chat-preferences.ts`, `src/lib/chat-preferences-store.ts`, `src/hooks/use-chat-preferences.ts`, `src/lib/ai/muse-prompt.ts`, `src/components/chat/ChatPreferenceControls.tsx`, `src/components/chat/VibeChips.tsx`. `ChatPostInputSchema` accepts `preferences`; `buildOpenPlaylist` takes `preferences`; `OPEN_CHAT_STAGES` is keyed by language; `useChat` returns `preferences` and `setPreferences`. The signed-in reply prompt now shares the same voice; its Spotify-search engine is replaced in Task 4. Client loading lines no longer mention a Spotify catalogue. Rotating English and Pidgin loading copy on the client, chip ripples, and vibration are Task 8. No new environment variables.
+
+---
+
 ## 2026-10-08: Chat needs no account; guests get a model-built, region-tagged list and keep their chat on the device
 
 **Decision**
