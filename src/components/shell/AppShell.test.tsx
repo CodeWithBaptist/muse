@@ -107,9 +107,10 @@ describe('AppShell', () => {
     expect(main.getAttribute('tabindex')).toBe('-1');
   });
 
-  it('shows an accessible loading state while the session is unknown', () => {
+  it('shows an accessible loading state while the session is unknown on an account page', () => {
     auth.isLoading = true;
     auth.authenticated = false;
+    navigation.pathname = '/library';
     renderShell();
     const status = screen.getByRole('status');
     expect(status.getAttribute('aria-busy')).toBe('true');
@@ -125,10 +126,15 @@ describe('AppShell', () => {
     expect(navigation.push).not.toHaveBeenCalled();
   });
 
-  it('does not carry the default destination as a return path', () => {
+  it('lets guests use the chat without a redirect and without waiting for the session', () => {
     auth.authenticated = false;
+    auth.isLoading = true;
     navigation.pathname = '/chat';
     renderShell();
-    expect(navigation.replace).toHaveBeenCalledWith('/login');
+    expect(screen.getByRole('main')).toBeDefined();
+    expect(screen.getByText('Page body')).toBeDefined();
+    auth.isLoading = false;
+    renderShell();
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 });

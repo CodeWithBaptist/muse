@@ -1,15 +1,36 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BottomTabs } from './BottomTabs';
 import { PRIMARY_NAV } from './shell-nav';
 
 const pathname = vi.hoisted(() => ({ value: '/discover' }));
+const auth = vi.hoisted(() => ({ authenticated: true }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => pathname.value,
 }));
 
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({
+    user: null,
+    authenticated: auth.authenticated,
+    isLoading: false,
+    logout: async () => ({ ok: true }),
+  }),
+}));
+
 describe('BottomTabs', () => {
+  beforeEach(() => {
+    auth.authenticated = true;
+    pathname.value = '/discover';
+  });
+
+  it('renders nothing for a guest, whose only destination is the chat they are in', () => {
+    auth.authenticated = false;
+    const { container } = render(<BottomTabs />);
+    expect(container.innerHTML).toBe('');
+  });
+
   it('renders the five destinations as 44px tabs with focus rings', () => {
     render(<BottomTabs />);
     const nav = screen.getByRole('navigation', { name: 'Primary navigation' });

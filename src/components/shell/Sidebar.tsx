@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { transitions } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
 import { Logo } from '@/components/ui/Logo';
-import { PRIMARY_NAV, SETTINGS_NAV, isActivePath } from './shell-nav';
+import { SETTINGS_NAV, isActivePath, navItemsFor } from './shell-nav';
 
 /**
  * Desktop navigation, shown from the lg breakpoint up. Phones get the bottom
@@ -52,7 +52,7 @@ export function Sidebar() {
         aria-label="Primary navigation"
         className="flex-1 space-y-1 px-3 pt-2"
       >
-        {PRIMARY_NAV.map((item) => {
+        {navItemsFor(authenticated).map((item) => {
           const active = isActivePath(pathname, item.href);
           return (
             <Link
@@ -107,30 +107,32 @@ export function Sidebar() {
             <div className="truncate text-xs font-semibold text-text-primary">
               {authenticated
                 ? (user?.displayName ?? 'Spotify account')
-                : 'Not connected'}
+                : 'Guest'}
             </div>
             <div className="type-section-label truncate">
-              {authenticated ? 'Spotify connected' : 'Spotify'}
+              {authenticated ? 'Spotify connected' : 'Chat stays on this device'}
             </div>
           </div>
         </div>
 
         <nav aria-label="Account navigation" className="space-y-1">
-          <Link
-            href={SETTINGS_NAV.href}
-            aria-current={
-              isActivePath(pathname, SETTINGS_NAV.href) ? 'page' : undefined
-            }
-            className={cn(
-              NAV_LINK,
-              isActivePath(pathname, SETTINGS_NAV.href)
-                ? 'bg-surface text-text-primary'
-                : 'text-text-secondary hover:bg-surface hover:text-text-primary',
-            )}
-          >
-            <SETTINGS_NAV.icon className="h-4 w-4" aria-hidden="true" />
-            <span>{SETTINGS_NAV.label}</span>
-          </Link>
+          {authenticated ? (
+            <Link
+              href={SETTINGS_NAV.href}
+              aria-current={
+                isActivePath(pathname, SETTINGS_NAV.href) ? 'page' : undefined
+              }
+              className={cn(
+                NAV_LINK,
+                isActivePath(pathname, SETTINGS_NAV.href)
+                  ? 'bg-surface text-text-primary'
+                  : 'text-text-secondary hover:bg-surface hover:text-text-primary',
+              )}
+            >
+              <SETTINGS_NAV.icon className="h-4 w-4" aria-hidden="true" />
+              <span>{SETTINGS_NAV.label}</span>
+            </Link>
+          ) : null}
           {authenticated ? (
             <>
               <button

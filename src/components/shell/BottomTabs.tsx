@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { PRIMARY_NAV, isActivePath } from './shell-nav';
+import { useAuth } from '@/hooks/use-auth';
+import { isActivePath, navItemsFor } from './shell-nav';
 
 /**
  * Phone navigation: five tabs, one thumb. Each tab is at least 44px tall and a
@@ -13,14 +14,22 @@ import { PRIMARY_NAV, isActivePath } from './shell-nav';
  */
 export function BottomTabs() {
   const pathname = usePathname();
+  const { authenticated } = useAuth();
+  const items = navItemsFor(authenticated);
+
+  // A bar with one destination navigates nowhere; guests get the space back.
+  if (items.length < 2) return null;
 
   return (
     <nav
       aria-label="Primary navigation"
       className="shrink-0 border-t border-border-subtle bg-background pb-[var(--muse-safe-bottom)] lg:hidden"
     >
-      <ul className="grid h-[var(--muse-bottom-nav-height)] grid-cols-5">
-        {PRIMARY_NAV.map((item) => {
+      <ul
+        className="grid h-[var(--muse-bottom-nav-height)]"
+        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+      >
+        {items.map((item) => {
           const active = isActivePath(pathname, item.href);
           return (
             <li key={item.href} className="min-w-0">

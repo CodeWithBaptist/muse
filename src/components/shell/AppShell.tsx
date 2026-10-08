@@ -7,6 +7,7 @@ import { EqualizerBars } from '@/components/motion/EqualizerBars';
 import { pageTransition, pageTransitionReduced } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
 import { loginPathForReturn } from '@/lib/auth-flow';
+import { isOpenAppPath } from './shell-nav';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
@@ -34,14 +35,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const shouldReduceMotion = useReducedMotion() ?? false;
   const previousPathname = React.useRef(pathname);
 
-  // Signed out visitors go to the login page, which brings them back here
-  // once Spotify is connected. replace() keeps the protected page out of the
-  // history so Back does not bounce them into the redirect again.
+  // Chat is open to everyone. Signed out visitors on the account-only pages
+  // go to the login page, which brings them back once connected. replace()
+  // keeps the protected page out of the history so Back does not bounce them
+  // into the redirect again.
+  const openPath = isOpenAppPath(pathname);
   React.useEffect(() => {
-    if (!isLoading && !authenticated && pathname !== '/') {
+    if (!isLoading && !authenticated && !openPath) {
       router.replace(loginPathForReturn(pathname));
     }
-  }, [authenticated, isLoading, pathname, router]);
+  }, [authenticated, isLoading, openPath, pathname, router]);
 
   React.useEffect(() => {
     if (previousPathname.current === pathname) return;
@@ -52,7 +55,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.cancelAnimationFrame(frame);
   }, [pathname]);
 
-  if (isLoading && pathname !== '/') {
+  // Open pages paint straight away; the session only changes what the
+  // sidebar offers, and waiting for it would cost a round trip on every visit.
+  if (isLoading && !openPath) {
     return (
       <div className="muse-shell flex items-center justify-center bg-background">
         <div role="status" aria-live="polite" aria-busy="true">

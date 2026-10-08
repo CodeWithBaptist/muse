@@ -20,15 +20,29 @@ export interface ShellNavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** Open to everyone; the rest need an account and its Spotify data. */
+  open?: boolean;
 }
 
 export const PRIMARY_NAV: readonly ShellNavItem[] = [
-  { label: 'Chat', href: '/chat', icon: MessageSquare },
+  { label: 'Chat', href: '/chat', icon: MessageSquare, open: true },
   { label: 'Discover', href: '/discover', icon: Compass },
   { label: 'Library', href: '/library', icon: Library },
   { label: 'Playlists', href: '/playlists', icon: Music2 },
   { label: 'Profile', href: '/profile', icon: User },
 ];
+
+/** The destinations a visitor can see: all of them with an account, the open ones without. */
+export function navItemsFor(authenticated: boolean): readonly ShellNavItem[] {
+  return authenticated ? PRIMARY_NAV : PRIMARY_NAV.filter((item) => item.open);
+}
+
+/** True for routes that work without an account, so the shell never redirects them. */
+export function isOpenAppPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  if (pathname === '/') return true;
+  return PRIMARY_NAV.some((item) => item.open && isActivePath(pathname, item.href));
+}
 
 export const SETTINGS_NAV: ShellNavItem = {
   label: 'Settings',

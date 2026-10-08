@@ -1,13 +1,30 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Sidebar } from './Sidebar';
 import { PRIMARY_NAV } from './shell-nav';
+
+const auth = vi.hoisted(() => ({ authenticated: true }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/playlists/abc123',
 }));
 
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({
+    user: auth.authenticated
+      ? { displayName: 'Ada', email: 'ada@example.com', avatarUrl: null }
+      : null,
+    authenticated: auth.authenticated,
+    isLoading: false,
+    logout: async () => ({ ok: true }),
+  }),
+}));
+
 describe('Sidebar', () => {
+  beforeEach(() => {
+    auth.authenticated = true;
+  });
+
   it('renders every destination plus Settings, all at least 40px tall with focus rings', () => {
     render(<Sidebar />);
     for (const item of PRIMARY_NAV) {
@@ -48,9 +65,16 @@ describe('Sidebar', () => {
     expect(aside.className).toContain('lg:flex');
   });
 
-  it('tells signed out visitors they are not connected, without a log out control', () => {
+  it('shows guests only the chat, says where their chat lives, and offers no account controls', () => {
+    auth.authenticated = false;
     render(<Sidebar />);
-    expect(screen.getByText('Not connected')).toBeDefined();
+    expect(screen.getByRole('link', { name: 'Chat' }).getAttribute('href')).toBe('/chat');
+    for (const item of PRIMARY_NAV.filter((entry) => !entry.open)) {
+      expect(screen.queryByRole('link', { name: item.label })).toBeNull();
+    }
+    expect(screen.getByText('Guest')).toBeDefined();
+    expect(screen.getByText('Chat stays on this device')).toBeDefined();
+    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
   });
 });

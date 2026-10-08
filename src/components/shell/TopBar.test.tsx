@@ -1,12 +1,34 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TopBar } from './TopBar';
+
+const auth = vi.hoisted(() => ({ authenticated: true }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/settings',
 }));
 
+vi.mock('@/hooks/use-auth', () => ({
+  useAuth: () => ({
+    user: null,
+    authenticated: auth.authenticated,
+    isLoading: false,
+    logout: async () => ({ ok: true }),
+  }),
+}));
+
 describe('TopBar', () => {
+  beforeEach(() => {
+    auth.authenticated = true;
+  });
+
+  it('keeps the wordmark but drops the Settings control for guests', () => {
+    auth.authenticated = false;
+    render(<TopBar />);
+    expect(screen.getByRole('link', { name: 'MUSE home' })).toBeDefined();
+    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
+  });
+
   it('offers the wordmark home link and a 44px Settings control', () => {
     render(<TopBar />);
     expect(

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/ui/Logo';
+import { useAuth } from '@/hooks/use-auth';
 import { SETTINGS_NAV, isActivePath } from './shell-nav';
 
 /**
@@ -14,6 +15,7 @@ import { SETTINGS_NAV, isActivePath } from './shell-nav';
  */
 export function TopBar() {
   const pathname = usePathname();
+  const { authenticated } = useAuth();
   const settingsActive = isActivePath(pathname, SETTINGS_NAV.href);
 
   return (
@@ -30,19 +32,21 @@ export function TopBar() {
           <Logo variant="wordmark" size={80} />
         </Link>
       </div>
-      <Link
-        href={SETTINGS_NAV.href}
-        aria-label={SETTINGS_NAV.label}
-        aria-current={settingsActive ? 'page' : undefined}
-        className={cn(
-          'inline-flex h-11 w-11 items-center justify-center rounded-md transition-colors focus-ring',
-          settingsActive
-            ? 'bg-surface text-text-primary'
-            : 'text-text-secondary hover:bg-surface hover:text-text-primary',
-        )}
-      >
-        <SETTINGS_NAV.icon className="h-5 w-5" aria-hidden="true" />
-      </Link>
+      {authenticated ? (
+        <Link
+          href={SETTINGS_NAV.href}
+          aria-label={SETTINGS_NAV.label}
+          aria-current={settingsActive ? 'page' : undefined}
+          className={cn(
+            'inline-flex h-11 w-11 items-center justify-center rounded-md transition-colors focus-ring',
+            settingsActive
+              ? 'bg-surface text-text-primary'
+              : 'text-text-secondary hover:bg-surface hover:text-text-primary',
+          )}
+        >
+          <SETTINGS_NAV.icon className="h-5 w-5" aria-hidden="true" />
+        </Link>
+      ) : null}
     </header>
   );
 }
