@@ -4,28 +4,20 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'motion/react';
-import { 
-  MessageSquare, 
-  Compass, 
-  Library, 
-  PlusSquare, 
-  Settings,
-  User,
-  Music2,
-  LogOut
-} from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { transitions } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
 import { Logo } from '@/components/ui/Logo';
+import { PRIMARY_NAV, SETTINGS_NAV, isActivePath } from './shell-nav';
 
-const NAV_ITEMS = [
-  { name: 'New chat', icon: PlusSquare, href: '/chat', primary: true },
-  { name: 'Discover', icon: Compass, href: '/discover' },
-  { name: 'Library', icon: Library, href: '/library' },
-  { name: 'Playlists', icon: Music2, href: '/playlists' },
-  { name: 'Profile', icon: User, href: '/profile' },
-];
+/**
+ * Desktop navigation, shown from the lg breakpoint up. Phones get the bottom
+ * tabs instead; both read the same destination list.
+ */
+
+const NAV_LINK =
+  'group relative flex min-h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors focus-ring';
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -34,83 +26,114 @@ export function Sidebar() {
   return (
     <aside
       aria-label="Application sidebar"
-      className="hidden w-[240px] flex-col border-r border-border-subtle bg-background lg:flex"
+      className="hidden w-[var(--muse-sidebar-width)] shrink-0 flex-col border-r border-border-subtle bg-background lg:flex"
     >
-      <div className="p-6">
-        <Link href="/" className="inline-block">
-          <Logo variant="wordmark" size={100} />
+      <div className="flex h-[var(--muse-topbar-height)] items-center px-6">
+        <Link
+          href="/"
+          className="inline-flex rounded-sm focus-ring"
+          aria-label="MUSE home"
+        >
+          <Logo variant="wordmark" size={96} />
         </Link>
       </div>
 
-      <nav aria-label="Primary navigation" className="flex-1 px-3 space-y-1">
-        {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.href;
+      <nav
+        aria-label="Primary navigation"
+        className="flex-1 space-y-1 px-3 pt-2"
+      >
+        {PRIMARY_NAV.map((item) => {
+          const active = isActivePath(pathname, item.href);
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={item.href}
-              aria-current={isActive ? 'page' : undefined}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'group relative flex items-center gap-3 px-4 py-2.5 rounded-md text-sm transition-colors',
-                isActive ? 'text-text-primary bg-surface/50' : 'text-text-secondary hover:text-text-primary hover:bg-surface',
-                item.primary && 'mb-6 text-accent hover:text-accent hover:bg-accent/5'
+                NAV_LINK,
+                active
+                  ? 'bg-surface text-text-primary'
+                  : 'text-text-secondary hover:bg-surface hover:text-text-primary',
               )}
             >
-              <item.icon className="w-4 h-4" strokeWidth={isActive ? 2.5 : 2} />
-              <span className={cn(isActive ? 'font-semibold' : 'font-medium')}>{item.name}</span>
-              {isActive && (
-                <motion.div
+              <item.icon
+                className="h-4 w-4"
+                strokeWidth={active ? 2.5 : 2}
+                aria-hidden="true"
+              />
+              <span className={cn(active ? 'font-semibold' : 'font-medium')}>
+                {item.label}
+              </span>
+              {active ? (
+                <motion.span
                   layoutId="sidebar-active"
-                  className="absolute left-0 w-0.5 h-4 bg-accent rounded-full"
+                  aria-hidden="true"
+                  className="absolute left-0 h-4 w-0.5 rounded-full bg-accent"
                   transition={transitions.standard}
                 />
-              )}
+              ) : null}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 mt-auto border-t border-border-subtle space-y-4">
-        <div className="flex items-center gap-3 px-2">
+      <div className="mt-auto space-y-3 border-t border-border-subtle p-3">
+        <div className="flex items-center gap-3 px-3 pt-2">
           {authenticated && user?.avatarUrl ? (
-            <img src={user.avatarUrl} alt={user.displayName} className="w-8 h-8 rounded-full border border-border-strong" />
+            <img
+              src={user.avatarUrl}
+              alt=""
+              className="h-8 w-8 rounded-full border border-border-strong"
+            />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-surface border border-border-strong flex items-center justify-center">
-              <User className="w-4 h-4 text-text-muted" />
+            <div
+              aria-hidden="true"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface"
+            >
+              <User className="h-4 w-4 text-text-muted" />
             </div>
           )}
-          <div className="flex-1 min-w-0">
-            <div className="text-xs font-semibold text-text-primary truncate">
-              {authenticated ? user?.displayName : 'Not connected'}
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-xs font-semibold text-text-primary">
+              {authenticated
+                ? (user?.displayName ?? 'Spotify account')
+                : 'Not connected'}
             </div>
-            <div className="text-[10px] text-text-muted uppercase tracking-tighter font-semibold">
-              {authenticated ? 'Spotify Connected' : 'Spotify'}
+            <div className="type-section-label truncate">
+              {authenticated ? 'Spotify connected' : 'Spotify'}
             </div>
           </div>
         </div>
-        
+
         <nav aria-label="Account navigation" className="space-y-1">
           <Link
-            href="/settings"
-            aria-current={pathname === '/settings' ? 'page' : undefined}
+            href={SETTINGS_NAV.href}
+            aria-current={
+              isActivePath(pathname, SETTINGS_NAV.href) ? 'page' : undefined
+            }
             className={cn(
-              'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-text-secondary hover:text-text-primary hover:bg-surface',
-              pathname === '/settings' && 'text-text-primary'
+              NAV_LINK,
+              isActivePath(pathname, SETTINGS_NAV.href)
+                ? 'bg-surface text-text-primary'
+                : 'text-text-secondary hover:bg-surface hover:text-text-primary',
             )}
           >
-            <Settings className="w-4 h-4" />
-            <span>Settings</span>
+            <SETTINGS_NAV.icon className="h-4 w-4" aria-hidden="true" />
+            <span>{SETTINGS_NAV.label}</span>
           </Link>
-          {authenticated && (
+          {authenticated ? (
             <button
               type="button"
               onClick={() => void logout()}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors text-text-secondary hover:text-text-primary hover:bg-surface"
+              className={cn(
+                NAV_LINK,
+                'w-full text-text-secondary hover:bg-surface hover:text-text-primary',
+              )}
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="h-4 w-4" aria-hidden="true" />
               <span>Log out</span>
             </button>
-          )}
+          ) : null}
         </nav>
       </div>
     </aside>

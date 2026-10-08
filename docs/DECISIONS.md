@@ -4,6 +4,25 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: Phones navigate with bottom tabs; Now Playing is a rail above 1280px and a strip below
+
+**Decision**
+Replace the phone hamburger overlay with five bottom tabs (Chat, Discover, Library, Playlists, Profile) at 44px, keep Settings in the phone top bar, keep the 280px Now Playing rail from the xl breakpoint, and add a compact Now Playing strip for every width below it that renders only while a track is selected or playing. All shell bars are in normal flow inside a `100dvh` column; nothing is fixed over the content.
+
+**Why**
+The product owner chose both patterns on 2026-10-08. Tabs are reachable with one thumb and show where you are without opening anything. Between 1024px and 1279px the old shell had no playback surface at all. In-flow bars remove the padding arithmetic that fixed bars needed and let each bar own its safe-area inset.
+
+**Alternatives considered**
+
+- Keep the hamburger overlay, restyled: one extra tap for every navigation and no visible location.
+- A full-width bottom player at every size instead of the rail: loses the artwork, the reason, and the longer notices on wide screens.
+- Rail only, as before: playback hidden on common laptop widths.
+
+**Impact**
+`MobileNav.tsx` is removed in favour of `TopBar`, `BottomTabs`, and `NowPlayingStrip`; destinations come from one list in `shell-nav.ts`, so the sidebar and the tabs cannot drift. The sidebar entry is labelled "Chat" rather than "New chat" because a link to the current route starts nothing; the chat page keeps its own "New chat" control. Phase 5 and later screens should assume the scroll container is the page area, not the window.
+
+---
+
 ## 2026-10-07: The landing decides "Connect Spotify" availability on the server
 
 **Decision**

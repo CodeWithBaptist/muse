@@ -210,6 +210,13 @@
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
+
+  /* The app shell fills the visible viewport. Dynamic viewport units follow
+   * the browser chrome on phones. The CSS pipeline strips vh fallbacks for
+   * the project's browser targets, so none is written here. */
+  .muse-shell {
+    height: 100dvh;
+  }
 }
 
 /*

@@ -77,11 +77,13 @@ Tokens: `--duration-instant` 90ms, `fast` 140ms, `base` 220ms, `slow` 360ms, `sc
 
 Tokens: `--muse-sidebar-width` 240px, `--muse-now-playing-width` 280px, `--muse-topbar-height` 64px, `--muse-bottom-nav-height` 64px, `--muse-header-height` 64px, `--muse-safe-bottom` and `--muse-safe-top` (safe-area insets; the viewport is `cover`).
 
-Breakpoints are Tailwind's defaults. The shell reads them as:
+Breakpoints are Tailwind's defaults. The shell (`src/components/shell/AppShell.tsx`) is one row that fills the visible viewport (`.muse-shell`, `100dvh`): the sidebar, the page column, and the Now Playing rail. The page column stacks the phone header, the scrolling page, the compact Now Playing strip, and the bottom tabs. Every bar is in normal flow; nothing is fixed over the content.
 
-- below `md` (768px): mobile. Top bar, main, bottom player, bottom navigation.
-- `md` to `lg`: tablet. Sidebar, main, bottom player.
-- `lg` (1024px) and up: desktop. Sidebar, main, Now Playing.
+- below `lg` (1024px): phone and tablet. Top bar (wordmark, Settings), page, Now Playing strip when a track is selected, five bottom tabs (Chat, Discover, Library, Playlists, Profile) at 44px.
+- `lg` to `xl`: laptop. Sidebar, page, Now Playing strip when a track is selected.
+- `xl` (1280px) and up: desktop. Sidebar, page, Now Playing rail.
+
+Destinations live in `src/components/shell/shell-nav.ts`; `isActivePath` treats nested routes as part of their section. On route change the page cross fades with `pageTransition` (or `pageTransitionReduced`) and focus moves to the `main` landmark.
 
 Mobile layouts are composed for the phone, not shrunk from the desktop.
 
