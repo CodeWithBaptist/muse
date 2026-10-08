@@ -27,6 +27,7 @@ import {
 } from '@/lib/ai/user-memory';
 import { ChatPostInputSchema } from '@/lib/validation/api-schemas';
 import { enforceAiBudget } from '@/lib/ai/budget';
+import { answerOpenChat, openPlaylistFailure, streamOpenChat } from './open-chat';
 import { and, eq, desc } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
@@ -141,7 +142,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const { content, conversationId } = parsedInput.data;
+  const { content, conversationId, history = [] } = parsedInput.data;
 
   if (!isAIConfigured()) {
     return NextResponse.json(
@@ -154,21 +155,54 @@ export async function POST(request: Request) {
     );
   }
 
-  const session = await getSession();
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized', code: 'SPOTIFY_DISCONNECTED' },
-      { status: 401 }
-    );
-  }
-
-  // Counted after authentication so anonymous probes never spend the budget.
+  // Counted after validation so malformed probes never spend the budget.
   const resting = await enforceAiBudget();
   if (resting) return resting;
 
   const wantsEventStream = Boolean(
     request.headers.get('accept')?.includes('text/event-stream')
   );
+
+  const session = await getSession();
+  if (!session) {
+    // No account: nothing is stored, the browser holds the conversation.
+    const input = { content, history };
+    if (wantsEventStream) {
+      return streamOpenChat(input, (error) => {
+        if (isAINotConnectedError(error)) {
+          return encodeSseEvent({
+            type: 'error',
+            error: AI_NOT_CONNECTED_MESSAGE,
+            code: AI_NOT_CONNECTED_CODE,
+          });
+        }
+        logChatError('Open chat stream error', error);
+        return encodeSseEvent({
+          type: 'error',
+          error: 'Unable to process chat request right now.',
+          code: 'AI_ERROR',
+        });
+      });
+    }
+    try {
+      return NextResponse.json(await answerOpenChat(input));
+    } catch (error: unknown) {
+      if (isAINotConnectedError(error)) {
+        return NextResponse.json(
+          { error: AI_NOT_CONNECTED_MESSAGE, code: AI_NOT_CONNECTED_CODE, aiConnected: false },
+          { status: 503 }
+        );
+      }
+      logChatError('Open chat API error', error);
+      if (error instanceof Error && /Playlist answer unusable/.test(error.message)) {
+        return openPlaylistFailure();
+      }
+      return NextResponse.json(
+        { error: 'Unable to process chat request right now.', code: 'AI_ERROR' },
+        { status: 500 }
+      );
+    }
+  }
 
   try {
     let activeConversationId = conversationId;

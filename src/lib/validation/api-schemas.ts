@@ -37,6 +37,19 @@ export interface SpotifyTrackItem {
  */
 export const CHAT_MESSAGE_MAX_LENGTH = 500;
 
+/**
+ * Recent turns a visitor without an account sends back for context. Their
+ * chat lives in the browser, so the server never has it unless they send it.
+ * Ten turns at most; assistant turns may carry a longer intro than a message.
+ */
+export const CHAT_HISTORY_MAX_TURNS = 10;
+
+export const ChatHistoryTurnSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().trim().min(1).max(1000),
+});
+export type ChatHistoryTurn = z.infer<typeof ChatHistoryTurnSchema>;
+
 export const ChatPostInputSchema = z.object({
   content: z
     .string()
@@ -44,6 +57,7 @@ export const ChatPostInputSchema = z.object({
     .min(1, 'Content is required')
     .max(CHAT_MESSAGE_MAX_LENGTH, `Message is too long (${CHAT_MESSAGE_MAX_LENGTH} characters max)`),
   conversationId: z.string().uuid().optional(),
+  history: z.array(ChatHistoryTurnSchema).max(CHAT_HISTORY_MAX_TURNS).optional(),
 });
 
 export const ChatIdParamSchema = z.object({
