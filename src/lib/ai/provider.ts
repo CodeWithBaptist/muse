@@ -173,12 +173,17 @@ export async function* chatCompletionStream(
   noteUsage(usage);
 }
 
-export async function structuredCompletion<T>(
+/**
+ * One JSON-mode completion, returned as the raw text the model produced.
+ * Callers that can tolerate imperfect output (for example a list cut short
+ * by the token cap) parse this themselves; everyone else goes through
+ * structuredCompletion, which insists on a schema.
+ */
+export async function jsonCompletionText(
   prompt: string,
-  schema: unknown,
   systemPrompt = 'You are a helpful music assistant.',
   options: CompletionOptions = {}
-): Promise<T> {
+): Promise<string> {
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
     model: AI_MODEL,
@@ -192,9 +197,18 @@ export async function structuredCompletion<T>(
   });
 
   noteUsage(response.usage);
-  const content = response.choices[0].message.content;
+  const content = response.choices[0]?.message?.content;
   if (!content) throw new Error('AI failed to generate content');
+  return content;
+}
 
+export async function structuredCompletion<T>(
+  prompt: string,
+  schema: unknown,
+  systemPrompt = 'You are a helpful music assistant.',
+  options: CompletionOptions = {}
+): Promise<T> {
+  const content = await jsonCompletionText(prompt, systemPrompt, options);
   const parsed: unknown = JSON.parse(content);
   if (isZodSchema<T>(schema)) {
     return schema.parse(parsed);
