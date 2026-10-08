@@ -27,7 +27,7 @@ const LANDING_SOURCES = [
   'src/components/landing/Hero.tsx',
   'src/components/landing/HeroWordmark.tsx',
   'src/components/landing/LandingMark.tsx',
-  'src/components/landing/SpotifyPrimaryAction.tsx',
+  'src/components/landing/StartAction.tsx',
   'src/components/auth/AuthNotice.tsx',
   'src/components/auth/spotify-connect-copy.ts',
   'src/components/landing/LandingPage.tsx',
@@ -376,8 +376,9 @@ describe('landing quality checklist', () => {
     expect(first.tagName).toBe('A');
     expect(first.getAttribute('href')).toBe('#main-content');
 
-    const connect = screen.getAllByRole('button', { name: /connect spotify/i });
-    expect(connect.length).toBe(3);
+    const start = screen.getAllByRole('link', { name: 'Start' });
+    expect(start.length).toBe(3);
+    for (const link of start) expect(link.className).toContain('focus-ring');
     expect(screen.getByRole('button', { name: /see how it works/i })).toBeDefined();
 
     // Both hero actions carry the hover attribute, so touch and keyboard focus

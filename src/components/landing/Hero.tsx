@@ -12,10 +12,7 @@ import { scrollToLandingSection } from '@/lib/landing-scroll';
 import { HeroWordmark } from './HeroWordmark';
 import { RecordGroovesCanvas } from './RecordGroovesCanvas';
 import { AuthNotice } from '@/components/auth/AuthNotice';
-import {
-  SPOTIFY_UNAVAILABLE_EXPLANATION,
-  SpotifyPrimaryAction,
-} from './SpotifyPrimaryAction';
+import { StartAction } from './StartAction';
 
 /**
  * The hero.
@@ -26,18 +23,15 @@ import {
  * `contentRef` so it can dim the lime that would cross the text, and it scales
  * the wordmark dot through `pulseRef` from the one shared beat loop.
  *
- * `spotifyLoginAvailable` and `authError` are decided on the server by the
- * page, so the primary action is never a button that leads to an error body
- * and a failed sign-in is explained right where it started.
+ * The primary action opens the chat for everyone. `authError` is decided on
+ * the server by the page, so a failed tester sign-in is still explained right
+ * where it started.
  */
 export interface HeroProps {
-  spotifyLoginAvailable?: boolean;
   authError?: string;
 }
 
-const HERO_UNAVAILABLE_ID = 'hero-spotify-unavailable';
-
-export function Hero({ spotifyLoginAvailable = true, authError }: HeroProps) {
+export function Hero({ authError }: HeroProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const dotRef = useRef<HTMLSpanElement | null>(null);
 
@@ -84,11 +78,7 @@ export function Hero({ spotifyLoginAvailable = true, authError }: HeroProps) {
           className="muse-hero-fade flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
           style={heroFadeStyle(HERO_ACTIONS_START_MS)}
         >
-          <SpotifyPrimaryAction
-            actionAttribute="data-muse-hero-action"
-            available={spotifyLoginAvailable}
-            unavailableDescriptionId={HERO_UNAVAILABLE_ID}
-          />
+          <StartAction actionAttribute="data-muse-hero-action" />
           <Button
             data-muse-hero-action
             variant="outline"
@@ -97,16 +87,6 @@ export function Hero({ spotifyLoginAvailable = true, authError }: HeroProps) {
             See how it works
           </Button>
         </div>
-
-        {spotifyLoginAvailable ? null : (
-          <p
-            id={HERO_UNAVAILABLE_ID}
-            className="muse-hero-fade mx-auto max-w-md text-sm leading-relaxed text-text-secondary"
-            style={heroFadeStyle(HERO_ACTIONS_START_MS)}
-          >
-            {SPOTIFY_UNAVAILABLE_EXPLANATION}
-          </p>
-        )}
 
         {authError ? (
           <AuthNotice

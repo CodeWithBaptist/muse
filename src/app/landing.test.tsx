@@ -29,16 +29,15 @@ describe('Landing Page', () => {
     expect(heading.tagName).toBe('H1');
   });
 
-  it('renders enabled Spotify connection buttons for unauthenticated visitors', () => {
+  it('opens the chat from the header, the hero, and the closing band without an account', () => {
     render(<LandingPage />);
     // Header, hero, and closing band all carry the same primary action.
-    const buttons = screen.getAllByRole('button', {
-      name: /connect spotify/i,
-    }) as HTMLButtonElement[];
-    expect(buttons.length).toBe(3);
-    for (const button of buttons) {
-      expect(button.disabled).toBe(false);
+    const links = screen.getAllByRole('link', { name: 'Start' });
+    expect(links.length).toBe(3);
+    for (const link of links) {
+      expect(link.getAttribute('href')).toBe('/chat');
     }
+    expect(screen.queryByRole('button', { name: /connect spotify/i })).toBeNull();
   });
 
   it('links the header nav to the three landing sections', () => {
@@ -59,7 +58,7 @@ describe('Landing Page', () => {
       'Your music,',
       'understood.',
       'Discover music, build playlists',
-      'Connect Spotify',
+      '>Start<',
       'See how it works',
       'See it work',
       'Say the vibe. Get the playlist.',
@@ -163,7 +162,7 @@ describe('Landing Page', () => {
       }),
     ).toBeDefined();
     expect(document.querySelectorAll('canvas')).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: /connect spotify/i })).toHaveLength(3);
+    expect(screen.getAllByRole('link', { name: 'Start' })).toHaveLength(3);
     expect(screen.getByRole('button', { name: /see how it works/i })).toBeDefined();
     expect(document.querySelectorAll('[data-hero-piece]')).toHaveLength(5);
     expect(document.querySelectorAll('[data-step]')).toHaveLength(4);
@@ -185,40 +184,25 @@ describe('HomePage server wiring', () => {
     process.env = { ...originalEnv };
   });
 
-  it('disables the Spotify action everywhere when sign-in is not configured', async () => {
+  it('offers the same Start link whether or not Spotify is configured', async () => {
     delete process.env.SPOTIFY_CLIENT_ID;
     delete process.env.SPOTIFY_CLIENT_SECRET;
     delete process.env.SPOTIFY_REDIRECT_URI;
     delete process.env.ENCRYPTION_KEY;
 
-    render(await HomePage({ searchParams: Promise.resolve({}) }));
+    const { unmount } = render(await HomePage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getAllByRole('link', { name: 'Start' })).toHaveLength(3);
+    expect(screen.queryByText(/Spotify sign-in is not configured/)).toBeNull();
+    unmount();
 
-    expect(screen.queryByRole('button', { name: 'Connect Spotify' })).toBeNull();
-    const disabled = [
-      // Hero and closing band carry the full label, the narrow header a short one.
-      ...screen.getAllByRole('button', { name: 'Spotify connection unavailable' }),
-      ...screen.getAllByRole('button', { name: 'Spotify unavailable' }),
-    ];
-    expect(disabled).toHaveLength(3);
-    for (const button of disabled) {
-      expect((button as HTMLButtonElement).disabled).toBe(true);
-      expect(button.getAttribute('aria-describedby')).toBeTruthy();
-    }
-    expect(
-      screen.getAllByText(/Spotify sign-in is not configured for this deployment yet/).length,
-    ).toBeGreaterThan(0);
-  });
-
-  it('offers the real connection when every credential is present', async () => {
     process.env.SPOTIFY_CLIENT_ID = 'id';
     process.env.SPOTIFY_CLIENT_SECRET = 'secret';
     process.env.SPOTIFY_REDIRECT_URI = 'http://127.0.0.1:3000/api/auth/spotify/callback';
     process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef';
 
     render(await HomePage({ searchParams: Promise.resolve({}) }));
-
-    expect(screen.getAllByRole('button', { name: 'Connect Spotify' })).toHaveLength(3);
-    expect(screen.queryByRole('button', { name: 'Spotify connection unavailable' })).toBeNull();
+    expect(screen.getAllByRole('link', { name: 'Start' })).toHaveLength(3);
+    expect(screen.queryByRole('button', { name: /connect spotify/i })).toBeNull();
     expect(document.querySelector('[data-auth-notice]')).toBeNull();
   });
 

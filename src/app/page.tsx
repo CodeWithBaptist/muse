@@ -1,6 +1,5 @@
 import { LandingPage } from '@/components/landing/LandingPage';
 import { readAuthErrorParam } from '@/components/auth/AuthNotice';
-import { isSpotifyLoginConfigured } from '@/lib/spotify-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +11,6 @@ export default async function HomePage({
   const params = (await searchParams) ?? {};
 
   return (
-    <LandingPage
-      spotifyLoginAvailable={isSpotifyLoginConfigured()}
-      authError={readAuthErrorParam(params)}
-    />
+    <LandingPage authError={readAuthErrorParam(params)} />
   );
 }

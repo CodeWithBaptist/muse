@@ -14,16 +14,11 @@ import { SiteFooter } from './SiteFooter';
  * so this tree renders the same on the server, in the browser, and in tests.
  */
 export interface LandingPageProps {
-  /** Whether the server can complete a Spotify sign-in. */
-  spotifyLoginAvailable?: boolean;
   /** Error code the auth routes sent the visitor back with, if any. */
   authError?: string;
 }
 
-export function LandingPage({
-  spotifyLoginAvailable = true,
-  authError,
-}: LandingPageProps) {
+export function LandingPage({ authError }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       <a
@@ -32,16 +27,13 @@ export function LandingPage({
       >
         Skip to main content
       </a>
-      <SiteHeader spotifyLoginAvailable={spotifyLoginAvailable} />
+      <SiteHeader />
       <main id="main-content" tabIndex={-1}>
-        <Hero
-          spotifyLoginAvailable={spotifyLoginAvailable}
-          authError={authError}
-        />
+        <Hero authError={authError} />
         <ProductPreview />
         <HowItWorks />
         <WhatItDoes />
-        <ClosingBand spotifyLoginAvailable={spotifyLoginAvailable} />
+        <ClosingBand />
       </main>
       <SiteFooter />
     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRevealOnce } from '@/hooks/use-reveal-once';
-import { SpotifyPrimaryAction } from './SpotifyPrimaryAction';
+import { StartAction } from './StartAction';
 import { ClosingBandCanvas } from './ClosingBandCanvas';
 
 /**
@@ -11,12 +11,7 @@ import { ClosingBandCanvas } from './ClosingBandCanvas';
  * with a plain fade at the two edges. It is the second and last canvas on the
  * page, and it shares the one beat loop with the hero.
  */
-export interface ClosingBandProps {
-  /** Decided on the server by the page; see SpotifyPrimaryAction. */
-  spotifyLoginAvailable?: boolean;
-}
-
-export function ClosingBand({ spotifyLoginAvailable = true }: ClosingBandProps) {
+export function ClosingBand() {
   const [revealRef, revealArmed] = useRevealOnce<HTMLDivElement>();
 
   return (
@@ -39,10 +34,7 @@ export function ClosingBand({ spotifyLoginAvailable = true }: ClosingBandProps) 
           Start with a feeling.
         </h2>
         <div className="pt-2">
-          <SpotifyPrimaryAction
-            actionAttribute="data-muse-closing-action"
-            available={spotifyLoginAvailable}
-          />
+          <StartAction actionAttribute="data-muse-closing-action" />
         </div>
       </div>
     </section>

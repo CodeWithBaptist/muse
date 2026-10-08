@@ -142,9 +142,11 @@ describe('SiteHeader', () => {
     }
   });
 
-  it('keeps the primary action on the right', () => {
+  it('keeps the primary action on the right, as a link into the chat', () => {
     render(<SiteHeader />);
-    expect(screen.getByRole('button', { name: /connect spotify/i })).toBeDefined();
+    const start = screen.getByRole('link', { name: 'Start' });
+    expect(start.getAttribute('href')).toBe('/chat');
+    expect(start.className).toContain('h-9');
   });
 
   it('smooth scrolls only when motion is allowed', () => {

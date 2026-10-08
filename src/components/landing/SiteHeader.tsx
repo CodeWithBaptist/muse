@@ -9,7 +9,7 @@ import {
   landingTopClickHandler,
 } from '@/lib/landing-scroll';
 import { LandingMark } from './LandingMark';
-import { SpotifyPrimaryAction } from './SpotifyPrimaryAction';
+import { StartAction } from './StartAction';
 
 /** The nav links, and the sections they scroll to. */
 export const LANDING_NAV: ReadonlyArray<{ label: string; id: string }> = [
@@ -27,12 +27,7 @@ export const LANDING_NAV: ReadonlyArray<{ label: string; id: string }> = [
  * action on the right is the same control the hero uses. The links drop out
  * below 760px, where the page reads as one column anyway.
  */
-export interface SiteHeaderProps {
-  /** Decided on the server by the page; see SpotifyPrimaryAction. */
-  spotifyLoginAvailable?: boolean;
-}
-
-export function SiteHeader({ spotifyLoginAvailable = true }: SiteHeaderProps) {
+export function SiteHeader() {
   const dotRef = React.useRef<HTMLSpanElement | null>(null);
   useBrandDotPulse(dotRef, HERO_DOT_PULSE_SCALE);
 
@@ -64,7 +59,7 @@ export function SiteHeader({ spotifyLoginAvailable = true }: SiteHeaderProps) {
           ))}
         </nav>
 
-        <SpotifyPrimaryAction size="sm" available={spotifyLoginAvailable} />
+        <StartAction size="sm" />
       </div>
     </header>
   );
