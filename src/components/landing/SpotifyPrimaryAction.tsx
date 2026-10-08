@@ -15,11 +15,17 @@ import { useAuth } from '@/hooks/use-auth';
  * instead of sending the visitor to an error response.
  */
 
-export const SPOTIFY_UNAVAILABLE_LABEL = 'Spotify connection unavailable';
-/** The header is narrow on phones; the explanation is still attached in full. */
-export const SPOTIFY_UNAVAILABLE_LABEL_COMPACT = 'Spotify unavailable';
-export const SPOTIFY_UNAVAILABLE_EXPLANATION =
-  'Spotify sign-in is not configured for this deployment yet, so nothing can be connected right now.';
+import {
+  SPOTIFY_UNAVAILABLE_EXPLANATION,
+  SPOTIFY_UNAVAILABLE_LABEL,
+  SPOTIFY_UNAVAILABLE_LABEL_COMPACT,
+} from '@/components/auth/spotify-connect-copy';
+
+export {
+  SPOTIFY_UNAVAILABLE_EXPLANATION,
+  SPOTIFY_UNAVAILABLE_LABEL,
+  SPOTIFY_UNAVAILABLE_LABEL_COMPACT,
+};
 
 export interface SpotifyPrimaryActionProps {
   /** Attribute that lifts the nearby canvas on hover, focus, and touch. */

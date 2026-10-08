@@ -6,6 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { EqualizerBars } from '@/components/motion/EqualizerBars';
 import { pageTransition, pageTransitionReduced } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
+import { loginPathForReturn } from '@/lib/auth-flow';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
@@ -33,9 +34,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const shouldReduceMotion = useReducedMotion() ?? false;
   const previousPathname = React.useRef(pathname);
 
+  // Signed out visitors go to the login page, which brings them back here
+  // once Spotify is connected. replace() keeps the protected page out of the
+  // history so Back does not bounce them into the redirect again.
   React.useEffect(() => {
     if (!isLoading && !authenticated && pathname !== '/') {
-      router.push('/');
+      router.replace(loginPathForReturn(pathname));
     }
   }, [authenticated, isLoading, pathname, router]);
 

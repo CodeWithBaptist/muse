@@ -4,6 +4,25 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: Sign-in has its own page, a validated return path, and one error code per failure
+
+**Decision**
+`/login` is the single place a Spotify sign-in starts and the single place a failed one lands. It states what MUSE asks Spotify for (each line maps to scopes actually requested in `src/lib/spotify.ts`), links to the auth route as a real anchor, renders the honest disabled state when credentials are missing, and redirects visitors who already have a session. The shell sends signed out visitors to `/login?next=<path>` with `router.replace`; the auth start route stores a validated `next` in a third handshake cookie (`spotify_auth_next`, ten minutes, HttpOnly) and the callback returns there, or to `/chat`. `safeNextPath()` accepts only in-app paths (single leading slash, no scheme, host, backslash, or control characters, never `/login` or `/api/...`). The callback maps every outcome to one of `access_denied`, `session_expired`, `state_mismatch`, `auth_not_configured`, `user_not_registered`, `token_exchange_failed`, or `auth_failed`, clears all handshake cookies on every path, and answers every redirect with a relative `Location` and `Cache-Control: no-store`.
+
+**Why**
+The landing explained failures but gave the visitor nothing to do except scroll back to the button, and the shell dropped signed out visitors on the homepage with no memory of where they were going. Spotify's development mode refuses accounts the owner has not added (a 403 from `/v1/me`), which previously read as a generic token failure. Absolute redirects built from `request.url` pointed at the wrong host behind a proxy or a `0.0.0.0` bind.
+
+**Alternatives considered**
+
+- Keep sign-in on the landing page with a modal: the connection is the first real product moment and deserves a page that explains the permissions.
+- Pass `next` through Spotify's `state` parameter: mixes an anti-forgery token with routing data and makes `state` long and user influenced; a cookie keeps it server side.
+- Allow any same-origin URL in `next`: still an open redirect via `//host` and protocol-relative tricks; the allow list is simpler to reason about.
+
+**Impact**
+`AuthNotice` moves to `src/components/auth/` and is shared by the landing (older `/?error=` links keep working) and the login page. `src/lib/auth-flow.ts` owns cookie names, error codes, and the redirect helper, with unit tests. The Spotify redirect URI stays `/api/auth/spotify/callback`, so no dashboard change is needed; the spec's `/callback` path remains deferred. Logging out now reports failure (`LogoutResult`) instead of redirecting as if it succeeded; the sidebar shows the message, and the Settings panel (a PR #8 file) will pick that up after it lands.
+
+---
+
 ## 2026-10-08: Phones navigate with bottom tabs; Now Playing is a rail above 1280px and a strip below
 
 **Decision**

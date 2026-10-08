@@ -77,10 +77,28 @@ export async function exchangeCodeForTokens(
   });
 
   if (!response.ok) {
-    throw new Error('Failed to exchange Spotify authorization code');
+    throw new SpotifyAuthRequestError(
+      'Failed to exchange Spotify authorization code',
+      response.status,
+    );
   }
 
   return response.json() as Promise<SpotifyTokenResponse>;
+}
+
+/**
+ * A failed request to Spotify during sign-in. The status lets the callback
+ * tell "Spotify refused this account" (403 while the app is in development
+ * mode) apart from everything else.
+ */
+export class SpotifyAuthRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = 'SpotifyAuthRequestError';
+  }
 }
 
 export async function getSpotifyUserProfile(
@@ -93,7 +111,7 @@ export async function getSpotifyUserProfile(
   });
 
   if (!response.ok) {
-    throw new Error('Failed to fetch Spotify profile');
+    throw new SpotifyAuthRequestError('Failed to fetch Spotify profile', response.status);
   }
 
   return response.json() as Promise<SpotifyUserProfileResponse>;

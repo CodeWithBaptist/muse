@@ -22,6 +22,16 @@ const NAV_LINK =
 export function Sidebar() {
   const pathname = usePathname();
   const { user, authenticated, logout } = useAuth();
+  const [logoutState, setLogoutState] = React.useState<{
+    pending: boolean;
+    error: string | null;
+  }>({ pending: false, error: null });
+
+  const handleLogout = async () => {
+    setLogoutState({ pending: true, error: null });
+    const result = await logout();
+    if (!result.ok) setLogoutState({ pending: false, error: result.message });
+  };
 
   return (
     <aside
@@ -122,17 +132,31 @@ export function Sidebar() {
             <span>{SETTINGS_NAV.label}</span>
           </Link>
           {authenticated ? (
-            <button
-              type="button"
-              onClick={() => void logout()}
-              className={cn(
-                NAV_LINK,
-                'w-full text-text-secondary hover:bg-surface hover:text-text-primary',
-              )}
-            >
-              <LogOut className="h-4 w-4" aria-hidden="true" />
-              <span>Log out</span>
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                disabled={logoutState.pending}
+                aria-busy={logoutState.pending || undefined}
+                aria-describedby={logoutState.error ? 'sidebar-logout-error' : undefined}
+                className={cn(
+                  NAV_LINK,
+                  'w-full text-text-secondary hover:bg-surface hover:text-text-primary disabled:opacity-60',
+                )}
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                <span>{logoutState.pending ? 'Logging out' : 'Log out'}</span>
+              </button>
+              {logoutState.error ? (
+                <p
+                  id="sidebar-logout-error"
+                  role="alert"
+                  className="px-3 py-1 text-xs leading-relaxed text-danger"
+                >
+                  {logoutState.error}
+                </p>
+              ) : null}
+            </>
           ) : null}
         </nav>
       </div>

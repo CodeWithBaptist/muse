@@ -1,5 +1,5 @@
 import { LandingPage } from '@/components/landing/LandingPage';
-import { readAuthErrorParam } from '@/components/landing/AuthNotice';
+import { readAuthErrorParam } from '@/components/auth/AuthNotice';
 import { isSpotifyLoginConfigured } from '@/lib/spotify-config';
 
 export const dynamic = 'force-dynamic';

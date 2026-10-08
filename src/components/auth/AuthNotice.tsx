@@ -1,30 +1,49 @@
-import { SPOTIFY_UNAVAILABLE_EXPLANATION } from './SpotifyPrimaryAction';
+import type { AuthErrorCode } from '@/lib/auth-flow';
+import { SPOTIFY_UNAVAILABLE_EXPLANATION } from './spotify-connect-copy';
 
 /**
- * Explains why a Spotify sign-in sent the visitor back to the landing page.
+ * Explains why a Spotify sign-in sent the visitor back.
  *
- * The auth routes redirect to "/?error=<code>" when sign-in cannot continue.
- * Before this component the landing swallowed those codes and the visitor saw
- * the homepage again with no explanation. The copy only states what the code
- * guarantees: in every case nothing was connected or saved.
+ * The auth routes redirect to "/login?error=<code>" (and older links to
+ * "/?error=<code>") when sign-in cannot continue. The copy only states what
+ * each code guarantees: in every case nothing was connected or saved.
  */
 
-export const AUTH_NOTICES = {
-  auth_failed: {
-    title: 'Spotify sign-in did not complete.',
-    body: 'Spotify did not confirm the connection, or the sign-in took longer than ten minutes. Nothing was connected. You can try again.',
+export const AUTH_NOTICES: Record<
+  AuthErrorCode,
+  { title: string; body: string }
+> = {
+  access_denied: {
+    title: 'You did not allow access.',
+    body: 'You left Spotify without approving the connection, so nothing was connected. Connect whenever you are ready.',
+  },
+  session_expired: {
+    title: 'That sign-in took too long.',
+    body: 'Spotify sign-in has to finish within ten minutes, and this one did not, or your browser did not keep the cookie MUSE needs for it. Nothing was connected. Start again from this page.',
+  },
+  state_mismatch: {
+    title: 'That sign-in did not match this browser.',
+    body: 'The reply from Spotify did not match the sign-in MUSE started here, so it was ignored and nothing was connected. This happens when sign-in is started twice or in another tab. Start again from this page.',
   },
   auth_not_configured: {
     title: 'Spotify sign-in is not available here.',
     body: SPOTIFY_UNAVAILABLE_EXPLANATION,
   },
+  user_not_registered: {
+    title: 'Spotify would not let this account in yet.',
+    body: 'Spotify refused the request for this account. While MUSE is in development mode on Spotify, each account has to be added by whoever runs this MUSE before it can sign in. Nothing was connected.',
+  },
   token_exchange_failed: {
     title: 'MUSE could not finish connecting to Spotify.',
     body: 'Spotify approved the connection but the final step failed on our side. Nothing was saved. Please try again in a moment.',
   },
-} as const;
+  auth_failed: {
+    title: 'Spotify sign-in did not complete.',
+    body: 'Spotify did not confirm the connection. Nothing was connected. You can try again.',
+  },
+};
 
-export type AuthNoticeCode = keyof typeof AUTH_NOTICES;
+export type AuthNoticeCode = AuthErrorCode;
 
 const FALLBACK_NOTICE = {
   title: 'Spotify sign-in did not complete.',

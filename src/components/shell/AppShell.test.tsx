@@ -8,6 +8,7 @@ import { AppShell } from './AppShell';
 const navigation = vi.hoisted(() => ({
   pathname: '/chat',
   push: vi.fn(),
+  replace: vi.fn(),
 }));
 
 const auth = vi.hoisted(() => ({
@@ -17,7 +18,7 @@ const auth = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({
   usePathname: () => navigation.pathname,
-  useRouter: () => ({ push: navigation.push }),
+  useRouter: () => ({ push: navigation.push, replace: navigation.replace }),
 }));
 
 vi.mock('@/hooks/use-auth', () => ({
@@ -53,6 +54,7 @@ describe('AppShell', () => {
   beforeEach(() => {
     navigation.pathname = '/chat';
     navigation.push.mockReset();
+    navigation.replace.mockReset();
     auth.authenticated = true;
     auth.isLoading = false;
     vi.spyOn(globalThis, 'fetch').mockImplementation(
@@ -115,9 +117,18 @@ describe('AppShell', () => {
     expect(screen.queryByRole('main')).toBeNull();
   });
 
-  it('sends signed out visitors to the landing page', () => {
+  it('sends signed out visitors to the login page and remembers where they were', () => {
     auth.authenticated = false;
+    navigation.pathname = '/settings';
     renderShell();
-    expect(navigation.push).toHaveBeenCalledWith('/');
+    expect(navigation.replace).toHaveBeenCalledWith('/login?next=%2Fsettings');
+    expect(navigation.push).not.toHaveBeenCalled();
+  });
+
+  it('does not carry the default destination as a return path', () => {
+    auth.authenticated = false;
+    navigation.pathname = '/chat';
+    renderShell();
+    expect(navigation.replace).toHaveBeenCalledWith('/login');
   });
 });

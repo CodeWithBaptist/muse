@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { AUTH_ERROR_CODES } from '@/lib/auth-flow';
 import {
   AUTH_NOTICES,
   AuthNotice,
@@ -13,8 +14,10 @@ describe('AuthNotice', () => {
     expect(container.innerHTML).toBe('');
   });
 
-  it('explains each code the auth routes can send', () => {
-    for (const [code, notice] of Object.entries(AUTH_NOTICES)) {
+  it('explains every code the auth routes can send', () => {
+    for (const code of AUTH_ERROR_CODES) {
+      const notice = AUTH_NOTICES[code];
+      expect(notice, code).toBeDefined();
       const { unmount } = render(<AuthNotice code={code} />);
       const status = screen.getByRole('status');
       expect(status.textContent).toContain(notice.title);
@@ -36,6 +39,12 @@ describe('AuthNotice', () => {
         /[Nn]othing (was connected|was saved|can be connected)/,
       );
     }
+  });
+
+  it('tells people who declined on Spotify that they can come back', () => {
+    expect(AUTH_NOTICES.access_denied.body).toContain(
+      'Connect whenever you are ready.',
+    );
   });
 
   it('reads only well formed codes from the query string', () => {

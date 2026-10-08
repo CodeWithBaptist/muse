@@ -11,7 +11,7 @@ import {
 import { scrollToLandingSection } from '@/lib/landing-scroll';
 import { HeroWordmark } from './HeroWordmark';
 import { RecordGroovesCanvas } from './RecordGroovesCanvas';
-import { AuthNotice } from './AuthNotice';
+import { AuthNotice } from '@/components/auth/AuthNotice';
 import {
   SPOTIFY_UNAVAILABLE_EXPLANATION,
   SpotifyPrimaryAction,
