@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
-import type { RecommendedTrack } from '@/lib/ai/playlist-engine';
+import type { ListedTrack } from '@/lib/catalogue/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useChatPreferences } from '@/hooks/use-chat-preferences';
 import {
@@ -20,7 +20,9 @@ export interface Message {
   /** Spotify-backed tracks from the signed-in path. */
   tracks?: SpotifyTrackItem[];
   /** Model-picked tracks from the open path (title, artist, why, region). */
-  recommendations?: RecommendedTrack[];
+  recommendations?: ListedTrack[];
+  /** Picks left out by the catalogue check because no service knew the artist. */
+  dropped?: number;
   playlistTitle?: string;
   /** True when the open engine returned fewer than it aims for. */
   short?: boolean;
@@ -354,11 +356,12 @@ export function useChat(initialConversationId?: string) {
           ? (data.tracks as SpotifyTrackItem[])
           : undefined,
         recommendations: Array.isArray(data.recommendations)
-          ? (data.recommendations as RecommendedTrack[])
+          ? (data.recommendations as ListedTrack[])
           : undefined,
         playlistTitle:
           typeof data.playlistTitle === 'string' ? data.playlistTitle : undefined,
         short: Boolean(data.short),
+        dropped: typeof data.dropped === 'number' ? data.dropped : undefined,
         isPlaylistSuggestion: Boolean(data.isPlaylistSuggestion),
         noResults: Boolean(data.noResults),
       };

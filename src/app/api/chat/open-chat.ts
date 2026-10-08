@@ -5,10 +5,8 @@ import {
   sanitizePromptInput,
 } from '@/lib/ai/provider';
 import { extractChatIntent } from '@/lib/ai/recommendation-engine';
-import {
-  buildOpenPlaylist,
-  type RecommendedTrack,
-} from '@/lib/ai/playlist-engine';
+import { buildOpenPlaylist } from '@/lib/ai/playlist-engine';
+import { verifyTracks, type VerifiedTrack } from '@/lib/catalogue';
 import type { ChatHistoryTurn } from '@/lib/validation/api-schemas';
 import { chatSystemPrompt } from '@/lib/ai/muse-prompt';
 import {
@@ -37,21 +35,29 @@ export const OPEN_PLAYLIST_FAILED_MESSAGE =
 /** Status lines on the stream, in the visitor's chosen language. */
 export const OPEN_CHAT_STAGES: Record<
   ChatLanguage,
-  { understanding: string; building: string; composing: string }
+  {
+    understanding: string;
+    building: string;
+    checking: string;
+    composing: string;
+  }
 > = {
   english: {
     understanding: 'Understanding your vibe',
     building: 'Building your list',
+    checking: 'Checking the songs against the catalogue',
     composing: 'Composing response',
   },
   pidgin: {
     understanding: 'Dey feel your vibe...',
     building: 'Dey cook your playlist...',
+    checking: 'Dey confirm say the songs dey...',
     composing: 'Dey arrange reply...',
   },
   mix: {
     understanding: 'Reading the vibe',
     building: 'Dey cook your playlist...',
+    checking: 'Checking the songs against the catalogue',
     composing: 'Composing response',
   },
 };
@@ -66,11 +72,13 @@ export interface OpenPlaylistPayload {
   role: 'assistant';
   content: string;
   intent: string;
-  recommendations: RecommendedTrack[];
+  recommendations: VerifiedTrack[];
   playlistTitle: string;
   isPlaylistSuggestion: true;
   noResults: boolean;
   short: boolean;
+  /** Picks left out because no catalogue knew the artist. */
+  dropped: number;
 }
 
 export interface OpenReplyPayload {
@@ -90,22 +98,30 @@ function historyAsMessages(history: ChatHistoryTurn[]) {
   }));
 }
 
-async function composePlaylist(
+/**
+ * Builds the list, then checks it against the catalogues. `onChecking` fires
+ * between the two so a stream can show the second stage.
+ */
+export async function composePlaylist(
   input: OpenChatInput,
   intent: string,
+  onChecking?: () => void,
 ): Promise<OpenPlaylistPayload> {
   const playlist = await buildOpenPlaylist(input.content, input.history, {
     preferences: input.preferences,
   });
+  onChecking?.();
+  const checked = await verifyTracks(playlist.tracks);
   return {
     role: 'assistant',
     content: playlist.intro,
     intent,
-    recommendations: playlist.tracks,
+    recommendations: checked.tracks,
     playlistTitle: playlist.title,
     isPlaylistSuggestion: true,
-    noResults: playlist.tracks.length === 0,
-    short: playlist.short,
+    noResults: checked.tracks.length === 0,
+    short: playlist.short || checked.tracks.length < playlist.tracks.length,
+    dropped: checked.dropped.length,
   };
 }
 
@@ -165,7 +181,11 @@ export function streamOpenChat(
           );
           let payload: OpenPlaylistPayload;
           try {
-            payload = await composePlaylist(input, classified.intent);
+            payload = await composePlaylist(input, classified.intent, () =>
+              controller.enqueue(
+                encodeSseEvent({ type: 'status', stage: stages.checking }),
+              ),
+            );
           } catch (playlistError) {
             onError(playlistError);
             controller.enqueue(

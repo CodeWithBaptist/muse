@@ -10,15 +10,16 @@ import { RecommendationList } from './RecommendationList';
 import { fadeIn, fadeInUp, transitions } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
-import type { RecommendedTrack } from '@/lib/ai/playlist-engine';
+import type { ListedTrack } from '@/lib/catalogue/types';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string;
   tracks?: SpotifyTrackItem[];
-  recommendations?: RecommendedTrack[];
+  recommendations?: ListedTrack[];
   playlistTitle?: string;
   short?: boolean;
+  dropped?: number;
   isPlaylistSuggestion?: boolean;
   isStreaming?: boolean;
   noResults?: boolean;
@@ -91,6 +92,7 @@ export function ChatMessage({ message }: { message: Message }) {
             tracks={message.recommendations}
             title={message.playlistTitle}
             short={message.short}
+            dropped={message.dropped}
           />
         </div>
       )}

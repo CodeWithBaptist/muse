@@ -368,11 +368,31 @@ describe('Stage D Chat Quality', () => {
                   playlistTitle: 'Third Mainland at 1am',
                   isPlaylistSuggestion: true,
                   recommendations: [
-                    { id: 'wizkid--essence', title: 'Essence', artist: 'Wizkid', why: 'Slow heat.', region: 'Nigeria' },
-                    { id: 'focalistic--ke-star', title: 'Ke Star', artist: 'Focalistic', why: 'Log drums.', region: 'Africa' },
+                    {
+                      id: 'wizkid--essence',
+                      title: 'Essence',
+                      artist: 'Wizkid',
+                      why: 'Slow heat.',
+                      region: 'Nigeria',
+                      verification: {
+                        status: 'verified',
+                        source: 'deezer',
+                        id: '1',
+                        url: 'https://www.deezer.com/track/1',
+                      },
+                    },
+                    {
+                      id: 'focalistic--ke-star',
+                      title: 'Ke Star',
+                      artist: 'Focalistic',
+                      why: 'Log drums.',
+                      region: 'Africa',
+                      verification: { status: 'unverified', reason: 'title_not_found' },
+                    },
                     { id: 'frank-ocean--nights', title: 'Nights', artist: 'Frank Ocean', why: 'The quiet stretch.', region: 'Global' },
                   ],
                   short: true,
+                  dropped: 1,
                 })}\n\n`,
               ),
             );
@@ -405,8 +425,22 @@ describe('Stage D Chat Quality', () => {
     expect(
       rows.map((row) => row.querySelector('[data-region]')?.getAttribute('data-region')),
     ).toEqual(['Nigeria', 'Africa', 'Global']);
-    expect(screen.getByText(/only the ones MUSE was sure about/)).toBeDefined();
-    expect(screen.getByText(/not been checked against a music catalogue yet/)).toBeDefined();
+    expect(screen.getByText(/3 songs, 1 verified, only the ones MUSE was sure about/)).toBeDefined();
+
+    // Verified picks link to the catalogue entry; unverified picks stay, say why, and offer searches.
+    const verified = rows[0].querySelector('[data-verification="verified"]');
+    expect(verified?.textContent).toContain('Verified on Deezer');
+    expect(verified?.getAttribute('href')).toBe('https://www.deezer.com/track/1');
+    expect(verified?.getAttribute('rel')).toContain('noopener');
+    expect(rows[1].querySelector('[data-verification="unverified"]')?.textContent).toContain('Unverified');
+    const help = rows[1].querySelector('[data-testid="unverified-help"]');
+    expect(help?.textContent).toContain('this title was not found there');
+    const helpLinks = Array.from(help?.querySelectorAll('a') ?? []);
+    expect(helpLinks.map((a) => a.textContent)).toEqual(['Audiomack', 'Boomplay', 'YouTube Music']);
+    expect(helpLinks[0].getAttribute('href')).toBe('https://audiomack.com/search?q=Focalistic%20Ke%20Star');
+    expect(rows[2].querySelector('[data-verification]')).toBeNull();
+    expect(screen.getByText(/checked against Deezer and the Apple iTunes Search API/)).toBeDefined();
+    expect(screen.getByText(/1 pick was left out because no catalogue lists the artist/)).toBeDefined();
 
     // The first request carries no history; nothing is sent that the guest did not type.
     expect(bodies[0]).toEqual({

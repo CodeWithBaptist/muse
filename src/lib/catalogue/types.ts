@@ -43,6 +43,9 @@ export interface VerifiedTrack extends RecommendedTrack {
   verification: TrackVerification;
 }
 
+/** A track as the chat screen sees it: lists saved before verification existed carry none. */
+export type ListedTrack = RecommendedTrack & { verification?: TrackVerification };
+
 export interface VerificationResult {
   tracks: VerifiedTrack[];
   /** Picks with no artist match in any catalogue: treated as hallucinations. */

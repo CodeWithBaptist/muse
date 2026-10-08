@@ -9,6 +9,11 @@ const mocks = vi.hoisted(() => ({
   chatCompletion: vi.fn(),
   chatCompletionStream: vi.fn(),
   dbInsert: vi.fn(),
+  verifyTracks: vi.fn(),
+}));
+
+vi.mock('@/lib/catalogue', () => ({
+  verifyTracks: (...args: unknown[]) => mocks.verifyTracks(...args),
 }));
 
 vi.mock('@/db', () => ({
@@ -91,6 +96,20 @@ describe('POST /api/chat without an account', () => {
     mocks.chatCompletion.mockReset();
     mocks.chatCompletionStream.mockReset();
     mocks.dbInsert.mockReset();
+    mocks.verifyTracks
+      .mockReset()
+      .mockImplementation(async (tracks: Array<Record<string, unknown>>) => ({
+        tracks: tracks.map((track) => ({
+          ...track,
+          verification: {
+            status: 'verified',
+            source: 'deezer',
+            id: '1',
+            url: 'https://www.deezer.com/track/1',
+          },
+        })),
+        dropped: [],
+      }));
   });
 
   it('answers a discovery request with the JSON playlist and stores nothing', async () => {
@@ -113,7 +132,14 @@ describe('POST /api/chat without an account', () => {
       artist: 'Artist 0',
       why: 'Fits.',
       region: 'Nigeria',
+      verification: {
+        status: 'verified',
+        source: 'deezer',
+        id: '1',
+        url: 'https://www.deezer.com/track/1',
+      },
     });
+    expect(mocks.verifyTracks).toHaveBeenCalledTimes(1);
     expect(body.conversationId).toBeUndefined();
     expect(mocks.dbInsert).not.toHaveBeenCalled();
     expect(mocks.enforceAiBudget).toHaveBeenCalledTimes(1);
@@ -134,15 +160,48 @@ describe('POST /api/chat without an account', () => {
     expect(events.map((event) => event.type)).toEqual([
       'status',
       'status',
+      'status',
       'delta',
       'delta',
       'delta',
       'done',
     ]);
     expect(events[1].stage).toBe('Building your list');
+    expect(events[2].stage).toBe('Checking the songs against the catalogue');
     const done = events.at(-1)!;
     expect(done.recommendations).toHaveLength(9);
+    expect(
+      (done.recommendations as Array<{ verification: { status: string } }>)[0]
+        .verification.status,
+    ).toBe('verified');
     expect(done.short).toBe(false);
+    expect(done.dropped).toBe(0);
+  });
+
+  it('reports dropped picks and keeps unverified ones in the done event', async () => {
+    mocks.extractChatIntent.mockResolvedValue({
+      intent: 'build_playlist',
+      isDiscovery: true,
+    });
+    mocks.jsonCompletionText.mockResolvedValue(PLAYLIST);
+    mocks.verifyTracks.mockImplementation(
+      async (tracks: Array<Record<string, unknown>>) => ({
+        tracks: tracks.slice(0, 7).map((track) => ({
+          ...track,
+          verification: { status: 'unverified', reason: 'title_not_found' },
+        })),
+        dropped: tracks.slice(7),
+      }),
+    );
+
+    const response = await POST(post({ content: 'Owambe' }));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.recommendations).toHaveLength(7);
+    expect(body.recommendations[0].verification.reason).toBe('title_not_found');
+    expect(body.dropped).toBe(2);
+    expect(body.short).toBe(true);
+    expect(body.noResults).toBe(false);
   });
 
   it('passes the scope and language through to the prompts and the status lines', async () => {
@@ -165,7 +224,10 @@ describe('POST /api/chat without an account', () => {
     expect(events[0].stage).toBe('Dey feel your vibe...');
     expect(events[1].stage).toBe('Dey cook your playlist...');
 
-    const [prompt, system] = mocks.jsonCompletionText.mock.calls[0] as [string, string];
+    const [prompt, system] = mocks.jsonCompletionText.mock.calls[0] as [
+      string,
+      string,
+    ];
     expect(system).toContain('Scope: global.');
     expect(system).toContain('Language: Nigerian Pidgin.');
     expect(system).toContain('not a caricature');
@@ -181,7 +243,10 @@ describe('POST /api/chat without an account', () => {
 
     const response = await POST(post({ content: 'Owambe' }));
     expect(response.status).toBe(200);
-    const [prompt, system] = mocks.jsonCompletionText.mock.calls[0] as [string, string];
+    const [prompt, system] = mocks.jsonCompletionText.mock.calls[0] as [
+      string,
+      string,
+    ];
     expect(system).toContain('Scope: Nigeria first.');
     expect(system).toContain('Language: clear, warm Nigerian English.');
     expect(prompt).toContain('Lead with Nigerian music');
