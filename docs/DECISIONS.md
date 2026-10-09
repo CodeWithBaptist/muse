@@ -4,6 +4,25 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: Songs open through public search links, and a list leaves MUSE as text, CSV, or a share sheet
+
+**Decision**
+Every song in a list has open-in links built from public search URLs (`src/lib/catalogue/search-links.ts`): Audiomack and Boomplay always visible, Spotify, Apple Music, YouTube Music, and Deezer behind a per-song "More" toggle. A verified pick links to its exact Deezer or Apple Music page for that service. The list has Copy list (clipboard), Download as text, Download as CSV, and Share: the Web Share API when the browser has it, otherwise a `wa.me` WhatsApp link carrying the same text. The text format is the list title, "Built with MUSE", numbered "Title by Artist" lines, and a "Make your own" link to `/chat` on the current origin. All of it runs in the browser with no key, no account, and no server call.
+
+**Why**
+The brief asks for links on the services people in Nigeria actually use, with Audiomack and Boomplay prominent, and for a way to take the list out of MUSE without Spotify. Search URLs are the only link type that works for every service without an API agreement, and they degrade gracefully: a search page is still useful when a catalogue lacks the exact song. Hiding four of six links per song keeps a twelve-song list to a screenful on a mid-range phone. The share text goes out as plain text rather than a link to a saved page because guest lists are not stored on the server.
+
+**Alternatives considered**
+
+- Deep links through each service's API: needs keys or partner agreements for most of them, and Audiomack and Boomplay have no public search API.
+- A hosted share page per list: needs server storage of guest lists, which the counters-only decision rules out.
+- Showing all six links per song: clearer, but too much to scroll on the target devices.
+
+**Impact**
+New: `src/components/chat/TrackLinks.tsx`, `src/components/chat/PlaylistActions.tsx`, `src/lib/playlist-text.ts`. `RecommendationList` renders both. URL patterns that are documented and stable: Spotify `open.spotify.com/search/{q}`, Apple Music `music.apple.com/ng/search?term={q}`, YouTube Music `music.youtube.com/search?q={q}`, Deezer `www.deezer.com/search/{q}`. Patterns written from memory that the owner must check on a phone, with the app installed and without it: Audiomack `audiomack.com/search?q={q}` and Boomplay `www.boomplay.com/search/default/{q}`; if either is wrong, only the two functions in `search-links.ts` change. The CSV carries a byte order mark so Excel reads accented names correctly. No new environment variables.
+
+---
+
 ## 2026-10-08: Lists are checked against Deezer and iTunes without a login, unverified picks stay, and both chat paths share one engine
 
 **Decision**
