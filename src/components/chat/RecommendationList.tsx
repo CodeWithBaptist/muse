@@ -9,6 +9,8 @@ import { cn } from '@/lib/utils';
 import type { RegionTag } from '@/lib/ai/playlist-engine';
 import { searchLinksFor } from '@/lib/catalogue/search-links';
 import type { ListedTrack, TrackVerification } from '@/lib/catalogue/types';
+import { PlaylistActions } from './PlaylistActions';
+import { TrackLinks } from './TrackLinks';
 
 /**
  * The list MUSE builds: title, artist, one line on why, a region tag, and
@@ -224,10 +226,15 @@ export function RecommendationList({
                   track={{ ...track, verification: track.verification }}
                 />
               ) : null}
+              <TrackLinks track={track} className="pt-1" />
             </div>
           </motion.li>
         ))}
       </ol>
+
+      <div className="border-t border-border-subtle px-5 py-3">
+        <PlaylistActions title={title || 'MUSE mix'} tracks={tracks} />
+      </div>
 
       <p className="border-t border-border-subtle px-5 py-3 text-xs leading-relaxed text-text-muted">
         {checked

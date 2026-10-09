@@ -69,3 +69,66 @@ export function searchLinksFor(
     url: searchUrlFor(service, track),
   }));
 }
+
+/** Services shown first on every track; the ones people in Nigeria reach for. */
+export const PROMINENT_SERVICES: readonly SearchService[] = [
+  'audiomack',
+  'boomplay',
+];
+export const MORE_SERVICES: readonly SearchService[] = [
+  'spotify',
+  'apple-music',
+  'youtube-music',
+  'deezer',
+];
+
+export interface OpenLink extends SearchLink {
+  /** True when the link goes to the exact catalogue page rather than a search. */
+  direct: boolean;
+}
+
+/**
+ * Open-in links for one track. A verified pick links straight to its Deezer
+ * or Apple Music page for that service; every other service gets a search.
+ */
+export function openLinksFor(
+  track: {
+    title: string;
+    artist: string;
+    verification?: {
+      status: string;
+      source?: 'deezer' | 'itunes';
+      url?: string;
+    };
+  },
+  services: readonly SearchService[] = [
+    ...PROMINENT_SERVICES,
+    ...MORE_SERVICES,
+  ],
+): OpenLink[] {
+  const direct =
+    track.verification?.status === 'verified' && track.verification.url
+      ? {
+          service: (track.verification.source === 'itunes'
+            ? 'apple-music'
+            : 'deezer') as SearchService,
+          url: track.verification.url,
+        }
+      : null;
+  return services.map((service) => {
+    if (direct && direct.service === service) {
+      return {
+        service,
+        label: SEARCH_SERVICE_LABELS[service],
+        url: direct.url,
+        direct: true,
+      };
+    }
+    return {
+      service,
+      label: SEARCH_SERVICE_LABELS[service],
+      url: searchUrlFor(service, track),
+      direct: false,
+    };
+  });
+}
