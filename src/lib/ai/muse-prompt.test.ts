@@ -106,7 +106,7 @@ describe('MUSE prompt (Nigeria first)', () => {
       expect(stages.building.length).toBeGreaterThan(0);
       expect(stages.composing.length).toBeGreaterThan(0);
     }
-    expect(OPEN_CHAT_STAGES.pidgin.building).toBe('Dey cook your playlist...');
+    expect(OPEN_CHAT_STAGES.pidgin.building).toBe('Dey find the tracks');
   });
 });
 

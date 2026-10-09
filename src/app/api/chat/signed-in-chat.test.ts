@@ -188,9 +188,9 @@ describe('POST /api/chat with an account', () => {
     expect(
       events.filter((e) => e.type === 'status').map((e) => e.stage),
     ).toEqual([
-      'Dey feel your vibe...',
-      'Dey cook your playlist...',
-      'Dey confirm say the songs dey...',
+      'Dey read wetin you type',
+      'Dey find the tracks',
+      'Dey check the catalogue',
     ]);
     const done = events.at(-1)!;
     expect(done.type).toBe('done');

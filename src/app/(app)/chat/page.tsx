@@ -5,13 +5,24 @@ import { useChat, type ChatErrorKind } from '@/hooks/use-chat';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { ThinkingIndicator } from '@/components/chat/ThinkingIndicator';
-import { AlertCircle, Clock, History, MessageSquarePlus, RefreshCw, Smartphone, Sparkles, Terminal, Trash2, WifiOff, Moon } from 'lucide-react';
+import {
+  AlertCircle,
+  Clock,
+  History,
+  MessageSquarePlus,
+  RefreshCw,
+  Smartphone,
+  KeyRound,
+  Terminal,
+  Trash2,
+  WifiOff,
+  Moon,
+} from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { HumanCheckCard } from '@/components/security/HumanCheckCard';
 import { ChatPreferenceControls } from '@/components/chat/ChatPreferenceControls';
 import { VibeChips } from '@/components/chat/VibeChips';
 import { TasteHint } from '@/components/chat/TasteHint';
-import { EqualizerBars } from '@/components/motion/EqualizerBars';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -22,17 +33,18 @@ function AiNotConnectedBanner() {
       data-testid="ai-not-connected-state"
       className="p-6 border-border-strong bg-surface/80 flex items-start gap-4 rounded-xl"
     >
-      <Sparkles className="text-accent shrink-0 mt-0.5" size={20} />
+      <KeyRound className="text-accent shrink-0 mt-0.5" size={20} />
       <div className="space-y-2">
         <h2 className="text-sm font-bold text-text-primary tracking-wide">
           AI is not connected yet
         </h2>
         <p className="text-sm text-text-secondary leading-relaxed">
-          MUSE needs an OpenAI API key to respond in chat and curate recommendations. Add{' '}
+          MUSE needs an OpenAI API key to respond in chat and curate
+          recommendations. Add{' '}
           <code className="text-xs font-mono text-text-primary bg-background/60 px-1.5 py-0.5 rounded">
             OPENAI_API_KEY
           </code>{' '}
-          to your environment variables to enable AI features.
+          to the environment and restart.
         </p>
         <div className="flex items-center gap-2 pt-1 text-[10px] text-text-muted font-mono uppercase tracking-wider">
           <Terminal size={12} />
@@ -43,7 +55,10 @@ function AiNotConnectedBanner() {
   );
 }
 
-type BannerErrorKind = Exclude<ChatErrorKind, 'ai_not_connected' | 'human_check'>;
+type BannerErrorKind = Exclude<
+  ChatErrorKind,
+  'ai_not_connected' | 'human_check'
+>;
 
 interface DistinctErrorBannerProps {
   kind: BannerErrorKind;
@@ -75,7 +90,8 @@ function DistinctChatErrorBanner({
     spotify_error: {
       title: 'Spotify error',
       description:
-        message || 'Spotify could not be reached right now. Please try again in a moment.',
+        message ||
+        'Spotify could not be reached right now. Please try again in a moment.',
       icon: AlertCircle,
       action: 'retry',
     },
@@ -90,7 +106,8 @@ function DistinctChatErrorBanner({
     rate_limited: {
       title: 'Rate limited',
       description:
-        message || 'Too many requests in a short window. Wait a moment and try again.',
+        message ||
+        'Too many requests in a short window. Wait a moment and try again.',
       icon: Clock,
       action: 'retry',
     },
@@ -104,7 +121,8 @@ function DistinctChatErrorBanner({
     ai_error: {
       title: 'AI error',
       description:
-        message || 'MUSE could not complete that response right now. Please try again.',
+        message ||
+        'MUSE could not complete that response right now. Please try again.',
       icon: AlertCircle,
       action: 'retry',
     },
@@ -123,7 +141,9 @@ function DistinctChatErrorBanner({
       <div className="flex items-start gap-4">
         <Icon className="text-accent shrink-0 mt-0.5" size={20} />
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-text-primary">{config.title}</h3>
+          <h3 className="text-sm font-bold text-text-primary">
+            {config.title}
+          </h3>
           <p className="text-sm text-text-secondary leading-relaxed">
             {config.description}
           </p>
@@ -163,7 +183,6 @@ export default function ChatPage() {
     retryLastMessage,
     isThinking,
     thinkingStage,
-    lastPrompt,
     error,
     errorKind,
     isAiNotConnected,
@@ -210,14 +229,17 @@ export default function ChatPage() {
           )}
           {activeConversationId && (
             <span className="text-xs text-text-muted truncate">
-              {conversations.find((c) => c.id === activeConversationId)?.title ||
-                'Active conversation'}
+              {conversations.find((c) => c.id === activeConversationId)
+                ?.title || 'Active conversation'}
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          <ChatPreferenceControls preferences={preferences} onChange={setPreferences} />
+          <ChatPreferenceControls
+            preferences={preferences}
+            onChange={setPreferences}
+          />
           {(messages.length > 0 || activeConversationId) && (
             <button
               type="button"
@@ -294,18 +316,12 @@ export default function ChatPage() {
         {messages.length === 0 ? (
           <div className="max-w-4xl mx-auto pt-12 space-y-12 pb-24">
             <div className="space-y-4">
-              <span
-                aria-hidden="true"
-                data-testid="empty-state-bars"
-                className="muse-float muse-decorative inline-flex"
-              >
-                <EqualizerBars bars={5} height={28} width={4} durationMs={1100} />
-              </span>
               <h1 className="type-page-title !text-[clamp(32px,5vw,40px)]">
-                What are we listening to?
+                Say the vibe.
               </h1>
               <p className="text-text-secondary text-lg font-medium">
-                Tell me the mood, sound, artist, or moment.
+                A mood, an artist, a place, a time of day. MUSE answers with
+                real songs, Nigeria first.
               </p>
             </div>
 
@@ -340,7 +356,6 @@ export default function ChatPage() {
               <div className="mr-auto">
                 <ThinkingIndicator
                   stage={thinkingStage}
-                  prompt={lastPrompt}
                   language={preferences.language}
                 />
               </div>

@@ -48,22 +48,22 @@ export const OPEN_CHAT_STAGES: Record<
   }
 > = {
   english: {
-    understanding: 'Understanding your vibe',
-    building: 'Building your list',
-    checking: 'Checking the songs against the catalogue',
-    composing: 'Composing response',
+    understanding: 'Reading your request',
+    building: 'Finding tracks',
+    checking: 'Checking the catalogue',
+    composing: 'Writing the reply',
   },
   pidgin: {
-    understanding: 'Dey feel your vibe...',
-    building: 'Dey cook your playlist...',
-    checking: 'Dey confirm say the songs dey...',
-    composing: 'Dey arrange reply...',
+    understanding: 'Dey read wetin you type',
+    building: 'Dey find the tracks',
+    checking: 'Dey check the catalogue',
+    composing: 'Dey write the reply',
   },
   mix: {
-    understanding: 'Reading the vibe',
-    building: 'Dey cook your playlist...',
-    checking: 'Checking the songs against the catalogue',
-    composing: 'Composing response',
+    understanding: 'Reading your request',
+    building: 'Finding tracks',
+    checking: 'Checking the catalogue',
+    composing: 'Writing the reply',
   },
 };
 

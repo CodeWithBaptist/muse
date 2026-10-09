@@ -90,8 +90,8 @@ export const STEP_TYPE_TOTAL_MS =
 export const STEP_THINK_LINE_MS = 900;
 export const STEP_THINK_TOTAL_MS = STEP_THINK_LINE_MS * 2;
 export const STEP_THINK_LINES = [
-  'Understanding your vibe',
-  'Finding something that fits',
+  'Reading your request',
+  'Finding tracks',
   'I found a few things',
 ] as const;
 

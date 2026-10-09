@@ -255,7 +255,7 @@ const TYPE_SCALE: Array<{ utility: string; sample: string; where: string }> = [
   },
   {
     utility: 'type-page-title',
-    sample: 'What are we listening to?',
+    sample: 'Say the vibe.',
     where: 'Page titles inside the app',
   },
   {
@@ -544,9 +544,9 @@ function FocusSection() {
 /* ------------------------------------------------------------------------- */
 
 const DEMO_ROWS = [
-  'Understanding your vibe',
-  'Finding a direction',
-  'Looking for a better fit',
+  'Reading your request',
+  'Finding tracks',
+  'Checking the catalogue',
   'I found a few things',
   'Something like Rema, but calmer',
   'Nigerian R&B, less mainstream',

@@ -106,7 +106,7 @@ describe('preview state machine', () => {
     expect(first.phase).toBe('thinking');
     expect(first.typedPrompt).toBe(SAMPLE_PROMPT);
     expect(SAMPLE_THINKING_LINES[first.thinkingLineIndex]).toBe(
-      'Understanding your vibe',
+      'Reading your request',
     );
     expect(first.replyWords).toBe(0);
 
@@ -116,7 +116,7 @@ describe('preview state machine', () => {
     );
     expect(second.phase).toBe('thinking');
     expect(SAMPLE_THINKING_LINES[second.thinkingLineIndex]).toBe(
-      'Finding something that fits',
+      'Finding tracks',
     );
 
     const last = previewStateAt(LANDING_SAMPLE, timeline.thinkingEnd - 1);

@@ -166,8 +166,8 @@ describe('POST /api/chat without an account', () => {
       'delta',
       'done',
     ]);
-    expect(events[1].stage).toBe('Building your list');
-    expect(events[2].stage).toBe('Checking the songs against the catalogue');
+    expect(events[1].stage).toBe('Finding tracks');
+    expect(events[2].stage).toBe('Checking the catalogue');
     const done = events.at(-1)!;
     expect(done.recommendations).toHaveLength(9);
     expect(
@@ -221,8 +221,8 @@ describe('POST /api/chat without an account', () => {
       ),
     );
     const events = await readSse(response);
-    expect(events[0].stage).toBe('Dey feel your vibe...');
-    expect(events[1].stage).toBe('Dey cook your playlist...');
+    expect(events[0].stage).toBe('Dey read wetin you type');
+    expect(events[1].stage).toBe('Dey find the tracks');
 
     const [prompt, system] = mocks.jsonCompletionText.mock.calls[0] as [
       string,

@@ -39,8 +39,8 @@ export const SAMPLE_REPLY =
 
 /** The two scripted thinking lines, in the wording the real indicator uses. */
 export const SAMPLE_THINKING_LINES = [
-  'Understanding your vibe',
-  'Finding something that fits',
+  'Reading your request',
+  'Finding tracks',
 ] as const;
 
 export const SAMPLE_PLAYLIST_NAME = 'Late Night Lagos';
