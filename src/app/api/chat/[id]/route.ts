@@ -45,7 +45,19 @@ export async function GET(
       .where(eq(recommendations.conversationId, id));
 
     return NextResponse.json({
-      messages: chatMessages,
+      // A message that answered with a list carries it, so the songs reload with the chat.
+      messages: chatMessages.map(({ list, ...message }) =>
+        list
+          ? {
+              ...message,
+              recommendations: list.tracks,
+              playlistTitle: list.title,
+              short: list.short,
+              dropped: list.dropped,
+              isPlaylistSuggestion: true,
+            }
+          : message
+      ),
       recommendations: recs,
     });
   } catch (error: unknown) {
