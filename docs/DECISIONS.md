@@ -4,6 +4,30 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: Spotify sign-in and Create in Spotify are for testers only, and the no-account path is proven never to touch Spotify
+
+**Decision**
+Spotify sign-in is hidden from the public and refused on the server unless the visitor is a tester. There are two ways to be one, both set on the server: `TESTER_KEY` (a secret of at least 16 characters that a visitor types on `/login`; a correct key sets an HttpOnly `muse_tester` cookie holding an HMAC pass for 30 days) or `SPOTIFY_TESTER_EMAILS` (a comma list of Spotify account emails checked in the OAuth callback before anything is stored). When both are set the key wins, so the allowlist is the quieter option for a short private list and the key is the option when the testers are not known in advance. With neither set, `/login` shows a short note that sign-in is for testers, offers Start, and `/api/auth/spotify` redirects to `/login?error=testers_only`. "Create in Spotify" is rendered only for a signed-in tester, is loaded with `next/dynamic` so visitors never download that code, and works in two steps: `POST /api/playlists/resolve` turns the MUSE list into Spotify URIs for the tester's own account by searching each song and accepting only title-and-artist matches, then the existing export route creates the playlist. Unresolved songs are reported by count, never guessed. A unit test (`src/lib/open-path.test.ts`) walks the real import graph from the chat route and the chat components and fails if any of them reaches the Spotify client, token store, Spotify service, export, or tester modules.
+
+**Why**
+The brief requires that no normal-user path can ever require a Spotify token and that this be tested explicitly, not promised. Hiding the button is not enough: the start route, the callback, and the export have to refuse on the server, and the open path has to be checked at the module level so a future import does not quietly reintroduce the dependency. A server-checked key was chosen over a client-side flag because anything in the bundle is public, and over a magic link because the key needs no email provider.
+
+**Alternatives considered**
+
+- Allowlist only: simple, but every tester must share their Spotify email before they can try the app.
+- Key only: easy to hand out, but nothing stops the key from being forwarded; the allowlist exists for the stricter case.
+- Removing Spotify sign-in entirely: it still backs the account pages until Task 7 and the tester export, and removing it is cheaper later than re-adding it.
+- Resolving songs on the client with the Spotify Web API: would put a Spotify token in the browser, which the brief forbids.
+
+**Impact**
+
+- New env names in `.env.example`: `TESTER_KEY`, `SPOTIFY_TESTER_EMAILS`. Neither is needed for the public app; without them sign-in is off.
+- New routes: `POST /api/tester` (rate limited to 5 per minute per IP) and `POST /api/playlists/resolve` (session required, 10 per minute per user).
+- `/login` has three states: visible, key prompt, hidden. All three keep the no-account Start action.
+- The import-graph test is a guard, not a runtime check; it covers the modules it lists, so new chat entry points should be added to its list.
+
+---
+
 ## 2026-10-08: Songs open through public search links, and a list leaves MUSE as text, CSV, or a share sheet
 
 **Decision**
