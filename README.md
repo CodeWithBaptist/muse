@@ -1,169 +1,91 @@
 # MUSE
 
-MUSE is an AI music companion. Tell it the mood or the moment and it suggests eight to twelve real songs, Nigeria first, each with a one-line reason, checked against Deezer and the Apple iTunes Search API, with links to open every song on Audiomack, Boomplay, Spotify, Apple Music, YouTube Music, and Deezer. No account is needed. It uses Next.js App Router, PostgreSQL, Drizzle ORM, Tailwind CSS, Motion, TanStack Query, Zod, and OpenAI. Spotify sign-in remains for allow-listed testers only.
+Tell MUSE the mood or the moment and it suggests eight to twelve real songs, Nigeria first, each with a one-line reason. Every pick is checked against Deezer and the Apple iTunes Search API and links out to Audiomack, Boomplay, Spotify, Apple Music, YouTube Music, and Deezer. No account is needed. Spotify sign-in exists for allow-listed testers only.
 
-## Technology
+Stack: Next.js 16 (App Router), PostgreSQL with Drizzle ORM, Tailwind CSS 4, Motion, TanStack Query, Zod, OpenAI (`src/lib/ai/provider.ts`). Tests: Vitest, Testing Library, Playwright, axe-core.
 
-* **Framework:** Next.js 16 with the App Router
-* **Database:** PostgreSQL with Drizzle ORM
-* **Styling:** Tailwind CSS 4
-* **Motion:** Motion for React
-* **Data fetching:** TanStack Query
-* **Validation:** Zod
-* **AI provider:** OpenAI, configured in `src/lib/ai/provider.ts`
-* **Tests:** Vitest, Testing Library, Playwright, and axe-core
+## Run it locally
+
+Node.js 22 (`.nvmrc`), npm, and PostgreSQL 16 (Docker for the bundled container, or your own server).
+
+```bash
+npm ci
+cp .env.example .env.local   # fill in DATABASE_URL, OPENAI_API_KEY, ENCRYPTION_KEY
+npm run db:up                # local PostgreSQL container
+npm run db:push              # apply the Drizzle schema
+npm run dev                  # http://127.0.0.1:3000
+```
+
+`npm run dev:stack` does the last three in one go. It only applies the schema to loopback databases; for a hosted database run `npm run db:push` yourself.
 
 ## Scripts
 
-* `npm run dev`: start the local Next.js development server
-* `npm run dev:stack`: start the local PostgreSQL container, apply the schema, and start Next.js in one command
-* `npm run db:up`: start the local PostgreSQL container from `docker-compose.yml`
-* `npm run db:down`: stop the local PostgreSQL container (data is kept in a named volume)
-* `npm run db:push`: apply the Drizzle schema to the database in `DATABASE_URL`
-* `npm run verify`: run TypeScript checks, ESLint, and the Vitest suite in one pass
-* `npm run format:check`: report Prettier formatting differences without writing files
-* `npm run build`: create a production build
-* `npm run start`: start the production server
-* `npm run typecheck`: run TypeScript checks
-* `npm run lint`: run ESLint
-* `npm run test`: run the Vitest unit and component tests
-* `npm run test:e2e`: run the Playwright browser suite
-* `npm run test:e2e:list`: list the Playwright tests without launching a browser
-* `npm run format`: format files with Prettier
+| Command | What it does |
+| --- | --- |
+| `npm run verify` | typecheck, lint, and the Vitest suite |
+| `npm run test` | Vitest unit and component tests |
+| `npm run test:e2e` | Playwright browser suite (needs `npx playwright install chromium` once) |
+| `npm run build` / `npm run start` | production build and server |
+| `npm run db:up` / `db:down` / `db:push` | local PostgreSQL container and schema |
+| `npm run format` / `format:check` | Prettier |
 
-## Local setup
+The Playwright suite mocks `/api` and uses sample data. It makes no real Spotify, OpenAI, or database requests. Browser tests, axe scans, and the throttled frame-rate check need a working Chromium, so run them outside the build sandbox before a release.
 
-You need Node.js 22 (see `.nvmrc`), npm, and either Docker (for the bundled PostgreSQL container) or your own PostgreSQL 16 server.
+## Configuration
 
-1. Install the locked dependencies:
+Names only; values live in `.env.local` locally and in the Vercel dashboard in production. `.env.example` documents each one.
 
-   ```bash
-   npm ci
-   ```
+Required:
 
-2. Copy `.env.example` to `.env.local` and provide local development credentials:
+* `DATABASE_URL`: PostgreSQL connection string (pooled for serverless).
+* `OPENAI_API_KEY`: without it, chat and Discover show an explicit "AI is not connected" state.
+* `ENCRYPTION_KEY`: 32 characters. Encrypts stored Spotify tokens and peppers the one-way hash of visitor IPs in rate-limit counters.
+* `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI`: tester sign-in only.
 
-   ```bash
-   cp .env.example .env.local
-   ```
+Optional:
 
-   The example `DATABASE_URL` already points at the local Docker database (`postgresql://muse:muse@127.0.0.1:5432/muse`). If port 5432 is taken, set `MUSE_DB_PORT` to another port and change the port in `DATABASE_URL` to match. To use a hosted database instead, replace `DATABASE_URL` with its connection string.
+* `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`: rate-limit and budget counters in Redis; without them the Postgres `rate_limits` table is used.
+* `AI_MAX_OUTPUT_TOKENS`, `AI_DAILY_BUDGET_REQUESTS`, `AI_DAILY_BUDGET_TOKENS`: output cap and the shared daily budget (Lagos day) behind "MUSE is resting".
+* `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`: Cloudflare Turnstile; the human check runs only when both are set.
+* `SPOTIFY_TESTER_EMAILS` or `TESTER_KEY`: who sees Spotify sign-in and Create in Spotify. Neither set means it is hidden.
+* `LASTFM_API_KEY`: the Last.fm import on the Profile page.
+* `PAYMENTS_ENABLED`, `PAYSTACK_SECRET_KEY`: payments scaffold. Leave `PAYMENTS_ENABLED` unset.
 
-3. Start PostgreSQL and apply the Drizzle schema:
+Never put secrets in client code, browser storage, logs, screenshots, or source control.
 
-   ```bash
-   npm run db:up
-   npm run db:push
-   ```
+## Display settings and performance
 
-   Or do everything in one command. `npm run dev:stack` starts the container when Docker is available, waits for PostgreSQL, applies the schema, and then starts Next.js. It only applies the schema automatically to loopback databases (`127.0.0.1`, `localhost`); for a hosted database it skips that step so you can review the target first and run `npm run db:push` deliberately.
+The Display menu stores two device-only choices under `muse.ui.prefs.v1`: theme (dark default, light available, both AA-checked in `src/lib/design-tokens.test.ts`) and Lite mode (auto, on, off). Everything decorative reads one effects level from `src/lib/ui-prefs.ts`: `none` under reduced motion, `lite` when Lite is on or auto detects Save-Data, a 2G class connection, or 2 GB of memory or less, else `full`. An inline script in `src/app/layout.tsx` stamps `data-theme` and `data-effects` on `<html>` before first paint.
 
-   ```bash
-   npm run dev:stack
-   ```
-
-4. If you did not use `npm run dev:stack`, start the application and open `http://127.0.0.1:3000`:
-
-   ```bash
-   npm run dev
-   ```
-
-## Browser and accessibility tests
-
-Install the Playwright Chromium browser once for the local machine:
-
-```bash
-npx playwright install chromium
-```
-
-Run the browser flows with:
-
-```bash
-npm run test:e2e
-```
-
-The Playwright suite covers the mocked Spotify authorization redirect, signed-out route protection, chat responses and recommendations, playlist draft saving and export, primary navigation, mobile navigation and focus, reduced-motion preference, and recoverable errors. The axe test scans the landing page and the main authenticated routes for WCAG A and AA violations. The suite mocks `/api` responses and uses sample data. It does not make real Spotify, OpenAI, or database requests, and it does not complete a real OAuth session or create a real playlist.
-
-The Chromium performance test applies 2x CPU throttling through the Chrome DevTools Protocol and samples animation frame intervals during a chat response. It uses an average frame rate threshold of 58 fps and a 95th percentile frame interval threshold of 33.4 ms. This is a repeatable budget check, not a substitute for profiling on representative devices. Browser tests, axe scans, and throttled performance measurements must be run in an environment with a working Chromium installation before release.
-
-## Accessibility and motion
-
-The interface includes a skip link, a main landmark, visible keyboard focus, labeled controls, navigation state, status and error announcements, and reduced-motion handling. Verify keyboard operation and screen reader output manually in addition to automated axe checks. Automated checks do not certify accessibility conformance.
-
-### Display settings, Lite mode, and the effects level
-
-The Display menu (sidebar, phone header, landing header) holds three device-only choices stored under `muse.ui.prefs.v1`: theme (dark by default, light available, both AA-checked in `src/lib/design-tokens.test.ts`), Lite mode (auto, on, off), and sound (off by default, Web Audio blips only). Every decorative effect reads one effects level from `src/lib/ui-prefs.ts`:
-
-* `none`: the system asks for reduced motion. Nothing decorative moves.
-* `lite`: Lite is on, or auto and the browser reports Save-Data, a 2G class connection, or two gigabytes of memory or less. The living background and the notes burst render nothing, the landing canvases paint a still frame, typed reveals are instant, ripples and pointer tilts are skipped.
-* `full`: everything, on `transform` and `opacity` only.
-
-A small inline script in `src/app/layout.tsx` stamps `data-theme` and `data-effects` on `<html>` before the first paint, so there is no flash and CSS rules such as `html[data-effects="lite"] .muse-effect-full` apply immediately.
-
-### Performance checks for phones
-
-Lighthouse cannot run in the build sandbox. Before and after a release, run it against the preview on a mobile profile, once with the defaults and once after choosing Lite in the Display menu:
+Lighthouse does not run in the build sandbox. Before and after a release:
 
 ```bash
 npx lighthouse https://<preview-url>/chat --form-factor=mobile --preset=perf --view
 ```
 
-The Vercel functions stay in the default `iad1` region because the database is in the US East region; moving only the functions nearer West Africa would put every database round trip across the Atlantic. Static assets are served from Vercel's CDN regardless. If the database moves to the EU, add `{ "regions": ["cdg1"] }` in `vercel.json` at the same time, and keep the Upstash database in the same region as the functions.
-
-## Configuration
-
-Set these environment variable names in `.env.local` for local development. Configure production values only through the project's approved secret-management process.
-
-* `DATABASE_URL`: PostgreSQL connection string. Use a pooled connection for serverless deployments where appropriate.
-* `SPOTIFY_CLIENT_ID`: Spotify application client ID.
-* `SPOTIFY_CLIENT_SECRET`: Spotify application client secret.
-* `SPOTIFY_REDIRECT_URI`: exact OAuth callback URI for the current environment.
-* `OPENAI_API_KEY`: OpenAI API key. When this is absent, MUSE shows an explicit unavailable state for AI features.
-* `ENCRYPTION_KEY`: 32-character key used to encrypt stored Spotify tokens. It also peppers the one-way hash of visitor IP addresses in rate-limit counters.
-
-Optional, added by the rebuild (names only; every one is documented in `.env.example`):
-
-* `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`: rate-limit and budget counters in Upstash Redis; without them the Postgres `rate_limits` table is used.
-* `AI_MAX_OUTPUT_TOKENS`, `AI_DAILY_BUDGET_REQUESTS`, `AI_DAILY_BUDGET_TOKENS`: the output cap and the shared daily budget (Lagos day) behind "MUSE is resting".
-* `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`: Cloudflare Turnstile; the human check runs only when both are set.
-* `SPOTIFY_TESTER_EMAILS` or `TESTER_KEY`: who can see Spotify sign-in and Create in Spotify. Neither set means Spotify sign-in is hidden.
-* `LASTFM_API_KEY`: the optional Last.fm import on the Profile page.
-* `PAYMENTS_ENABLED`, `PAYSTACK_SECRET_KEY`: the payments scaffold (see below). Leave `PAYMENTS_ENABLED` unset or `false`.
-
-Do not place secrets in client code, browser storage, screenshots, logs, or source control.
+Functions stay in Vercel's default `iad1` region because the database is in US East. If the database moves to the EU, add `{ "regions": ["cdg1"] }` in `vercel.json` and keep Upstash in the same region.
 
 ## Payments (scaffold, off)
 
-`/plus` shows the Free and Plus plans and says Plus is not open. `POST /api/billing/checkout` and `POST /api/billing/webhook` answer 503 `PAYMENTS_DISABLED` until `PAYMENTS_ENABLED=true`, and the checkout refuses with `PRICE_NOT_SET` until a Plus price exists in `src/lib/billing/plans.ts`. Paystack's hosted page would take the payment in naira; the webhook is checked with an HMAC SHA-512 of the raw body. No Plus benefit uses Spotify data. The registrations, keys, legal text, and code TODOs needed before the flag flips are in `docs/PAYMENTS.md`.
+`/plus` shows the Free and Plus plans and says Plus is not open. `POST /api/billing/checkout` and `POST /api/billing/webhook` answer 503 `PAYMENTS_DISABLED` until `PAYMENTS_ENABLED=true`, and checkout refuses with `PRICE_NOT_SET` until a Plus price exists in `src/lib/billing/plans.ts`. Paystack's hosted page would take payment in naira; the webhook is verified with HMAC SHA-512 of the raw body. What has to happen before the flag flips is in `docs/PAYMENTS.md`.
 
 ## Legal pages
 
-`/privacy`, `/terms`, and `/spotify-attribution` describe the no-account product: browser storage keys, what goes to OpenAI and the catalogues, hashed-IP counters, every cookie, the optional Last.fm and export features, NDPA 2023 rights, and a deletion path for visitors and testers. They are drafts for a lawyer; governing law, jurisdiction, and the database provider are marked placeholders, and each page lists what to check before publishing. The operator and contact are in `src/lib/legal.ts`.
+`/privacy`, `/terms`, and `/spotify-attribution` describe the no-account product: browser storage keys, what goes to OpenAI and the catalogues, hashed-IP counters, every cookie, Last.fm and export, NDPA 2023 rights, and a deletion path. They are drafts for a lawyer. Governing law, jurisdiction, and the database provider are marked as placeholders. Operator and contact are in `src/lib/legal.ts`.
 
-## Spotify application setup
+## Spotify (testers only)
 
-Register the exact callback URI in the Spotify Developer Dashboard. Spotify requires HTTPS except for loopback addresses. For local HTTP development, use an explicit loopback IP such as `127.0.0.1`; `localhost` is not accepted. See Spotify's [redirect URI guidance](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri).
+Register the exact callback URI in the Spotify Developer Dashboard. Spotify requires HTTPS except for loopback; use `127.0.0.1`, not `localhost`, for local HTTP ([redirect URI guidance](https://developer.spotify.com/documentation/web-api/concepts/redirect_uri)). Development Mode limits users per app and needs a Premium owner; check the app's quota mode against the [February 2026 migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide) and the [July 2026 changelog](https://developer.spotify.com/documentation/web-api/references/changes/july-2026) before testing.
 
-Development Mode requirements differ from Extended Quota Mode. Spotify's February 2026 guide says Development Mode app owners need an active Premium subscription and new apps may authorize up to five users. Existing apps above that user limit are grandfathered. The July 2026 update allows up to 25 Client IDs per developer account, while Development Mode API quotas are shared across that account. Extended Quota Mode apps are not affected by the February migration guide. Check the actual quota mode and current limits for the app before testing or release. See the [February 2026 migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide) and [July 2026 changelog](https://developer.spotify.com/documentation/web-api/references/changes/july-2026).
+MUSE is not represented as Spotify-policy compliant. Tester features send Spotify-derived listening data to OpenAI, and Spotify's [Developer Policy](https://developer.spotify.com/policy) restricts AI use of Spotify Content and requires deletion after disconnect. Get policy and legal review before opening the integration beyond testers. Passing mocked tests says nothing about Spotify API compatibility.
 
-The Spotify app mode and MUSE's compatibility with the current API requirements have not been verified. Do not assume that passing mocked tests establishes Spotify API compatibility.
+## Error monitoring
 
-## Spotify policy and release review
+None is installed. The [Sentry Next.js SDK](https://docs.sentry.io/platforms/javascript/guides/nextjs/) is the obvious choice. Before enabling it, scrub request bodies and query data, skip Session Replay, and never send tokens, cookies, prompts, AI replies, listening history, or account details ([sensitive data scrubbing](https://docs.sentry.io/platforms/javascript/guides/nextjs/data-management/sensitive-data/)).
 
-MUSE is not represented as Spotify-policy compliant. The current product sends Spotify-derived listening data to OpenAI and uses listening history for profile insights and recommendations. Spotify's [Developer Policy](https://developer.spotify.com/policy) restricts analyzing Spotify Content and using Spotify Platform or Content for AI ingestion. It also requires deletion and no further processing of a user's personal data after disconnection. MUSE currently retains Spotify account identity fields after disconnect, so the deletion flow needs review and remediation before the integration can be treated as compliant.
+## Before a deploy
 
-MUSE sends playback commands to Spotify and does not stream audio itself. Spotify's playback references include Premium requirements and restrictions concerning commercial streaming integrations. Whether the current or future product use falls within those restrictions remains unresolved. Obtain appropriate policy and legal review before release. The [Spotify attribution page](/spotify-attribution) is still a review placeholder and needs final branding, artwork, links, and attribution before release.
-
-## Error monitoring recommendation
-
-Error monitoring is not installed or configured. A reasonable next step is the official [Sentry Next.js SDK](https://docs.sentry.io/platforms/javascript/guides/nextjs/) for App Router rendering errors, API route failures, and sampled performance traces. Keep the default rollout conservative and define an explicit data policy first.
-
-Do not send Spotify access or refresh tokens, cookies, authorization headers, prompts, AI responses, Spotify listening history, or personal account details to monitoring. Disable or scrub request bodies and query data, add SDK-side redaction before events leave the app, and avoid Session Replay until its capture behavior has been reviewed. Sentry documents [sensitive data scrubbing](https://docs.sentry.io/platforms/javascript/guides/nextjs/data-management/sensitive-data/). Prefer route templates, status codes, provider error codes, durations, and non-identifying request IDs. Alert on sustained server errors, failed Spotify or AI requests, and health-check failures. Review retention, access controls, and processor terms before enabling a third-party monitor.
-
-## Deployment checks
-
-1. Review Spotify policy, API mode, endpoint compatibility, attribution, privacy, and data deletion before enabling the integration for real users.
-2. Apply schema changes to the intended database through the project's deployment change process. Do not point local setup commands at production accidentally.
-3. Deploy through the existing release process. No production configuration changes are made by the test suite.
-4. Check database connectivity at `/api/health`. A healthy database returns HTTP 200 with `{"ok":true}`. An unavailable or unconfigured database returns HTTP 500 with `{"ok":false}` without returning credentials or internal error details.
-5. Review `npm audit --omit=dev` findings. The current locked Next.js dependency has unresolved production advisories. Upgrade and regression-test the runtime dependencies before release. Do not apply forced dependency upgrades without review.
+1. Apply schema changes to the intended database deliberately. Do not point local commands at production.
+2. Check `/api/health`: 200 `{"ok":true}` when the database answers, 500 `{"ok":false}` otherwise, with no internal details.
+3. Review `npm audit --omit=dev`. Upgrade and regression-test runtime dependencies before release; do not force upgrades without review.
+4. For tester Spotify features, finish the policy, API mode, attribution, and deletion review first.
