@@ -13,8 +13,8 @@ import { SETTINGS_NAV, isActivePath, navItemsFor } from './shell-nav';
 import { DisplayMenu } from './DisplayMenu';
 
 /**
- * Desktop navigation, shown from the lg breakpoint up. Phones get the bottom
- * tabs instead; both read the same destination list.
+ * Tablet and desktop navigation, shown from the md breakpoint up. Phones get
+ * the bottom tabs instead; both read the same destination list.
  */
 
 const NAV_LINK =
@@ -37,7 +37,7 @@ export function Sidebar() {
   return (
     <aside
       aria-label="Application sidebar"
-      className="hidden w-[var(--muse-sidebar-width)] shrink-0 flex-col border-r border-border-subtle bg-background lg:flex"
+      className="hidden w-[var(--muse-sidebar-width)] shrink-0 flex-col border-r border-border-subtle bg-background md:flex"
     >
       <div className="flex h-[var(--muse-topbar-height)] items-center px-6">
         <Link

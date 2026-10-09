@@ -2,7 +2,7 @@
  * The one beat clock for the landing page.
  *
  * Everything that needs a beat reads it from here: the hero record canvas, the
- * closing band canvas, and the two lime dots in the header and the hero. There
+ * closing band canvas, and the two accent dots in the header and the hero. There
  * is exactly one requestAnimationFrame loop in the whole page, started by the
  * first subscriber and stopped when the last one leaves, so React strict mode
  * mounting an effect twice can never leave two loops running.

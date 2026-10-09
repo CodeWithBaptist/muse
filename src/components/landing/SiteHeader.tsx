@@ -23,7 +23,7 @@ export const LANDING_NAV: ReadonlyArray<{ label: string; id: string }> = [
  * The landing header.
  *
  * Solid background with a hairline underneath and no blur, so it stays readable
- * over the hero record. The mark on the left pulses its lime dot on the shared
+ * over the hero record. The mark on the left pulses its accent dot on the shared
  * beat, the nav links scroll smoothly unless motion is reduced, and the right
  * holds the display settings and the same primary action the hero uses. The links drop out
  * below 760px, where the page reads as one column anyway.

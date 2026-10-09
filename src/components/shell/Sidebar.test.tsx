@@ -55,20 +55,22 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Chat' })).toBeDefined();
   });
 
-  it('uses the layout token for its width and hides below lg', () => {
+  it('uses the layout token for its width and hides below md', () => {
     render(<Sidebar />);
     const aside = screen.getByRole('complementary', {
       name: 'Application sidebar',
     });
     expect(aside.className).toContain('w-[var(--muse-sidebar-width)]');
     expect(aside.className).toContain('hidden');
-    expect(aside.className).toContain('lg:flex');
+    expect(aside.className).toContain('md:flex');
   });
 
   it('shows guests only the chat, says where their chat lives, and offers no account controls', () => {
     auth.authenticated = false;
     render(<Sidebar />);
-    expect(screen.getByRole('link', { name: 'Chat' }).getAttribute('href')).toBe('/chat');
+    expect(
+      screen.getByRole('link', { name: 'Chat' }).getAttribute('href'),
+    ).toBe('/chat');
     for (const item of PRIMARY_NAV.filter((entry) => !entry.open)) {
       expect(screen.queryByRole('link', { name: item.label })).toBeNull();
     }

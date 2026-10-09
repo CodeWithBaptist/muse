@@ -1,3 +1,4 @@
+import { colors } from './design-tokens';
 import {
   DEFAULT_UI_PREFS,
   UI_PREFS_STORAGE_KEY,
@@ -106,10 +107,10 @@ export function applyUiPrefsToDocument(): void {
   root.setAttribute('data-theme', prefs.theme);
   root.style.colorScheme = prefs.theme;
   root.setAttribute('data-effects', getEffectsLevel());
-  // The browser chrome follows the page background.
+  // The browser chrome uses the cobalt primary token in both themes.
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', prefs.theme === 'light' ? '#F7F6F2' : '#0B0B0C');
+    ?.setAttribute('content', colors.accentPrimary);
 }
 
 export function setUiPrefs(next: Partial<UiPrefs>): void {

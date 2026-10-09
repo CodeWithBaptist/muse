@@ -19,12 +19,11 @@ import { BackToTop } from '@/components/ui/BackToTop';
 /**
  * The app shell.
  *
- * One row that fills the visible viewport: the sidebar (lg and up), the page
+ * One row that fills the visible viewport: the sidebar (md and up), the page
  * column, and the now-playing rail (xl and up). The page column stacks the
- * phone header, the scrolling page, the compact now-playing strip (below xl),
- * and the bottom tabs (below lg). Every bar is in normal flow, so nothing is
- * fixed over the content and safe areas are handled where the bars touch the
- * edges.
+ * phone header, the scrolling page, and the compact now-playing strip (below
+ * xl). The fixed bottom tabs (below md) reserve space in the shell and follow
+ * the safe area and visible viewport when the on-screen keyboard opens.
  *
  * Pages cross fade on route change with the shared page transition, and focus
  * moves to the main landmark so keyboard and screen reader users land on the
@@ -40,6 +39,59 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // it and send it back up. Pages that scroll their own region (chat) simply
   // never move this one, and their own control takes over there.
   const pageScrollRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const root = document.documentElement;
+    const clearViewportState = () => {
+      root.removeAttribute('data-keyboard-visible');
+      root.style.removeProperty('--muse-visual-viewport-top');
+      root.style.removeProperty('--muse-visual-viewport-height');
+      root.style.removeProperty('--muse-visual-viewport-bottom-offset');
+    };
+    const updateViewportState = () => {
+      const isMobile = window.matchMedia('(max-width: 767px)').matches;
+      const bottomOffset = Math.max(
+        0,
+        window.innerHeight - viewport.offsetTop - viewport.height,
+      );
+      const keyboardVisible =
+        isMobile && viewport.scale === 1 && bottomOffset > 120;
+
+      if (!keyboardVisible) {
+        clearViewportState();
+        return;
+      }
+
+      root.setAttribute('data-keyboard-visible', 'true');
+      root.style.setProperty(
+        '--muse-visual-viewport-top',
+        `${Math.max(0, viewport.offsetTop)}px`,
+      );
+      root.style.setProperty(
+        '--muse-visual-viewport-height',
+        `${viewport.height}px`,
+      );
+      root.style.setProperty(
+        '--muse-visual-viewport-bottom-offset',
+        `${bottomOffset}px`,
+      );
+    };
+
+    viewport.addEventListener('resize', updateViewportState);
+    viewport.addEventListener('scroll', updateViewportState);
+    window.addEventListener('resize', updateViewportState);
+    updateViewportState();
+
+    return () => {
+      viewport.removeEventListener('resize', updateViewportState);
+      viewport.removeEventListener('scroll', updateViewportState);
+      window.removeEventListener('resize', updateViewportState);
+      clearViewportState();
+    };
+  }, []);
 
   // Chat is open to everyone. Signed out visitors on the account-only pages
   // go to the login page, which brings them back once connected. replace()

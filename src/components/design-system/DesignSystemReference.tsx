@@ -88,7 +88,17 @@ const TEXT_TOKENS: Array<{
   {
     token: 'accent',
     use: 'text',
-    role: 'One action per screen, focus, playing',
+    role: 'Links, highlights, focus, playing',
+  },
+  {
+    token: 'accentPrimary',
+    use: 'ui',
+    role: 'Cobalt primary action fill',
+  },
+  {
+    token: 'accentContrast',
+    use: 'text',
+    role: 'Text and icons on primary actions',
   },
   { token: 'danger', use: 'text', role: 'Errors and destructive confirmation' },
 ];
@@ -105,12 +115,12 @@ function ColorSection() {
     <Section
       id="color"
       title="Color"
-      lede="A near-black stage, warm off-white text, and one lime accent used on well under five percent of any screen. Ratios are computed from the tokens, not typed in."
+      lede="A near-black stage, warm off-white text, and a compact palette of cobalt actions and azure highlights. Ratios are computed from the tokens, not typed in."
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
           <caption className="sr-only">
-            Text tokens with contrast ratios on the background and surface
+            Color roles with contrast ratios on the background and surface
             colors
           </caption>
           <thead>

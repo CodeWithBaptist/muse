@@ -14,7 +14,7 @@ vi.mock('motion/react', async () => {
 });
 
 /**
- * The header: solid with a hairline and no blur, a mark whose lime dot pulses on
+ * The header: solid with a hairline and no blur, a mark whose accent dot pulses on
  * the shared beat, nav links that drop out under 760px and smooth scroll only
  * when motion is allowed, and the shared primary action.
  */
@@ -89,7 +89,7 @@ describe('SiteHeader', () => {
     expect(header.className).not.toContain('blur');
   });
 
-  it('carries the mark with the lime dot on the left', () => {
+  it('carries the mark with the accent dot on the left', () => {
     render(<SiteHeader />);
 
     expect(screen.getByRole('img', { name: 'muse' })).toBeDefined();

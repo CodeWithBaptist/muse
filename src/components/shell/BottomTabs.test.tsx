@@ -34,16 +34,19 @@ describe('BottomTabs', () => {
     ).toEqual(['Chat', 'Profile']);
   });
 
-  it('renders the five destinations as 44px tabs with focus rings', () => {
+  it('renders all six authenticated destinations as 44px tabs with focus rings', () => {
     render(<BottomTabs />);
     const nav = screen.getByRole('navigation', { name: 'Primary navigation' });
     const links = nav.querySelectorAll('a');
-    expect(links).toHaveLength(PRIMARY_NAV.length);
+    expect(links).toHaveLength(PRIMARY_NAV.length + 1);
     for (const link of links) {
       expect(link.className).toContain('min-h-11');
       expect(link.className).toContain('focus-ring');
     }
-    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute(
+      'href',
+      '/settings',
+    );
   });
 
   it('marks the active tab with aria-current and a visible indicator', () => {
@@ -57,11 +60,11 @@ describe('BottomTabs', () => {
     expect(chat.querySelector('[data-tab-indicator]')).toBeNull();
   });
 
-  it('keeps the bar in flow, hides it from lg up, and pads for the home indicator', () => {
+  it('fixes the bar below md and pads for the home indicator', () => {
     render(<BottomTabs />);
     const nav = screen.getByRole('navigation', { name: 'Primary navigation' });
-    expect(nav.className).not.toContain('fixed');
-    expect(nav.className).toContain('lg:hidden');
+    expect(nav.className).toContain('fixed');
+    expect(nav.className).toContain('md:hidden');
     expect(nav.className).toContain('pb-[var(--muse-safe-bottom)]');
   });
 });

@@ -46,7 +46,7 @@ describe('VibeBackdrop', () => {
     expect(layers[1]).toHaveAttribute('data-entering', 'true');
     expect(
       (layers[1] as HTMLElement).style.getPropertyValue('--vibe-tint'),
-    ).toBe('#E24B3B');
+    ).toBe('var(--color-vibe-grind)');
     expect(backdrop.querySelector('[class*="blob"]')).toBeNull();
 
     // jsdom has no AnimationEvent, so the timer fallback settles the fade here.

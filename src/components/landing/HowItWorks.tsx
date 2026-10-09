@@ -266,7 +266,7 @@ const STEP_VISUALS = [
  * A thin rail on the left fills as the steps become active, with a transform, so
  * nothing in the section changes layout. The step crossing the middle band of
  * the viewport is the active one: it reads at full strength and its number turns
- * lime, while the others dim. Each small visual plays once, the first time its
+ * accent, while the others dim. Each small visual plays once, the first time its
  * step becomes active, and then holds its final frame. There is no scroll
  * jacking: the page scrolls exactly as it would without this section.
  */

@@ -20,7 +20,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 };
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-background hover:bg-accent/90',
+  primary: 'bg-accent-primary text-accent-contrast hover:bg-accent-primary/90',
   secondary:
     'bg-surface text-text-primary border border-border-subtle hover:border-border-strong',
   ghost:
@@ -101,7 +101,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           <EqualizerBars
             bars={3}
             height={12}
-            tone={variant === 'primary' ? 'dark' : 'lime'}
+            tone={variant === 'primary' ? 'dark' : 'accent'}
             playing
           />
         ) : null}

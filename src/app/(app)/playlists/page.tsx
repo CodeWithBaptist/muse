@@ -71,7 +71,9 @@ export default function PlaylistsPage() {
       const res = await fetch('/api/music?type=playlists&limit=12');
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        const err = new Error(body.error || 'Unable to load Spotify playlists') as Error & {
+        const err = new Error(
+          body.error || 'Unable to load Spotify playlists',
+        ) as Error & {
           status?: number;
           code?: string;
         };
@@ -110,7 +112,7 @@ export default function PlaylistsPage() {
       await queryClient.invalidateQueries({ queryKey: ['muse-playlists'] });
     } catch (e: unknown) {
       setActionError(
-        e instanceof Error ? e.message : 'Unable to update playlist.'
+        e instanceof Error ? e.message : 'Unable to update playlist.',
       );
     }
   };
@@ -127,7 +129,7 @@ export default function PlaylistsPage() {
       await queryClient.invalidateQueries({ queryKey: ['muse-playlists'] });
     } catch (e: unknown) {
       setActionError(
-        e instanceof Error ? e.message : 'Unable to remove track.'
+        e instanceof Error ? e.message : 'Unable to remove track.',
       );
     }
   };
@@ -142,7 +144,7 @@ export default function PlaylistsPage() {
       await queryClient.invalidateQueries({ queryKey: ['muse-playlists'] });
     } catch (e: unknown) {
       setActionError(
-        e instanceof Error ? e.message : 'Unable to delete playlist.'
+        e instanceof Error ? e.message : 'Unable to delete playlist.',
       );
     }
   };
@@ -152,7 +154,9 @@ export default function PlaylistsPage() {
       .map(
         (t) =>
           t.uri ||
-          (t.id ? `spotify:track:${t.id.replace(/^spotify:track:/, '')}` : null),
+          (t.id
+            ? `spotify:track:${t.id.replace(/^spotify:track:/, '')}`
+            : null),
       )
       .filter((u): u is string => Boolean(u));
 
@@ -184,7 +188,7 @@ export default function PlaylistsPage() {
         </div>
         <Link
           href="/chat"
-          className="inline-flex h-9 items-center justify-center rounded-md bg-accent px-4 text-xs font-semibold text-background transition-colors hover:bg-accent/90 focus-ring"
+          className="inline-flex h-9 items-center justify-center rounded-md bg-accent-primary px-4 text-xs font-semibold text-accent-contrast transition-colors hover:bg-accent-primary/90 focus-ring"
         >
           <PlusSquare size={15} className="mr-2" aria-hidden="true" />
           New Playlist in Chat
@@ -353,7 +357,7 @@ export default function PlaylistsPage() {
                             href={playlist.spotifyUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent text-background text-xs font-semibold hover:opacity-90 transition-opacity"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent-primary text-accent-contrast text-xs font-semibold hover:bg-accent-primary/90 transition-colors"
                           >
                             <span>Open in Spotify</span>
                             <ExternalLink size={13} />
@@ -362,7 +366,9 @@ export default function PlaylistsPage() {
                           <CreateInSpotifyButton
                             size="sm"
                             name={playlist.name}
-                            description={playlist.description || 'Created with MUSE'}
+                            description={
+                              playlist.description || 'Created with MUSE'
+                            }
                             playlistId={playlist.id}
                             trackUris={playlistTrackUris(playlist)}
                             tracks={playlistTrackMeta(playlist)}
@@ -456,7 +462,7 @@ export default function PlaylistsPage() {
           </p>
         ) : (
           <motion.div
-            variants={ fadeIn }
+            variants={fadeIn}
             initial="initial"
             animate="animate"
             className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6"

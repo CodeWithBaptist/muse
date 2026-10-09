@@ -4,18 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth';
-import { isActivePath, navItemsFor } from './shell-nav';
+import { isActivePath, navItemsFor, SETTINGS_NAV } from './shell-nav';
 
 /**
- * Phone navigation: five tabs, one thumb. Each tab is at least 44px tall and a
- * fifth of the width, the bar pads itself for the home indicator, and the
- * active tab is told apart by colour, weight, and a small accent mark so it
- * never relies on colour alone.
+ * Phone navigation uses up to six tabs. Each tab is at least 44px tall, the
+ * bar pads itself for the home indicator, and the active tab is told apart by
+ * colour, weight, and a small accent mark so it never relies on colour alone.
  */
 export function BottomTabs() {
   const pathname = usePathname();
   const { authenticated } = useAuth();
-  const items = navItemsFor(authenticated);
+  const items = authenticated
+    ? [...navItemsFor(authenticated), SETTINGS_NAV]
+    : navItemsFor(authenticated);
 
   // A bar with one destination navigates nowhere; guests get the space back.
   if (items.length < 2) return null;
@@ -23,11 +24,14 @@ export function BottomTabs() {
   return (
     <nav
       aria-label="Primary navigation"
-      className="shrink-0 border-t border-border-subtle bg-background pb-[var(--muse-safe-bottom)] lg:hidden"
+      data-testid="bottom-tabs"
+      className="muse-bottom-tabs fixed inset-x-0 bottom-0 z-50 border-t border-border-subtle bg-background pb-[var(--muse-safe-bottom)] md:hidden"
     >
       <ul
         className="grid h-[var(--muse-bottom-nav-height)]"
-        style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
+        style={{
+          gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))`,
+        }}
       >
         {items.map((item) => {
           const active = isActivePath(pathname, item.href);
@@ -50,7 +54,7 @@ export function BottomTabs() {
                 />
                 <span
                   className={cn(
-                    'max-w-full truncate text-[11px] leading-none',
+                    'max-w-full truncate text-xs leading-none',
                     active ? 'font-semibold' : 'font-medium',
                   )}
                 >

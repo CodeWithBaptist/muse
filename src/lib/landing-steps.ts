@@ -2,8 +2,8 @@
  * The vertical rail.
  *
  * Four steps sit beside one thin rail. The step crossing the middle band of the
- * viewport becomes active: it reads at full strength and its number turns lime,
- * while the others dim. The rail fills to the active step with a transform, so
+ * viewport becomes active: it reads at full strength and its number uses the
+ * accent color, while the others dim. The rail fills to the active step with a transform, so
  * nothing in this section changes layout.
  *
  * The activation rules are here as plain functions so they can be unit tested
@@ -36,7 +36,7 @@ export function stepOpacity(active: number, index: number): number {
   return active === index ? 1 : STEP_DIM_OPACITY;
 }
 
-/** True when a step number is drawn in lime. */
+/** True when a step number is drawn in accent. */
 export function stepNumberIsAccent(active: number, index: number): boolean {
   return active === index;
 }
@@ -59,12 +59,18 @@ export function railProgress(active: number, stepCount: number): number {
  * Whether a step's small visual has already played. Each visual plays once, the
  * first time its step becomes active, and then holds its final frame.
  */
-export function stepHasPlayed(played: readonly boolean[], index: number): boolean {
+export function stepHasPlayed(
+  played: readonly boolean[],
+  index: number,
+): boolean {
   return Boolean(played[index]);
 }
 
 /** The played flags after one activation, marking the new step as played. */
-export function markStepPlayed(played: readonly boolean[], active: number): boolean[] {
+export function markStepPlayed(
+  played: readonly boolean[],
+  active: number,
+): boolean[] {
   const next = [...played];
   if (active >= 0) next[active] = true;
   return next;

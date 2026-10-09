@@ -11,6 +11,7 @@
  * the canvas components; the fallbacks below are the token values themselves.
  */
 
+import { colors } from '@/lib/design-tokens';
 import { beatEnvelope } from '@/lib/beat-clock';
 import {
   LANDING_WORDMARK_BASELINE,
@@ -72,9 +73,9 @@ export const NEEDLE_SPEED = 0.0007;
 /** Sub segments used when splitting the needle arc for the readability rule. */
 export const NEEDLE_ARC_SAMPLES = 24;
 
-/** The content block is expanded by this much before lime is dimmed. */
+/** The content block is expanded by this much before accent is dimmed. */
 export const HERO_CONTENT_PADDING = 12;
-/** Lime that lands over the text is drawn at this fraction of its opacity. */
+/** The accent that lands over the text is drawn at this fraction of its opacity. */
 export const HERO_DIM_FACTOR = 0.35;
 
 /** Hover energy caps out here, and the distortion it feeds is capped lower. */
@@ -91,12 +92,17 @@ export const STATIC_NEEDLE_HEAD = 2.1;
 
 /** Outer groove radius for a hero of this size. */
 export function grooveLimit(width: number, height: number): number {
-  return Math.min(Math.hypot(Math.max(0, width), Math.max(0, height)) / 2, GROOVE_OUTER_CAP);
+  return Math.min(
+    Math.hypot(Math.max(0, width), Math.max(0, height)) / 2,
+    GROOVE_OUTER_CAP,
+  );
 }
 
 /** Grooves step more widely on narrow screens. */
 export function grooveStep(width: number): number {
-  return width > 0 && width < GROOVE_NARROW_WIDTH ? GROOVE_STEP_NARROW : GROOVE_STEP;
+  return width > 0 && width < GROOVE_NARROW_WIDTH
+    ? GROOVE_STEP_NARROW
+    : GROOVE_STEP;
 }
 
 /** The groove radii, from the inner radius to the hero limit. */
@@ -104,7 +110,11 @@ export function grooveRadii(width: number, height: number): number[] {
   const limit = grooveLimit(width, height);
   const step = grooveStep(width);
   const radii: number[] = [];
-  for (let radius = GROOVE_INNER_RADIUS; radius <= limit + 1e-6; radius += step) {
+  for (
+    let radius = GROOVE_INNER_RADIUS;
+    radius <= limit + 1e-6;
+    radius += step
+  ) {
     radii.push(radius);
   }
   return radii;
@@ -247,7 +257,11 @@ export function needleArcRuns(
     }
 
     if (dim !== runDim) {
-      runs.push({ start: runStart, end: start + (span * index) / samples, dim: runDim });
+      runs.push({
+        start: runStart,
+        end: start + (span * index) / samples,
+        dim: runDim,
+      });
       runStart = start + (span * index) / samples;
       runDim = dim;
     }
@@ -299,12 +313,20 @@ export function visibleCenter(
   viewportHeight: number,
 ): number {
   const top = clamp(-rectTop, 0, Math.max(0, height));
-  const bottom = clamp(-rectTop + Math.max(0, viewportHeight), 0, Math.max(0, height));
+  const bottom = clamp(
+    -rectTop + Math.max(0, viewportHeight),
+    0,
+    Math.max(0, height),
+  );
   return (top + bottom) / 2;
 }
 
 /** The one deterministic pose used when motion is reduced. */
-export function staticHeroFrame(width: number, height: number, contentRect: Rect): HeroFrame {
+export function staticHeroFrame(
+  width: number,
+  height: number,
+  contentRect: Rect,
+): HeroFrame {
   return {
     width,
     height,
@@ -318,7 +340,11 @@ export function staticHeroFrame(width: number, height: number, contentRect: Rect
 }
 
 /** The beat and distortion for one hero frame. */
-export function heroFrameValues(frame: HeroFrame): { beat: number; distortion: number; time: number } {
+export function heroFrameValues(frame: HeroFrame): {
+  beat: number;
+  distortion: number;
+  time: number;
+} {
   return {
     beat: frame.static ? STATIC_BEAT : beatEnvelope(frame.timeMs),
     distortion: frame.static ? 0 : grooveDistortion(frame.multiplier),
@@ -347,8 +373,20 @@ export interface GrooveCanvasContext {
   scale(x: number, y: number): void;
   clip(path: unknown): void;
   stroke(path: unknown): void;
-  setTransform(a: number, b: number, c: number, d: number, e: number, f: number): void;
-  createLinearGradient(x0: number, y0: number, x1: number, y1: number): CanvasGradientLike;
+  setTransform(
+    a: number,
+    b: number,
+    c: number,
+    d: number,
+    e: number,
+    f: number,
+  ): void;
+  createLinearGradient(
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+  ): CanvasGradientLike;
 }
 
 export interface CanvasGradientLike {
@@ -398,7 +436,7 @@ export const BAND_CURSOR_RADIUS = 18;
 export const BAND_CURSOR_LIFT = 0.3;
 
 /** Bar alphas, and the outline that keeps the shapes readable. */
-export const BAND_BAR_LIME_ALPHA = 0.7;
+export const BAND_BAR_ACCENT_ALPHA = 0.7;
 export const BAND_BAR_INK_ALPHA = 0.42;
 export const BAND_OUTLINE_ALPHA = 0.34;
 export const BAND_OUTLINE_WIDTH_PX = 1.1;
@@ -411,7 +449,10 @@ export const BAND_EDGE_FADE = 0.2;
  * of the width, and never taller than the band minus its vertical margin.
  */
 export function logoScale(width: number, height: number): number {
-  const usableWidth = Math.min(BAND_MAX_LOGO_WIDTH, Math.max(0, width) * BAND_LOGO_WIDTH_FRACTION);
+  const usableWidth = Math.min(
+    BAND_MAX_LOGO_WIDTH,
+    Math.max(0, width) * BAND_LOGO_WIDTH_FRACTION,
+  );
   const usableHeight = Math.max(0, height) - BAND_LOGO_VERTICAL_MARGIN;
   const scale = Math.min(
     usableWidth / LOGO_UNITS_WIDTH,
@@ -462,8 +503,11 @@ export function bandBarHeight(
   cursorX: number | null = null,
 ): number {
   const normalized = clamp(xUnits / LOGO_UNITS_WIDTH, 0, 1);
-  const lifted = bandBarRatio(normalized, time) + bandCursorLift(xUnits, cursorX);
-  return lifted * BAND_BAR_MAX_HEIGHT * (0.5 + 0.5 * beat) * (1 + (energy - 1) * 0.3);
+  const lifted =
+    bandBarRatio(normalized, time) + bandCursorLift(xUnits, cursorX);
+  return (
+    lifted * BAND_BAR_MAX_HEIGHT * (0.5 + 0.5 * beat) * (1 + (energy - 1) * 0.3)
+  );
 }
 
 /** The playhead position along the logo, from 0 to 1. */
@@ -483,8 +527,11 @@ export function bandBarPositions(): number[] {
   return positions;
 }
 
-/** True when a bar sits behind the playhead and is drawn in lime. */
-export function bandBarIsLime(normalizedX: number, playhead: number): boolean {
+/** True when a bar sits behind the playhead and is drawn in accent. */
+export function bandBarIsAccent(
+  normalizedX: number,
+  playhead: number,
+): boolean {
   return normalizedX < playhead;
 }
 
@@ -522,8 +569,8 @@ export interface LandingPalette {
 
 /** The design tokens, used only as a fallback when the variables are absent. */
 export const LANDING_FALLBACK_PALETTE: LandingPalette = {
-  ink: '#F2F1ED',
-  accent: '#A8E85C',
+  ink: colors.textPrimary,
+  accent: colors.accent,
 };
 
 export function hexToRgba(hex: string, alpha: number): string {
@@ -573,9 +620,9 @@ export interface HeroDrawStats {
 }
 
 /**
- * Draws one hero frame: the grooves first, then the lime needle on top of the
- * six grooves it lives on. Lime that falls over the hero content block is drawn
- * at a fraction of its opacity, so the text and the buttons stay easy to read.
+ * Draws one hero frame: the grooves first, then the accent needle on top of the
+ * six grooves it lives on. The accent over the hero content block is drawn at a
+ * fraction of its opacity, so the text and the buttons stay easy to read.
  */
 export function drawHeroGrooves(
   ctx: GrooveCanvasContext,
@@ -597,7 +644,10 @@ export function drawHeroGrooves(
   const angles = grooveAngles();
   const pointAt = (radius: number, angle: number): Point => {
     const rr = grooveRadius(radius, beat, distortion, angle, time);
-    return { x: frame.cx + Math.cos(angle) * rr, y: frame.cy + Math.sin(angle) * rr };
+    return {
+      x: frame.cx + Math.cos(angle) * rr,
+      y: frame.cy + Math.sin(angle) * rr,
+    };
   };
 
   ctx.lineCap = 'round';
@@ -629,10 +679,16 @@ export function drawHeroGrooves(
   for (const index of needleIndices(radii.length)) {
     const radius = radii[index];
     const base = needleOpacity(index);
-    const runs = needleArcRuns(radius, needleArcStart(index, head), NEEDLE_SPAN, frame.contentRect, {
-      x: frame.cx,
-      y: frame.cy,
-    });
+    const runs = needleArcRuns(
+      radius,
+      needleArcStart(index, head),
+      NEEDLE_SPAN,
+      frame.contentRect,
+      {
+        x: frame.cx,
+        y: frame.cy,
+      },
+    );
 
     for (const dim of [false, true]) {
       const parts = runs.filter((run) => run.dim === dim);
@@ -643,7 +699,9 @@ export function drawHeroGrooves(
       for (const run of parts) {
         const steps = Math.max(
           2,
-          Math.round((run.end - run.start) / (NEEDLE_SPAN / NEEDLE_ARC_SAMPLES)),
+          Math.round(
+            (run.end - run.start) / (NEEDLE_SPAN / NEEDLE_ARC_SAMPLES),
+          ),
         );
         for (let step = 0; step <= steps; step += 1) {
           const angle = run.start + ((run.end - run.start) * step) / steps;
@@ -669,8 +727,8 @@ export interface LogoPath {
 
 /**
  * Draws one closing band frame: the wordmark as vertical bars clipped to each
- * letter, with the playhead turning the bars it has passed into lime, an
- * outline that keeps the shapes readable when the bars are low, a solid lime
+ * letter, with the playhead turning the bars it has passed into accent, an
+ * outline that keeps the shapes readable when the bars are low, a solid accent
  * dot, and a plain edge fade at both sides.
  *
  * `makePath` builds a Path2D from the path data. It is passed in so the drawing
@@ -704,26 +762,36 @@ export function drawLivingLogo(
     ctx.scale(scale, scale);
 
     if (piece.tone === 'accent') {
-      // The dot is solid lime, so it reads at any bar height.
-      ctx.fillStyle = hexToRgba(palette.accent, BAND_BAR_LIME_ALPHA);
+      // The dot is solid accent, so it reads at any bar height.
+      ctx.fillStyle = hexToRgba(palette.accent, BAND_BAR_ACCENT_ALPHA);
       ctx.clip(path);
-      ctx.fillRect(0, -LOGO_UNITS_HEIGHT, LOGO_UNITS_WIDTH, LOGO_UNITS_HEIGHT * 2);
+      ctx.fillRect(
+        0,
+        -LOGO_UNITS_HEIGHT,
+        LOGO_UNITS_WIDTH,
+        LOGO_UNITS_HEIGHT * 2,
+      );
       ctx.restore();
       continue;
     }
 
     ctx.clip(path);
 
-    const lime: Array<[number, number]> = [];
+    const accent: Array<[number, number]> = [];
     const ink: Array<[number, number]> = [];
     for (const x of positions) {
-      const bucket = bandBarIsLime(x / LOGO_UNITS_WIDTH, playhead) ? lime : ink;
-      bucket.push([x, bandBarHeight(x, time, beat, frame.energy, frame.cursorX)]);
+      const bucket = bandBarIsAccent(x / LOGO_UNITS_WIDTH, playhead)
+        ? accent
+        : ink;
+      bucket.push([
+        x,
+        bandBarHeight(x, time, beat, frame.energy, frame.cursorX),
+      ]);
       bars += 1;
     }
 
-    ctx.fillStyle = hexToRgba(palette.accent, BAND_BAR_LIME_ALPHA);
-    for (const [x, h] of lime) ctx.fillRect(x, -h, BAND_BAR_WIDTH, h);
+    ctx.fillStyle = hexToRgba(palette.accent, BAND_BAR_ACCENT_ALPHA);
+    for (const [x, h] of accent) ctx.fillRect(x, -h, BAND_BAR_WIDTH, h);
 
     ctx.fillStyle = hexToRgba(palette.ink, BAND_BAR_INK_ALPHA);
     for (const [x, h] of ink) ctx.fillRect(x, -h, BAND_BAR_WIDTH, h);
@@ -772,4 +840,3 @@ export function fadeBandEdges(
 
   ctx.globalCompositeOperation = 'source-over';
 }
-

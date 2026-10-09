@@ -61,7 +61,7 @@ describe('SiteFooter', () => {
       name: 'MUSE, back to the top of the page',
     });
     expect(mark.getAttribute('href')).toBe(LANDING_TOP_FRAGMENT);
-    // The real wordmark, not a word of text, and the lime dot with it.
+    // The real wordmark, not a word of text, and the accent dot with it.
     expect(
       mark.querySelector('[role="img"][aria-label="muse"]'),
     ).not.toBeNull();

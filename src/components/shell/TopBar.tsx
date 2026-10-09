@@ -23,7 +23,7 @@ export function TopBar() {
   return (
     <header
       aria-label="App header"
-      className="flex shrink-0 items-center justify-between border-b border-border-subtle bg-background px-4 pt-[var(--muse-safe-top)] lg:hidden"
+      className="flex shrink-0 items-center justify-between border-b border-border-subtle bg-background px-4 pt-[var(--muse-safe-top)] md:hidden"
     >
       <div className="flex h-[var(--muse-topbar-height)] items-center">
         <Link

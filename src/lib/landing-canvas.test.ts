@@ -33,7 +33,7 @@ import {
   NEEDLE_SPAN,
   STATIC_BEAT,
   bandBarHeight,
-  bandBarIsLime,
+  bandBarIsAccent,
   bandBarPositions,
   bandBarRatio,
   bandCursorLift,
@@ -78,9 +78,11 @@ type Call = { name: string; args: unknown[] };
 
 function createMockContext() {
   const calls: Call[] = [];
-  const record = (name: string) => (...args: unknown[]) => {
-    calls.push({ name, args });
-  };
+  const record =
+    (name: string) =>
+    (...args: unknown[]) => {
+      calls.push({ name, args });
+    };
 
   const context = {
     globalAlpha: 1,
@@ -188,8 +190,12 @@ describe('record groove geometry', () => {
   });
 
   it('waves with the beat, the distortion, the angle, and the radius', () => {
-    const wave = (beat: number, distortion: number, angle: number, radius: number) =>
-      grooveWave(beat, distortion, angle, radius, 0);
+    const wave = (
+      beat: number,
+      distortion: number,
+      angle: number,
+      radius: number,
+    ) => grooveWave(beat, distortion, angle, radius, 0);
 
     // No beat, no distortion, no movement.
     expect(wave(0, 1.8, 1, 200)).toBe(0);
@@ -200,8 +206,12 @@ describe('record groove geometry', () => {
       2.4 * distortion * (radius / 380) + 1e-9;
     for (let step = 0; step < 200; step += 1) {
       const angle = (step / 200) * Math.PI * 2;
-      expect(Math.abs(wave(1, 1.8, angle, 200))).toBeLessThanOrEqual(bound(1.8, 200));
-      expect(Math.abs(wave(1, 1, angle, 200))).toBeLessThanOrEqual(bound(1, 200));
+      expect(Math.abs(wave(1, 1.8, angle, 200))).toBeLessThanOrEqual(
+        bound(1.8, 200),
+      );
+      expect(Math.abs(wave(1, 1, angle, 200))).toBeLessThanOrEqual(
+        bound(1, 200),
+      );
     }
     // A larger distortion always lifts the ceiling.
     expect(bound(1.8, 200)).toBeGreaterThan(bound(1, 200));
@@ -438,7 +448,7 @@ describe('hero drawing', () => {
     expect(counts(calls, 'clearRect')).toBe(1);
   });
 
-  it('uses the token palette for ink and lime', () => {
+  it('uses the token palette for ink and accent', () => {
     const { context, calls } = createMockContext();
     drawHeroGrooves(context, heroFrame());
 
@@ -447,7 +457,7 @@ describe('hero drawing', () => {
     );
     expect(inks.length).toBeGreaterThan(0);
     expect(LANDING_FALLBACK_PALETTE.ink).toBe('#F2F1ED');
-    expect(LANDING_FALLBACK_PALETTE.accent).toBe('#A8E85C');
+    expect(LANDING_FALLBACK_PALETTE.accent).toBe('#5B9BFF');
   });
 });
 
@@ -537,7 +547,9 @@ describe('closing band bar heights', () => {
     expect(positions[0]).toBe(0);
     expect(positions[1]).toBeCloseTo(4.6, 10);
     expect(positions[positions.length - 1]).toBeLessThan(LOGO_UNITS_WIDTH);
-    expect(positions).toHaveLength(Math.ceil(LOGO_UNITS_WIDTH / BAND_BAR_PITCH));
+    expect(positions).toHaveLength(
+      Math.ceil(LOGO_UNITS_WIDTH / BAND_BAR_PITCH),
+    );
   });
 });
 
@@ -547,7 +559,10 @@ describe('closing band playhead', () => {
     expect(bandPlayhead(0)).toBe(0);
     expect(bandPlayhead(BAND_PLAYHEAD_PERIOD_MS / 2)).toBeCloseTo(0.5, 10);
     expect(bandPlayhead(BAND_PLAYHEAD_PERIOD_MS)).toBeCloseTo(0, 10);
-    expect(bandPlayhead(BAND_PLAYHEAD_PERIOD_MS * 3 + 3000)).toBeCloseTo(0.25, 10);
+    expect(bandPlayhead(BAND_PLAYHEAD_PERIOD_MS * 3 + 3000)).toBeCloseTo(
+      0.25,
+      10,
+    );
     expect(bandPlayhead(-3000)).toBeCloseTo(0.75, 10);
   });
 
@@ -557,10 +572,10 @@ describe('closing band playhead', () => {
     expect(staticBandFrame(1440, 240).static).toBe(true);
   });
 
-  it('paints the bars left of the playhead in lime', () => {
-    expect(bandBarIsLime(0.2, 0.4)).toBe(true);
-    expect(bandBarIsLime(0.4, 0.4)).toBe(false);
-    expect(bandBarIsLime(0.9, 0.4)).toBe(false);
+  it('paints the bars left of the playhead in accent', () => {
+    expect(bandBarIsAccent(0.2, 0.4)).toBe(true);
+    expect(bandBarIsAccent(0.4, 0.4)).toBe(false);
+    expect(bandBarIsAccent(0.9, 0.4)).toBe(false);
   });
 });
 
@@ -597,7 +612,9 @@ describe('closing band drawing', () => {
     const { context, calls } = createMockContext();
     drawLivingLogo(context, staticBandFrame(1440, 240), paths);
 
-    const gradients = calls.filter((call) => call.name === 'createLinearGradient');
+    const gradients = calls.filter(
+      (call) => call.name === 'createLinearGradient',
+    );
     expect(gradients).toHaveLength(2);
     expect(BAND_EDGE_FADE).toBe(0.2);
     expect(gradients[0].args).toEqual([0, 0, 1440 * 0.2, 0]);
@@ -621,8 +638,16 @@ describe('closing band drawing', () => {
     const first = createMockContext();
     const second = createMockContext();
 
-    drawLivingLogo(first.context, { ...staticBandFrame(1440, 240), static: false, timeMs: 0 }, paths);
-    drawLivingLogo(second.context, { ...staticBandFrame(1440, 240), static: false, timeMs: 240 }, paths);
+    drawLivingLogo(
+      first.context,
+      { ...staticBandFrame(1440, 240), static: false, timeMs: 0 },
+      paths,
+    );
+    drawLivingLogo(
+      second.context,
+      { ...staticBandFrame(1440, 240), static: false, timeMs: 240 },
+      paths,
+    );
 
     expect(first.calls).not.toEqual(second.calls);
   });
@@ -646,7 +671,7 @@ describe('closing band drawing', () => {
 
 describe('palette', () => {
   it('converts a hex to rgba', () => {
-    expect(hexToRgba('#A8E85C', 0.5)).toBe('rgba(168, 232, 92, 0.5)');
+    expect(hexToRgba('#5B9BFF', 0.5)).toBe('rgba(91, 155, 255, 0.5)');
     expect(hexToRgba('#fff', 1)).toBe('rgba(255, 255, 255, 1)');
     expect(hexToRgba('nonsense', 0.25)).toBe('rgba(242, 241, 237, 0.25)');
   });
@@ -654,9 +679,9 @@ describe('palette', () => {
   it('reads the design tokens', () => {
     const palette = readLandingPalette({
       getPropertyValue: (property: string) =>
-        property === '--color-text-primary' ? '#F2F1ED' : '#A8E85C',
+        property === '--color-text-primary' ? '#F2F1ED' : '#5B9BFF',
     });
-    expect(palette).toEqual({ ink: '#F2F1ED', accent: '#A8E85C' });
+    expect(palette).toEqual({ ink: '#F2F1ED', accent: '#5B9BFF' });
   });
 
   it('falls back to the token values when the variables are missing', () => {
