@@ -37,11 +37,17 @@ export function navItemsFor(authenticated: boolean): readonly ShellNavItem[] {
   return authenticated ? PRIMARY_NAV : PRIMARY_NAV.filter((item) => item.open);
 }
 
+/** Open routes that are not in the navigation. */
+export const OPEN_PATHS: readonly string[] = ['/plus'];
+
 /** True for routes that work without an account, so the shell never redirects them. */
 export function isOpenAppPath(pathname: string | null): boolean {
   if (!pathname) return false;
   if (pathname === '/') return true;
-  return PRIMARY_NAV.some((item) => item.open && isActivePath(pathname, item.href));
+  if (OPEN_PATHS.some((path) => isActivePath(pathname, path))) return true;
+  return PRIMARY_NAV.some(
+    (item) => item.open && isActivePath(pathname, item.href),
+  );
 }
 
 export const SETTINGS_NAV: ShellNavItem = {

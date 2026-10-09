@@ -38,6 +38,10 @@ const ENTRY_POINTS = [
   'components/motion/BeatVisualizer.tsx',
   'components/chat/VinylDisc.tsx',
   'lib/ui-sound.ts',
+  'app/(app)/plus/page.tsx',
+  'app/api/billing/checkout/route.ts',
+  'app/api/billing/webhook/route.ts',
+  'lib/billing/plans.ts',
 ];
 const FORBIDDEN = [
   'lib/spotify.ts',
