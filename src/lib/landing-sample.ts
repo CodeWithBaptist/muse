@@ -2,12 +2,12 @@
  * Sample data for the landing page.
  *
  * This is the only scripted simulation in the product: it never contacts
- * Spotify or OpenAI, no playlist is created, and the preview labels itself
- * "Sample" on screen. The demo drives the real chat components with these
+ * OpenAI, a music catalogue, or any music service, nothing is copied or
+ * shared, and the preview labels itself "Sample" on screen. The demo drives the real chat components with these
  * values, and every control inside it is inert.
  *
  * The track rows name real, widely released songs so the sample shows the kind
- * of answer MUSE gives, but their ids are not Spotify ids and no durations are
+ * of answer MUSE gives, but their ids are sample ids and no durations are
  * shown: nothing in the sample is looked up, guessed, or invented.
  */
 
@@ -16,8 +16,8 @@ export interface SampleTrack {
   name: string;
   artist: string;
   /**
-   * Omitted on purpose. Durations come from Spotify's catalogue and the sample
-   * never contacts it, so the real TrackRow simply renders no duration.
+   * Omitted on purpose. Durations come from a catalogue lookup and the sample
+   * never makes one, so the real TrackRow simply renders no duration.
    */
   durationMs?: number;
   /** The one line reason the demo shows when the row is inspected. */
@@ -46,22 +46,17 @@ export const SAMPLE_THINKING_LINES = [
 export const SAMPLE_PLAYLIST_NAME = 'Late Night Lagos';
 
 /**
- * Where the demo's Open in Spotify control would point. The control is inert in
- * the demo and renders as a plain span, so this URL is never followed.
- */
-export const SAMPLE_SPOTIFY_URL = 'https://open.spotify.com/';
-
-/**
  * Three example rows: real songs from three Nigerian artists that fit a late
- * night drive. The ids are not Spotify track ids, so the real TrackRow never
- * renders a track link for them: the demo has no reachable links at all.
+ * night drive. The ids are sample ids, so the real TrackRow never renders a
+ * track link for them: the demo has no reachable links at all.
  */
 export const SAMPLE_TRACKS: readonly SampleTrack[] = [
   {
     id: 'sample-free-mind',
     name: 'Free Mind',
     artist: 'Tems',
-    reason: 'Slow, airy, and warm. It sets the pace without asking for attention.',
+    reason:
+      'Slow, airy, and warm. It sets the pace without asking for attention.',
   },
   {
     id: 'sample-essence',
@@ -84,7 +79,6 @@ export interface LandingSample {
   reply: string;
   thinkingLines: readonly string[];
   playlistName: string;
-  spotifyUrl: string;
   tracks: readonly SampleTrack[];
 }
 
@@ -95,7 +89,6 @@ export const LANDING_SAMPLE: LandingSample = {
   reply: SAMPLE_REPLY,
   thinkingLines: SAMPLE_THINKING_LINES,
   playlistName: SAMPLE_PLAYLIST_NAME,
-  spotifyUrl: SAMPLE_SPOTIFY_URL,
   tracks: SAMPLE_TRACKS,
 };
 

@@ -54,12 +54,18 @@ export function Hero({ authError }: HeroProps) {
         <div className="space-y-6">
           <h1 className="type-display text-[clamp(40px,7vw,80px)] text-balance">
             <span className="muse-hero-mask block overflow-hidden pt-[0.12em] -mt-[0.12em] pb-[0.16em] -mb-[0.16em]">
-              <span className="muse-hero-line block" style={heroHeadlineStyle(0)}>
+              <span
+                className="muse-hero-line block"
+                style={heroHeadlineStyle(0)}
+              >
                 Your music,
               </span>
             </span>
             <span className="muse-hero-mask block overflow-hidden pt-[0.12em] -mt-[0.12em] pb-[0.16em] -mb-[0.16em]">
-              <span className="muse-hero-line block" style={heroHeadlineStyle(1)}>
+              <span
+                className="muse-hero-line block"
+                style={heroHeadlineStyle(1)}
+              >
                 understood.
               </span>
             </span>
@@ -89,10 +95,7 @@ export function Hero({ authError }: HeroProps) {
         </div>
 
         {authError ? (
-          <AuthNotice
-            code={authError}
-            className="muse-hero-fade"
-          />
+          <AuthNotice code={authError} className="muse-hero-fade" />
         ) : null}
       </div>
     </section>

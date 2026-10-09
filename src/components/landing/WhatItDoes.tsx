@@ -1,7 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { revealStyle, useRevealOnce, CAPABILITY_STAGGER_MS } from '@/hooks/use-reveal-once';
+import {
+  revealStyle,
+  useRevealOnce,
+  CAPABILITY_STAGGER_MS,
+} from '@/hooks/use-reveal-once';
 import { prefersReducedMotion } from '@/lib/landing-scroll';
 import { ROLLING_PHRASES } from '@/lib/landing-sample';
 import {
@@ -22,12 +26,14 @@ const CAPABILITIES = [
     description: 'Each recommendation comes with a one-line reason.',
   },
   {
-    title: 'Playlists in Spotify',
-    description: 'Turn a conversation into a playlist in your own account.',
+    title: 'Open anywhere',
+    description:
+      'Every song links to Audiomack, Boomplay, Spotify, Apple Music, YouTube Music, and Deezer. Copy, download, or share the list.',
   },
   {
     title: 'Your taste in words',
-    description: 'A profile written from your top artists, top tracks, and recent plays.',
+    description:
+      'A profile written from a Last.fm account or your Spotify data export, if you add one.',
   },
 ] as const;
 
@@ -128,7 +134,9 @@ export function WhatItDoes() {
       if (document.hidden) stop();
       else start();
     };
-    document.addEventListener('visibilitychange', onVisibilityChange, { signal });
+    document.addEventListener('visibilitychange', onVisibilityChange, {
+      signal,
+    });
 
     return () => {
       stop();

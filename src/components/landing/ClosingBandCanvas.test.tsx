@@ -37,7 +37,8 @@ function createFakeContext() {
      */
     get bars() {
       return bars.filter(
-        (bar) => bar.fill.startsWith('rgba') && bar.width < BAND_BAR_WIDTH + 0.01,
+        (bar) =>
+          bar.fill.startsWith('rgba') && bar.width < BAND_BAR_WIDTH + 0.01,
       );
     },
     get clears() {
@@ -136,7 +137,9 @@ function makeMediaQuery(matches: boolean) {
       options?: AddEventListenerOptions,
     ) => {
       listeners.add(listener);
-      options?.signal?.addEventListener('abort', () => listeners.delete(listener));
+      options?.signal?.addEventListener('abort', () =>
+        listeners.delete(listener),
+      );
     },
     removeEventListener: (_type: string, listener: () => void) => {
       listeners.delete(listener);
@@ -209,7 +212,9 @@ describe('ClosingBandCanvas', () => {
     } as DOMRect);
     vi.spyOn(performance, 'now').mockReturnValue(0);
     vi.stubGlobal('Path2D', FakePath2D as unknown as typeof Path2D);
-    vi.stubGlobal('requestAnimationFrame', ((callback: (time: number) => void) => {
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: (time: number) => void,
+    ) => {
       nextHandle += 1;
       frameQueue.set(nextHandle, callback);
       return nextHandle;
@@ -247,7 +252,10 @@ describe('ClosingBandCanvas', () => {
   }
 
   function measuredHeight(
-    interact?: (targets: { button: HTMLButtonElement; canvas: HTMLElement }) => void,
+    interact?: (targets: {
+      button: HTMLButtonElement;
+      canvas: HTMLElement;
+    }) => void,
   ): number {
     const { container, unmount } = render(<Harness />);
     runFrames(200, 40);

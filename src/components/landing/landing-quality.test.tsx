@@ -33,6 +33,7 @@ const LANDING_SOURCES = [
   'src/components/landing/LandingPage.tsx',
   'src/components/landing/RecordGroovesCanvas.tsx',
   'src/components/landing/ProductPreview.tsx',
+  'src/components/landing/SampleListActions.tsx',
   'src/components/landing/HowItWorks.tsx',
   'src/components/landing/WhatItDoes.tsx',
   'src/components/landing/ClosingBand.tsx',
@@ -88,7 +89,9 @@ describe('landing quality checklist', () => {
     const hero = document.querySelector('.muse-hero') as HTMLElement;
     expect(hero.className).toContain('relative');
     expect(hero.className).toContain('overflow-hidden');
-    expect(hero.className).toContain('min-h-[calc(100svh-var(--muse-header-height))]');
+    expect(hero.className).toContain(
+      'min-h-[calc(100svh-var(--muse-header-height))]',
+    );
 
     expect(document.querySelector('img[loading="lazy"]')).toBeNull();
   });
@@ -131,7 +134,9 @@ describe('landing quality checklist', () => {
     // visuals are aria-hidden decoration whose scripts start from a blank frame,
     // so they are out of scope here; the server render check in landing.test.tsx
     // covers them without JavaScript.
-    const hidden = [...document.querySelectorAll<HTMLElement>('[style]')].filter(
+    const hidden = [
+      ...document.querySelectorAll<HTMLElement>('[style]'),
+    ].filter(
       (element) =>
         element.style.opacity === '0' &&
         !element.closest('[aria-hidden="true"]'),
@@ -141,11 +146,15 @@ describe('landing quality checklist', () => {
 
   it('3. keeps the wordmark shapes identical to the brand mark', () => {
     const brand = read('src/assets/brand/muse-wordmark.svg');
-    const brandPaths = [...brand.matchAll(/d="([^"]+)"/g)].map((match) => match[1]);
+    const brandPaths = [...brand.matchAll(/d="([^"]+)"/g)].map(
+      (match) => match[1],
+    );
     expect(brandPaths).toHaveLength(5);
 
     for (const brandPath of brandPaths) {
-      expect(HERO_WORDMARK_PIECES.some((piece) => piece.d === brandPath)).toBe(true);
+      expect(HERO_WORDMARK_PIECES.some((piece) => piece.d === brandPath)).toBe(
+        true,
+      );
       expect(
         LANDING_WORDMARK_PIECES.some((piece) => piece.d === brandPath),
       ).toBe(true);
@@ -190,7 +199,9 @@ describe('landing quality checklist', () => {
     );
 
     // The rolling word is the only interval outside the demo and the steps.
-    expect(read('src/components/landing/WhatItDoes.tsx')).toContain('setInterval');
+    expect(read('src/components/landing/WhatItDoes.tsx')).toContain(
+      'setInterval',
+    );
 
     // Reveals happen once, and never re-run on the way back up.
     const reveal = read('src/hooks/use-reveal-once.ts');
@@ -209,7 +220,9 @@ describe('landing quality checklist', () => {
         'scrollY',
         'onScroll',
       ]) {
-        expect(contents.includes(token), `${source} contains ${token}`).toBe(false);
+        expect(contents.includes(token), `${source} contains ${token}`).toBe(
+          false,
+        );
       }
     }
   });
@@ -220,7 +233,8 @@ describe('landing quality checklist', () => {
     expect(screen.getByText('Sample')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Replay' })).toBeDefined();
     expect(
-      screen.getAllByText(/Nothing here contacts Spotify or OpenAI/i).length,
+      screen.getAllByText(/Nothing here contacts OpenAI or any music service/i)
+        .length,
     ).toBeGreaterThan(0);
 
     // The hint and the placeholder are in the first paint, before the sequence.
@@ -240,7 +254,9 @@ describe('landing quality checklist', () => {
     expect(sample?.getAttribute('aria-hidden')).toBe('true');
 
     // The animated conversation is decorative, so it is not exposed as a list.
-    expect(screen.queryByRole('list', { name: /sample recommended tracks/i })).toBeNull();
+    expect(
+      screen.queryByRole('list', { name: /sample recommended tracks/i }),
+    ).toBeNull();
   });
 
   it('6. starts the preview only when it is 40 percent visible', () => {
@@ -299,7 +315,11 @@ describe('landing quality checklist', () => {
 
     // The hero entrance never holds a transform after it finishes, or the
     // button pressed transforms would be overridden.
-    for (const step of ['muse-hero-letter', 'muse-hero-line', 'muse-hero-fade']) {
+    for (const step of [
+      'muse-hero-letter',
+      'muse-hero-line',
+      'muse-hero-fade',
+    ]) {
       const block = css.slice(css.indexOf(`.${step} {`));
       const rule = block.slice(0, block.indexOf('}'));
       expect(rule).toContain('backwards');
@@ -321,7 +341,9 @@ describe('landing quality checklist', () => {
     for (const source of LANDING_SOURCES) {
       const contents = read(source);
       for (const token of forbidden) {
-        expect(contents.includes(token), `${source} contains ${token}`).toBe(false);
+        expect(contents.includes(token), `${source} contains ${token}`).toBe(
+          false,
+        );
       }
     }
 
@@ -382,18 +404,18 @@ describe('landing quality checklist', () => {
     const start = screen.getAllByRole('link', { name: 'Start' });
     expect(start.length).toBe(3);
     for (const link of start) expect(link.className).toContain('focus-ring');
-    expect(screen.getByRole('button', { name: /see how it works/i })).toBeDefined();
+    expect(
+      screen.getByRole('button', { name: /see how it works/i }),
+    ).toBeDefined();
 
     // Both hero actions carry the hover attribute, so touch and keyboard focus
     // lift the record just like the pointer does.
     const hero = document.querySelector('.muse-hero') as HTMLElement;
-    expect(
-      hero.querySelectorAll('[data-muse-hero-action]').length,
-    ).toBe(2);
+    expect(hero.querySelectorAll('[data-muse-hero-action]').length).toBe(2);
     // The closing action drives the closing band energy.
-    expect(
-      document.querySelectorAll('[data-muse-closing-action]').length,
-    ).toBe(1);
+    expect(document.querySelectorAll('[data-muse-closing-action]').length).toBe(
+      1,
+    );
 
     // Focus rings stay visible everywhere.
     const css = read('src/app/globals.css');
@@ -429,9 +451,10 @@ describe('landing quality checklist', () => {
         'margin',
         'filter:',
       ]) {
-        expect(block.includes(property), `${keyframe} animates ${property}`).toBe(
-          false,
-        );
+        expect(
+          block.includes(property),
+          `${keyframe} animates ${property}`,
+        ).toBe(false);
       }
     }
 
@@ -539,12 +562,21 @@ describe('landing quality checklist', () => {
       'millions of tracks',
       'MUSE Intelligence',
       'Designed for the',
+      'looks for real tracks on Spotify',
+      'creates the playlist in your Spotify account',
+      'Playlists in Spotify',
+      'Create in Spotify',
     ]) {
       expect(text, `the page still claims ${removed}`).not.toContain(removed);
     }
 
     // No invented numbers, testimonials, or legal text on the landing.
-    for (const invented of ['testimonial', 'as seen in', 'trusted by', 'users worldwide']) {
+    for (const invented of [
+      'testimonial',
+      'as seen in',
+      'trusted by',
+      'users worldwide',
+    ]) {
       expect(text.toLowerCase()).not.toContain(invented);
     }
   });
@@ -565,7 +597,9 @@ describe('landing quality checklist', () => {
       );
       for (const specifier of imports) {
         if (specifier.startsWith('@/') || specifier.startsWith('.')) continue;
-        expect(allowed.has(specifier), `${source} imports ${specifier}`).toBe(true);
+        expect(allowed.has(specifier), `${source} imports ${specifier}`).toBe(
+          true,
+        );
       }
     }
   });

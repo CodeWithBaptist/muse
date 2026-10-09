@@ -6,10 +6,7 @@ import {
   RECORD_GROOVES_TESTID,
   RecordGroovesCanvas,
 } from './RecordGroovesCanvas';
-import {
-  HERO_DOT_PULSE_SCALE,
-  HERO_DOT_SETTLE_MS,
-} from '@/lib/hero-entrance';
+import { HERO_DOT_PULSE_SCALE, HERO_DOT_SETTLE_MS } from '@/lib/hero-entrance';
 import { beatClockSubscriberCount } from '@/lib/beat-clock';
 
 /**
@@ -128,7 +125,9 @@ function makeMediaQuery(matches: boolean) {
     ) => {
       listeners.add(listener);
       // A real EventTarget drops the listener when the signal aborts.
-      options?.signal?.addEventListener('abort', () => listeners.delete(listener));
+      options?.signal?.addEventListener('abort', () =>
+        listeners.delete(listener),
+      );
     },
     removeEventListener: (_type: string, listener: () => void) => {
       listeners.delete(listener);
@@ -189,7 +188,9 @@ describe('RecordGroovesCanvas', () => {
       toJSON: () => ({}),
     } as DOMRect);
     vi.spyOn(performance, 'now').mockReturnValue(0);
-    vi.stubGlobal('requestAnimationFrame', ((callback: (time: number) => void) => {
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: (time: number) => void,
+    ) => {
       nextHandle += 1;
       frameQueue.set(nextHandle, callback);
       return nextHandle;
@@ -233,7 +234,10 @@ describe('RecordGroovesCanvas', () => {
 
   /** Waviness over a fixed window of frames, after an optional interaction. */
   function measuredWaviness(
-    interact?: (targets: { button: HTMLButtonElement; host: HTMLElement }) => void,
+    interact?: (targets: {
+      button: HTMLButtonElement;
+      host: HTMLElement;
+    }) => void,
   ): number {
     const { container, unmount } = render(<Harness />);
     runFrames(200, 40);
@@ -251,7 +255,9 @@ describe('RecordGroovesCanvas', () => {
 
   it('is decorative, behind the content, and never clickable', () => {
     const { container } = render(<Harness />);
-    const canvas = container.querySelector(`[data-testid="${RECORD_GROOVES_TESTID}"]`);
+    const canvas = container.querySelector(
+      `[data-testid="${RECORD_GROOVES_TESTID}"]`,
+    );
 
     expect(canvas).not.toBeNull();
     expect(canvas?.getAttribute('aria-hidden')).toBe('true');

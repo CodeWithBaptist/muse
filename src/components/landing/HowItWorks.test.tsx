@@ -4,14 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   HowItWorks,
   LANDING_STEPS,
-  STEP_CREATE_TOTAL_MS,
+  STEP_ACTION_TOTAL_MS,
   STEP_THINK_LINES,
   STEP_THINK_TOTAL_MS,
   STEP_TYPE_TEXT,
   STEP_TYPE_TOTAL_MS,
   STEP_WHY_TEXT,
   STEP_WHY_TOTAL_MS,
-  stepCreateStatus,
+  stepActionStatus,
   stepThinkLineIndex,
 } from './HowItWorks';
 import { STEP_DIM_OPACITY } from '@/lib/landing-steps';
@@ -97,7 +97,13 @@ describe('HowItWorks', () => {
     media = makeMediaQuery(false);
     FakeIntersectionObserver.instances = [];
     vi.useFakeTimers({
-      toFake: ['setInterval', 'clearInterval', 'setTimeout', 'clearTimeout', 'performance'],
+      toFake: [
+        'setInterval',
+        'clearInterval',
+        'setTimeout',
+        'clearTimeout',
+        'performance',
+      ],
     });
     vi.stubGlobal(
       'IntersectionObserver',
@@ -115,7 +121,9 @@ describe('HowItWorks', () => {
   it('renders the four steps with the copy from the brief', () => {
     render(<HowItWorks />);
 
-    expect(screen.getByRole('heading', { name: 'Four steps. No filters.' })).toBeDefined();
+    expect(
+      screen.getByRole('heading', { name: 'Four steps. No filters.' }),
+    ).toBeDefined();
     expect(screen.getByText('How it works')).toBeDefined();
     expect(stepNodes()).toHaveLength(4);
     for (const step of LANDING_STEPS) {
@@ -177,7 +185,9 @@ describe('HowItWorks', () => {
 
     // Off screen: nothing plays.
     act(() => {
-      view.trigger(nodes.map((element) => ({ element, isIntersecting: false })));
+      view.trigger(
+        nodes.map((element) => ({ element, isIntersecting: false })),
+      );
       band.trigger([{ element: nodes[0], isIntersecting: true }]);
     });
     await advance(STEP_TYPE_TOTAL_MS);
@@ -236,7 +246,7 @@ describe('HowItWorks', () => {
     expect(line.style.opacity).toBe('1');
   });
 
-  it('walks the real create control through its states', async () => {
+  it('walks the list actions through their states', async () => {
     render(<HowItWorks />);
     const band = FakeIntersectionObserver.instances[0];
     const view = FakeIntersectionObserver.instances[1];
@@ -249,14 +259,14 @@ describe('HowItWorks', () => {
 
     expect(
       document
-        .querySelector('[data-testid="create-in-spotify"]')
+        .querySelector('[data-testid="sample-list-actions"]')
         ?.getAttribute('data-status'),
     ).toBe('idle');
 
-    await advance(STEP_CREATE_TOTAL_MS + 200);
+    await advance(STEP_ACTION_TOTAL_MS + 200);
     expect(
       document
-        .querySelector('[data-testid="create-in-spotify"]')
+        .querySelector('[data-testid="sample-list-actions"]')
         ?.getAttribute('data-status'),
     ).toBe('open');
     // The sample control is inert, so it never renders a real link.
@@ -270,10 +280,10 @@ describe('HowItWorks', () => {
     expect(stepThinkLineIndex(900)).toBe(1);
     expect(stepThinkLineIndex(STEP_THINK_TOTAL_MS)).toBe(2);
 
-    expect(stepCreateStatus(0)).toBe('idle');
-    expect(stepCreateStatus(400)).toBe('loading');
-    expect(stepCreateStatus(1300)).toBe('success');
-    expect(stepCreateStatus(STEP_CREATE_TOTAL_MS)).toBe('open');
+    expect(stepActionStatus(0)).toBe('idle');
+    expect(stepActionStatus(400)).toBe('loading');
+    expect(stepActionStatus(1300)).toBe('success');
+    expect(stepActionStatus(STEP_ACTION_TOTAL_MS)).toBe('open');
   });
 
   it('cleans both observers up on unmount', () => {
@@ -305,7 +315,7 @@ describe('HowItWorks', () => {
     }
     expect(
       document
-        .querySelector('[data-testid="create-in-spotify"]')
+        .querySelector('[data-testid="sample-list-actions"]')
         ?.getAttribute('data-status'),
     ).toBe('open');
   });
