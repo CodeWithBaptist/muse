@@ -90,6 +90,26 @@ The Chromium performance test applies 2x CPU throttling through the Chrome DevTo
 
 The interface includes a skip link, a main landmark, visible keyboard focus, labeled controls, navigation state, status and error announcements, and reduced-motion handling. Verify keyboard operation and screen reader output manually in addition to automated axe checks. Automated checks do not certify accessibility conformance.
 
+### Display settings, Lite mode, and the effects level
+
+The Display menu (sidebar, phone header, landing header) holds three device-only choices stored under `muse.ui.prefs.v1`: theme (dark by default, light available, both AA-checked in `src/lib/design-tokens.test.ts`), Lite mode (auto, on, off), and sound (off by default, Web Audio blips only). Every decorative effect reads one effects level from `src/lib/ui-prefs.ts`:
+
+* `none`: the system asks for reduced motion. Nothing decorative moves.
+* `lite`: Lite is on, or auto and the browser reports Save-Data, a 2G class connection, or two gigabytes of memory or less. The living background and the notes burst render nothing, the landing canvases paint a still frame, typed reveals are instant, ripples and pointer tilts are skipped.
+* `full`: everything, on `transform` and `opacity` only.
+
+A small inline script in `src/app/layout.tsx` stamps `data-theme` and `data-effects` on `<html>` before the first paint, so there is no flash and CSS rules such as `html[data-effects="lite"] .muse-effect-full` apply immediately.
+
+### Performance checks for phones
+
+Lighthouse cannot run in the build sandbox. Before and after a release, run it against the preview on a mobile profile, once with the defaults and once after choosing Lite in the Display menu:
+
+```bash
+npx lighthouse https://<preview-url>/chat --form-factor=mobile --preset=perf --view
+```
+
+The Vercel functions stay in the default `iad1` region because the database is in the US East region; moving only the functions nearer West Africa would put every database round trip across the Atlantic. Static assets are served from Vercel's CDN regardless. If the database moves to the EU, add `{ "regions": ["cdg1"] }` in `vercel.json` at the same time, and keep the Upstash database in the same region as the functions.
+
 ## Configuration
 
 Set these environment variable names in `.env.local` for local development. Configure production values only through the project's approved secret-management process.

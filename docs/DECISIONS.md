@@ -4,6 +4,34 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-09: The interface is alive on transform and opacity, and every effect answers to one effects level
+
+**Decision**
+MUSE keeps its brand, tokens, fonts, and the existing animation system (beat clock, equalizer bars, hero canvases, page transitions) and adds a layer of life on top: a living background whose three glows recolour to the last prompt through a pure keyword palette (`src/lib/vibe-palette.ts`) and crossfade between palettes as layers; vibe chips that rise in turn, ripple where pressed, lean toward a mouse pointer, and buzz for ten milliseconds through `navigator.vibrate`; vinyl track cards with Deezer or iTunes cover art on the label, an entry roll, a hover spin, and a three degree tilt on fine pointers; "why this" lines typed word by word, each row a beat after the last; a header visualizer that pulses to the shared 96 BPM clock while on screen; a one-shot burst of inline SVG notes when a fresh playlist lands; and waiting lines that follow the language toggle, including Naija Pidgin ("Dey cook your playlist...") and a mixed set. Every effect moves only `transform` and `opacity`, writes pointer-driven transforms straight to the element inside the event rather than through React state, and the heavy pieces (the burst) load through `next/dynamic` only when needed.
+
+All of it answers to one effects level resolved in `src/lib/ui-prefs.ts`: `none` when the system asks for reduced motion, `lite` when the visitor chose Lite or, on auto, when the browser reports Save-Data, a 2G class connection, or two gigabytes of memory or less, else `full`. The level is stamped on `<html data-effects>` by a tiny inline head script before the first paint, together with `data-theme`, from a device-only preference (`localStorage` key `muse.ui.prefs.v1`: theme dark or light, Lite auto, on, or off, sound on or off). A Display menu, open to everyone in the sidebar, the phone header, and the landing header, exposes the three choices. Dark remains the default and is never swapped for the OS setting; the light theme re-tunes every token so each text role clears WCAG AA on both the page and the surface, with the accent darkened to `#3F7A00` so it still reads as text. Sound is synthesised with the Web Audio API, off until switched on, and the first context is created inside that switch-on gesture.
+
+**Why**
+The brief asked for a page that feels alive on mid-range Android phones with expensive data. Compositing only `transform` and `opacity` keeps the work off the main thread; skipping decorative layers outright under Lite (the backdrop and burst render nothing, the canvases go still, the typed reveals become instant) means a slow phone or a Save-Data connection does less, not merely the same work hidden. One shared level stops each effect inventing its own rule. Dark by default matches the brand and the OLED screens most of the audience carries, but a readable light option is an accessibility need, not a style. Vibration and sound are both courtesies that must never be a surprise, so the buzz is tied to a tap and the sound stays off until asked for.
+
+**Alternatives considered**
+
+- A WebGL or canvas background: richer, but a persistent GPU context and shader compile on a budget phone costs more than three blurred circles, and it cannot be switched off by a stylesheet rule.
+- Scroll parallax on the chat: the chat scrolls inside its own container and the backdrop already drifts; a scroll-linked layer adds a listener per frame for little gain, so it was left out on purpose.
+- Following `prefers-color-scheme` for the default: it would flip the brand to light for many Android users who never asked; the choice is offered instead.
+- Confetti as emoji glyphs: fonts differ per device and emoji are banned in this product, so the burst is SVG paths and dots.
+- Dropping the vinyl art to save requests: the covers are the 56 px thumbnails the verification already found, lazily loaded, so the cost is small and the recognition value is high.
+
+**Impact**
+
+- New files: `src/lib/ui-prefs.ts`, `src/lib/ui-prefs-store.ts`, `src/hooks/use-ui-prefs.ts`, `src/components/shell/DisplayMenu.tsx`, `src/lib/ui-sound.ts`, `src/lib/haptics.ts`, `src/lib/vibe-palette.ts`, `src/lib/vibe-store.ts`, `src/lib/celebrate-store.ts`, `src/hooks/{use-vibe,use-ripple,use-magnetic,use-tilt}.ts`, `src/components/motion/{VibeBackdrop,NotesBurst,BeatVisualizer}.tsx`, `src/components/chat/VinylDisc.tsx`, `src/components/ui/RippleLayer.tsx`. `src/lib/design-tokens.ts` carries `lightColors`, and the token test checks the light block and its contrast.
+- The open-path test lists the new components, so none of them may ever import Spotify or auth.
+- The PWA manifest gains `id`, `scope`, `start_url: /chat`, `lang: en-NG`, and maskable 192 and 512 icons generated from the existing mark; `appleWebApp` metadata lets iOS add it to the home screen. No service worker is added: offline chat would mean faking results.
+- Region: the Vercel functions stay in `iad1` (default) because the database and the OpenAI endpoint are in the US East region; moving the functions to `cdg1` or `lhr1` would put every database round trip across the Atlantic. The lower-latency path for Lagos is the edge-cached static assets Vercel already serves from its CDN, and, once Upstash is configured, choosing an EU region for it so the rate-limit round trip is short. If the database ever moves to the EU, set `regions: ["cdg1"]` in a `vercel.json` at that time.
+- Lighthouse could not be run in the build sandbox (no browser). The checks that matter for the brief are documented for the owner to run: `npx lighthouse <preview-url>/chat --form-factor=mobile --preset=perf --view`, once with the default and once after choosing Lite in the Display menu.
+
+---
+
 ## 2026-10-08: Personalisation comes from Last.fm or a Spotify data export, is read on the device, and lives only in the browser
 
 **Decision**
