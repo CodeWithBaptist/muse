@@ -27,7 +27,7 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://i.scdn.co https://*.scdn.co https://*.spotifycdn.com",
+      "img-src 'self' data: blob: https://i.scdn.co https://*.scdn.co https://*.spotifycdn.com https://*.dzcdn.net https://*.mzstatic.com",
       "font-src 'self' data:",
       "connect-src 'self' https://api.spotify.com https://accounts.spotify.com https://challenges.cloudflare.com",
       "frame-src 'self' https://challenges.cloudflare.com",
