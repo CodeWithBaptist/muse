@@ -181,6 +181,56 @@ html[data-theme='light'] .muse-vibe-backdrop {
   }
 }
 
+/* Press ripples and magnetic lean. Both are skipped outside full effects. */
+.muse-ripple-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.muse-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.16;
+  transform: translate(-50%, -50%) scale(0);
+  animation: muse-ripple 600ms var(--ease-standard) forwards;
+}
+
+@keyframes muse-ripple {
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+.muse-magnetic {
+  transition:
+    transform 180ms var(--ease-standard),
+    color 140ms var(--ease-standard),
+    border-color 140ms var(--ease-standard),
+    background-color 140ms var(--ease-standard);
+}
+
+/* Staggered rise for lists of chips and cards. Set --muse-rise-index per item. */
+.muse-rise {
+  animation: muse-rise 420ms var(--ease-emphasized) both;
+  animation-delay: calc(var(--muse-rise-index, 0) * 45ms);
+}
+
+@keyframes muse-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 /* Empty state: the title breathes once and the chips rise in turn. */
 .muse-float {
   animation: muse-float 6s ease-in-out infinite;
