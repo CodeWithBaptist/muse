@@ -103,8 +103,9 @@ html[data-effects="none"] .muse-decorative {
 }
 
 /*
- * Living background. Glows drift on transform alone; a new palette fades in
- * as its own layer. Hidden under Lite and reduced motion by the rules above.
+ * Vibe tint. One flat wash at the top of the page in the colour of the last
+ * prompt. A new colour fades in as its own layer; nothing drifts or blurs.
+ * Hidden under Lite and reduced motion by the rules above.
  */
 .muse-vibe-backdrop {
   position: absolute;
@@ -112,64 +113,25 @@ html[data-effects="none"] .muse-decorative {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
-  opacity: var(--vibe-opacity, 0.5);
-}
-
-html[data-theme='light'] .muse-vibe-backdrop {
-  --vibe-opacity: 0.34;
 }
 
 .muse-vibe-layer {
   position: absolute;
   inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--vibe-tint) var(--vibe-strength, 9%), transparent)
+      0%,
+    transparent 58%
+  );
 }
 
-.muse-vibe-layer[data-entering='true'] {
+html[data-theme="light"] .muse-vibe-layer {
+  --vibe-strength: 7%;
+}
+
+.muse-vibe-layer[data-entering="true"] {
   animation: muse-vibe-layer-in 1200ms var(--ease-standard) both;
-}
-
-.muse-vibe-blob {
-  position: absolute;
-  width: 62vmax;
-  height: 62vmax;
-  border-radius: 50%;
-  opacity: 0.5;
-  filter: blur(8px);
-  will-change: transform;
-  animation: muse-vibe-drift var(--vibe-drift, 30s) ease-in-out infinite alternate;
-}
-
-.muse-vibe-blob-a {
-  top: -28vmax;
-  left: -18vmax;
-  background: radial-gradient(circle, var(--vibe-a) 0%, transparent 62%);
-}
-
-.muse-vibe-blob-b {
-  top: 10%;
-  right: -30vmax;
-  background: radial-gradient(circle, var(--vibe-b) 0%, transparent 62%);
-  animation-delay: -9s;
-  animation-direction: alternate-reverse;
-}
-
-.muse-vibe-blob-c {
-  bottom: -34vmax;
-  left: 12%;
-  background: radial-gradient(circle, var(--vibe-c) 0%, transparent 62%);
-  animation-delay: -17s;
-}
-
-@keyframes muse-vibe-drift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(5vmax, -3vmax, 0) scale(1.12);
-  }
-  100% {
-    transform: translate3d(-4vmax, 4vmax, 0) scale(0.96);
-  }
 }
 
 @keyframes muse-vibe-layer-in {
@@ -181,37 +143,16 @@ html[data-theme='light'] .muse-vibe-backdrop {
   }
 }
 
-/* Press ripples and magnetic lean. Both are skipped outside full effects. */
-.muse-ripple-layer {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.muse-ripple {
-  position: absolute;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.16;
-  transform: translate(-50%, -50%) scale(0);
-  animation: muse-ripple 600ms var(--ease-standard) forwards;
-}
-
-@keyframes muse-ripple {
-  to {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0;
-  }
-}
-
-.muse-magnetic {
+/* Press feedback for chips and small buttons: a short dip on transform. */
+.muse-press {
   transition:
-    transform 180ms var(--ease-standard),
-    color 140ms var(--ease-standard),
-    border-color 140ms var(--ease-standard),
-    background-color 140ms var(--ease-standard);
+    transform 120ms var(--ease-standard),
+    border-color 160ms var(--ease-standard),
+    color 160ms var(--ease-standard);
+}
+
+.muse-press:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 /* Staggered rise for lists of chips and cards. Set --muse-rise-index per item. */
@@ -231,152 +172,10 @@ html[data-theme='light'] .muse-vibe-backdrop {
   }
 }
 
-/* Vinyl track art: rolls in with its row, turns on hover, transform only. */
-.muse-vinyl {
-  animation: muse-vinyl-in 620ms var(--ease-emphasized) both;
-  animation-delay: calc(var(--muse-rise-index, 0) * 60ms);
-}
-
-.muse-vinyl-disc {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  overflow: hidden;
-  background:
-    radial-gradient(circle, transparent 0 28%, rgba(255, 255, 255, 0.04) 28% 30%, transparent 30%),
-    repeating-radial-gradient(circle, #1c1c1f 0 1.5px, #0e0e10 1.5px 3.5px);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-}
-
-.group:hover .muse-vinyl-disc,
-.group:focus-within .muse-vinyl-disc {
-  animation: muse-spin 2.8s linear infinite;
-}
-
-.muse-vinyl-art,
-.muse-vinyl-label {
-  position: absolute;
-  inset: 24%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.muse-vinyl-label {
-  background: radial-gradient(circle, var(--color-accent) 0 40%, rgba(168, 232, 92, 0.55) 40% 100%);
-}
-
-.muse-vinyl-hole {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 4px;
-  height: 4px;
-  margin: -2px 0 0 -2px;
-  border-radius: 50%;
-  background: #0b0b0c;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-
-@keyframes muse-vinyl-in {
-  from {
-    opacity: 0;
-    transform: translate3d(-6px, 0, 0) rotate(-140deg) scale(0.6);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-  }
-}
-
-@keyframes muse-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Tilting cards only ever change transform; the hint keeps edges crisp. */
-.muse-tilt {
-  transform-style: preserve-3d;
-  transition: transform 160ms var(--ease-standard);
-}
-
-/* Beat visualizer bars are driven from JavaScript on transform alone. */
-.muse-beat-bar {
-  will-change: transform;
-}
-
-/* Notes burst: particles fly out on transform and fade. */
-.muse-burst {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 0;
-  height: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.muse-burst-particle {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: inline-flex;
-  margin: -7px 0 0 -7px;
-  opacity: 0;
-  transform: translate3d(0, 0, 0) rotate(0deg) scale(var(--burst-scale, 1));
-  animation: muse-burst 1100ms var(--ease-standard) forwards;
-}
-
-.muse-burst-dot {
-  display: block;
-  width: 7px;
-  height: 7px;
-  margin: 3.5px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-@keyframes muse-burst {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(0.4);
-  }
-  12% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(var(--burst-dx, 0), var(--burst-dy, -80px), 0)
-      rotate(var(--burst-rotate, 0deg)) scale(var(--burst-scale, 1));
-  }
-}
-
-/* Word reveal is instant outside full effects, matching reduced motion. */
-html[data-effects='lite'] .muse-word-reveal > span,
-html[data-effects='none'] .muse-word-reveal > span {
-  opacity: 1 !important;
-  transition-duration: 0s !important;
-}
-
-/* Empty state: the title breathes once and the chips rise in turn. */
-.muse-float {
-  animation: muse-float 6s ease-in-out infinite;
-}
-
-@keyframes muse-float {
-  0%,
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(0, -6px, 0);
-  }
-}
-
 @layer base {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     border-color: var(--color-border-subtle);
   }
 
@@ -772,7 +571,9 @@ html[data-effects='none'] .muse-word-reveal > span {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

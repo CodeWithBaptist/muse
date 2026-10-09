@@ -6,11 +6,10 @@ import { useVibe } from '@/hooks/use-vibe';
 import { paletteForVibe, type VibePalette } from '@/lib/vibe-palette';
 
 /**
- * The living background: three soft glows that drift on transform only and
- * recolour to the last prompt. A palette change mounts a new layer that
- * fades in over the old one, then the old one is dropped, so colours never
- * jump. Full effects only; Lite and reduced motion render nothing at all,
- * which also means nothing is composited on a slow phone.
+ * A quiet wash at the top of the page in the colour of the last prompt. A
+ * new colour mounts as its own layer that fades in over the old one, then
+ * the old one is dropped, so the tint never jumps. Full effects only; Lite
+ * and reduced motion render nothing at all.
  */
 
 interface Layer {
@@ -71,19 +70,8 @@ export function VibeBackdrop() {
           className="muse-vibe-layer"
           data-entering={index > 0 ? 'true' : undefined}
           onAnimationEnd={index > 0 ? settle : undefined}
-          style={
-            {
-              '--vibe-a': layer.palette.a,
-              '--vibe-b': layer.palette.b,
-              '--vibe-c': layer.palette.c,
-              '--vibe-drift': `${Math.round(40 - layer.palette.energy * 22)}s`,
-            } as React.CSSProperties
-          }
-        >
-          <span className="muse-vibe-blob muse-vibe-blob-a muse-decorative" />
-          <span className="muse-vibe-blob muse-vibe-blob-b muse-decorative" />
-          <span className="muse-vibe-blob muse-vibe-blob-c muse-decorative" />
-        </div>
+          style={{ '--vibe-tint': layer.palette.tint } as React.CSSProperties}
+        />
       ))}
     </div>
   );

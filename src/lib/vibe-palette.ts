@@ -1,151 +1,72 @@
 /**
- * The colours the background drifts toward for a vibe. Pure: a prompt in,
- * three glow colours and an energy out. Keywords are matched in order so a
- * named Lagos moment wins over a generic word inside it. Everything stays a
- * tint over the brand palette; the lime is never replaced, only joined.
+ * The tint the page takes on for a vibe. Pure: a prompt in, one colour out.
+ * Keywords are matched in order so a named Lagos moment wins over a generic
+ * word inside it. The tint is washed over the top of the page at a few
+ * percent, so it reads as warmth or coolness, never as a coloured screen.
  */
 
 export interface VibePalette {
   name: string;
-  a: string;
-  b: string;
-  c: string;
-  /** 0 (still) to 1 (full tilt); the drift speed follows it. */
-  energy: number;
+  tint: string;
 }
 
 export const DEFAULT_VIBE_PALETTE: VibePalette = {
   name: 'muse',
-  a: '#A8E85C',
-  b: '#2B5D1A',
-  c: '#5B4B8A',
-  energy: 0.5,
+  tint: '#A8E85C',
 };
 
 const PALETTES: ReadonlyArray<{ match: RegExp; palette: VibePalette }> = [
   {
     match:
       /detty december|december|party|turn ?up|club|owambe after|carnival|rave/,
-    palette: {
-      name: 'carnival',
-      a: '#A8E85C',
-      b: '#FF7A1A',
-      c: '#FF3D8A',
-      energy: 0.9,
-    },
+    palette: { name: 'carnival', tint: '#FF7A1A' },
   },
   {
     match:
       /heartbreak|breakup|broke up|miss (him|her|them|you)|sad|cry|lonely|tears/,
-    palette: {
-      name: 'heartbreak',
-      a: '#F06292',
-      b: '#8E5BE8',
-      c: '#2C3E99',
-      energy: 0.5,
-    },
+    palette: { name: 'heartbreak', tint: '#C96A8E' },
   },
   {
     match: /owambe|wedding|aso ?ebi|naming|party jollof|celebrat/,
-    palette: {
-      name: 'owambe',
-      a: '#F5C542',
-      b: '#E0418F',
-      c: '#A8E85C',
-      energy: 0.8,
-    },
+    palette: { name: 'owambe', tint: '#E0A93A' },
   },
   {
     match: /traffic|danfo|go-?slow|hold-?up|bus stop|okada/,
-    palette: {
-      name: 'traffic',
-      a: '#FFB020',
-      b: '#E8705F',
-      c: '#6B4EFF',
-      energy: 0.6,
-    },
+    palette: { name: 'traffic', tint: '#E8A33D' },
   },
   {
     match:
       /late[- ]night|night|midnight|2 ?am|drive|third mainland|cruise|moon/,
-    palette: {
-      name: 'night drive',
-      a: '#3B4CCA',
-      b: '#7A3FE0',
-      c: '#19B5B0',
-      energy: 0.4,
-    },
+    palette: { name: 'night drive', tint: '#4C5FD5' },
   },
   {
     match: /campus|read|cram|study|exam|focus|revision|library/,
-    palette: {
-      name: 'study',
-      a: '#1FA2A6',
-      b: '#3F7EE8',
-      c: '#A8E85C',
-      energy: 0.3,
-    },
+    palette: { name: 'study', tint: '#2E9BA0' },
   },
   {
     match:
       /devotion|worship|gospel|prayer|praise|church|sunday morning|morning/,
-    palette: {
-      name: 'devotion',
-      a: '#F3D27A',
-      b: '#7FC8F8',
-      c: '#F2F1ED',
-      energy: 0.4,
-    },
+    palette: { name: 'devotion', tint: '#E3C76A' },
   },
   {
     match: /sunday|rice and stew|jollof|family|lunch|cooking|kitchen/,
-    palette: {
-      name: 'sunday',
-      a: '#E5533C',
-      b: '#F59E42',
-      c: '#F2E7C8',
-      energy: 0.5,
-    },
+    palette: { name: 'sunday', tint: '#D8603F' },
   },
   {
     match: /gym|grind|workout|run|hustle|sprint|lift|cardio|hiit/,
-    palette: {
-      name: 'grind',
-      a: '#FF3B30',
-      b: '#A8E85C',
-      c: '#FF8A00',
-      energy: 1,
-    },
+    palette: { name: 'grind', tint: '#E24B3B' },
   },
   {
     match: /amapiano|piano|log ?drum|sgija/,
-    palette: {
-      name: 'piano',
-      a: '#9B5DE5',
-      b: '#00BBF9',
-      c: '#FEE440',
-      energy: 0.8,
-    },
+    palette: { name: 'piano', tint: '#7C5CC4' },
   },
   {
     match: /highlife|juju|fuji|apala|classic|old school|90s|2000s|throwback/,
-    palette: {
-      name: 'classics',
-      a: '#D9A441',
-      b: '#8C5A2B',
-      c: '#A8E85C',
-      energy: 0.5,
-    },
+    palette: { name: 'classics', tint: '#C9973F' },
   },
   {
     match: /chill|calm|soft|slow|sleep|rain|lo-?fi|relax|quiet/,
-    palette: {
-      name: 'calm',
-      a: '#5DADE2',
-      b: '#7A86B6',
-      c: '#A8E85C',
-      energy: 0.25,
-    },
+    palette: { name: 'calm', tint: '#5B9BD5' },
   },
 ];
 

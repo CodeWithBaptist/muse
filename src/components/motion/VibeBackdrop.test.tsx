@@ -44,16 +44,19 @@ describe('VibeBackdrop', () => {
     const layers = backdrop.querySelectorAll('.muse-vibe-layer');
     expect(layers).toHaveLength(2);
     expect(layers[1]).toHaveAttribute('data-entering', 'true');
-    expect((layers[1] as HTMLElement).style.getPropertyValue('--vibe-a')).toBe(
-      '#FF3B30',
-    );
+    expect(
+      (layers[1] as HTMLElement).style.getPropertyValue('--vibe-tint'),
+    ).toBe('#E24B3B');
+    expect(backdrop.querySelector('[class*="blob"]')).toBeNull();
 
     // jsdom has no AnimationEvent, so the timer fallback settles the fade here.
     act(() => {
       vi.advanceTimersByTime(1700);
     });
     expect(backdrop.querySelectorAll('.muse-vibe-layer')).toHaveLength(1);
-    expect(backdrop.querySelector('.muse-vibe-layer')).not.toHaveAttribute('data-entering');
+    expect(backdrop.querySelector('.muse-vibe-layer')).not.toHaveAttribute(
+      'data-entering',
+    );
   });
 
   it('renders nothing under Lite mode or reduced motion', () => {
