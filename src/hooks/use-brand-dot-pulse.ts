@@ -11,7 +11,7 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
- * Pulses the lime dot of a landing mark on the shared beat.
+ * Pulses the accent dot of a landing mark on the shared beat.
  *
  * It joins the one requestAnimationFrame loop instead of starting its own, and
  * it clears the transform on the way out so the element is left exactly as it

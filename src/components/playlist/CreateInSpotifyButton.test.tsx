@@ -1,5 +1,11 @@
 import * as React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { CreateInSpotifyButton } from './CreateInSpotifyButton';
 import type {
@@ -49,7 +55,7 @@ const currentLayer = () => {
 };
 
 describe('CreateInSpotifyButton', () => {
-  it('shows the idle lime button and fires a real export request', async () => {
+  it('shows the idle accent button and fires a real export request', async () => {
     let resolveRequest: ((result: PlaylistExportResult) => void) | undefined;
     const request = vi.fn(
       (_payload: PlaylistExportRequest) =>
@@ -60,8 +66,10 @@ describe('CreateInSpotifyButton', () => {
 
     renderButton({ request });
 
-    const idleButton = screen.getByRole('button', { name: 'Create in Spotify' });
-    expect(idleButton.className).toContain('bg-accent');
+    const idleButton = screen.getByRole('button', {
+      name: 'Create in Spotify',
+    });
+    expect(idleButton.className).toContain('bg-accent-primary');
 
     fireEvent.click(idleButton);
 
@@ -100,10 +108,14 @@ describe('CreateInSpotifyButton', () => {
   it('holds success briefly and then links to the real playlist', async () => {
     vi.useFakeTimers();
     try {
-      const request = vi.fn(async (_payload: PlaylistExportRequest) => SUCCESS_RESULT);
+      const request = vi.fn(
+        async (_payload: PlaylistExportRequest) => SUCCESS_RESULT,
+      );
       renderButton({ request });
 
-      fireEvent.click(screen.getByRole('button', { name: 'Create in Spotify' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Create in Spotify' }),
+      );
 
       await act(async () => {
         await vi.advanceTimersByTimeAsync(0);
@@ -211,7 +223,9 @@ describe('CreateInSpotifyButton', () => {
   });
 
   it('renders a controlled state without running any request', () => {
-    const request = vi.fn(async (_payload: PlaylistExportRequest) => SUCCESS_RESULT);
+    const request = vi.fn(
+      async (_payload: PlaylistExportRequest) => SUCCESS_RESULT,
+    );
     const controlled: CreateInSpotifyState = {
       status: 'open',
       spotifyUrl: SUCCESS_RESULT.spotifyUrl,

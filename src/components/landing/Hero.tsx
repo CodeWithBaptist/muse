@@ -20,7 +20,7 @@ import { StartAction } from './StartAction';
  * The record canvas sits behind everything with pointer events off, the content
  * keeps its own stacking order, and the entrance is CSS driven so the text is
  * visible without JavaScript. The canvas measures the content block through
- * `contentRef` so it can dim the lime that would cross the text, and it scales
+ * `contentRef` so it can dim the accent that would cross the text, and it scales
  * the wordmark dot through `pulseRef` from the one shared beat loop.
  *
  * The primary action opens the chat for everyone. `authError` is decided on

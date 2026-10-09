@@ -29,7 +29,7 @@ const DPR_CAP = 2;
 const RECT_REFRESH_MS = 120;
 
 export interface RecordGroovesCanvasProps {
-  /** The hero content block: lime that crosses it is dimmed. */
+  /** The hero content block: accent that crosses it is dimmed. */
   contentRef?: React.RefObject<HTMLElement | null>;
   /** The wordmark dot, scaled on the shared beat once the entrance settles. */
   pulseRef?: React.RefObject<HTMLElement | null>;

@@ -4,18 +4,20 @@ The working rules for building MUSE screens. Tokens live in `src/app/globals.css
 
 ## Color
 
-| Token                    | Value     | Use                                                                                 |
-| ------------------------ | --------- | ----------------------------------------------------------------------------------- |
-| `--color-background`     | `#0B0B0C` | Page stage                                                                          |
-| `--color-surface`        | `#111113` | Raised areas: fields, sidebar, sheets                                               |
-| `--color-border-subtle`  | `#232326` | Hairlines. Structure only, never meaning                                            |
-| `--color-border-strong`  | `#34343A` | Outlined controls, hover edges                                                      |
-| `--color-text-primary`   | `#F2F1ED` | Body, titles, control labels                                                        |
-| `--color-text-secondary` | `#A1A1A8` | Supporting copy, meta                                                               |
-| `--color-text-muted`     | `#85858C` | Labels, placeholders, hints. The darkest tone allowed for small text (5.4:1)        |
-| `--color-text-faint`     | `#6B6B73` | Large text (24px, or 19px bold), disabled text, decorative details only (3.7:1)     |
-| `--color-accent`         | `#A8E85C` | One primary action per view, focus, playing state. Under five percent of any screen |
-| `--color-danger`         | `#E8705F` | Error text, invalid field edges, destructive confirmation. Never decorative         |
+| Token                     | Value                           | Use                                                                             |
+| ------------------------- | ------------------------------- | ------------------------------------------------------------------------------- |
+| `--color-background`      | `#0B0B0C`                       | Page stage                                                                      |
+| `--color-surface`         | `#111113`                       | Raised areas: fields, sidebar, sheets                                           |
+| `--color-border-subtle`   | `#232326`                       | Hairlines. Structure only, never meaning                                        |
+| `--color-border-strong`   | `#34343A`                       | Outlined controls, hover edges                                                  |
+| `--color-text-primary`    | `#F2F1ED`                       | Body, titles, control labels                                                    |
+| `--color-text-secondary`  | `#A1A1A8`                       | Supporting copy, meta                                                           |
+| `--color-text-muted`      | `#85858C`                       | Labels, placeholders, hints. The darkest tone allowed for small text (5.4:1)    |
+| `--color-text-faint`      | `#6B6B73`                       | Large text (24px, or 19px bold), disabled text, decorative details only (3.7:1) |
+| `--color-accent`          | `#5B9BFF` dark, `#174CB4` light | Links, highlights, focus, playing state                                         |
+| `--color-accent-primary`  | `#2F5BEA`                       | Primary action fills                                                            |
+| `--color-accent-contrast` | `#FFFFFF`                       | Text and icons on primary action fills                                          |
+| `--color-danger`          | `#E8705F`                       | Error text, invalid field edges, destructive confirmation. Never decorative     |
 
 Rules:
 
@@ -77,10 +79,10 @@ Tokens: `--duration-instant` 90ms, `fast` 140ms, `base` 220ms, `slow` 360ms, `sc
 
 Tokens: `--muse-sidebar-width` 240px, `--muse-now-playing-width` 280px, `--muse-topbar-height` 64px, `--muse-bottom-nav-height` 64px, `--muse-header-height` 64px, `--muse-safe-bottom` and `--muse-safe-top` (safe-area insets; the viewport is `cover`).
 
-Breakpoints are Tailwind's defaults. The shell (`src/components/shell/AppShell.tsx`) is one row that fills the visible viewport (`.muse-shell`, `100dvh`): the sidebar, the page column, and the Now Playing rail. The page column stacks the phone header, the scrolling page, the compact Now Playing strip, and the bottom tabs. Every bar is in normal flow; nothing is fixed over the content.
+Breakpoints are Tailwind's defaults. The shell (`src/components/shell/AppShell.tsx`) fills the visible viewport (`.muse-shell`, `100dvh`): the sidebar, the page column, and the Now Playing rail. Below `md`, a fixed bottom tab bar reserves space in the shell, includes the safe area, and follows the visual viewport while the keyboard is open. The display popover uses Floating UI collision middleware, and below 640px it becomes a bottom sheet.
 
-- below `lg` (1024px): phone and tablet. Top bar (wordmark, Settings), page, Now Playing strip when a track is selected, five bottom tabs (Chat, Discover, Library, Playlists, Profile) at 44px.
-- `lg` to `xl`: laptop. Sidebar, page, Now Playing strip when a track is selected.
+- below `md` (768px): phone. Top bar, scrolling page, Now Playing strip when a track is selected, fixed bottom tabs with 44px targets. Signed-in users see Chat, Discover, Library, Playlists, Profile, and Settings. Guests see Chat and Profile.
+- `md` (768px) and up: sidebar, page, and Now Playing strip when a track is selected.
 - `xl` (1280px) and up: desktop. Sidebar, page, Now Playing rail.
 
 Destinations live in `src/components/shell/shell-nav.ts`; `isActivePath` treats nested routes as part of their section. On route change the page cross fades with `pageTransition` (or `pageTransitionReduced`) and focus moves to the `main` landmark.

@@ -19,9 +19,10 @@ describe('paletteForVibe', () => {
     }
   });
 
-  it('falls back to the brand tint and gives every mood one six digit colour', () => {
+  it('falls back to the brand token and gives each mood a blue CSS token', () => {
     expect(paletteForVibe('')).toBe(DEFAULT_VIBE_PALETTE);
     expect(paletteForVibe(null)).toBe(DEFAULT_VIBE_PALETTE);
+    expect(DEFAULT_VIBE_PALETTE.tint).toBe('var(--color-vibe-muse)');
     expect(paletteForVibe('something with no known words').name).toBe('muse');
     expect(paletteForVibe('Amapiano for a Friday').name).toBe('piano');
     for (const text of [
@@ -33,7 +34,9 @@ describe('paletteForVibe', () => {
       'chill',
       'anything',
     ]) {
-      expect(paletteForVibe(text).tint).toMatch(/^#[0-9A-F]{6}$/);
+      expect(paletteForVibe(text).tint).toMatch(
+        /^var\(--color-vibe-[a-z-]+\)$/,
+      );
     }
   });
 });

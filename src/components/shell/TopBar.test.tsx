@@ -50,6 +50,6 @@ describe('TopBar', () => {
     const header = screen.getByRole('banner', { name: 'App header' });
     expect(header.className).not.toContain('fixed');
     expect(header.className).toContain('pt-[var(--muse-safe-top)]');
-    expect(header.className).toContain('lg:hidden');
+    expect(header.className).toContain('md:hidden');
   });
 });

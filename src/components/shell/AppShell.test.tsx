@@ -70,7 +70,7 @@ describe('AppShell', () => {
     vi.restoreAllMocks();
   });
 
-  it('lays out sidebar, page column, and rail with nothing fixed over the page', () => {
+  it('lays out the sidebar and fixed phone tabs with room reserved below the page', () => {
     const { container } = renderShell();
 
     expect(
@@ -86,7 +86,7 @@ describe('AppShell', () => {
     expect(root.className).toContain('muse-shell');
     expect(root.className).not.toContain('h-screen');
 
-    // Both navigations exist: the sidebar for lg+, the tabs below it.
+    // Both navigations exist: the sidebar at md and up, the tabs below it.
     const navs = screen.getAllByRole('navigation', {
       name: 'Primary navigation',
     });
@@ -94,7 +94,7 @@ describe('AppShell', () => {
     const fixed = Array.from(
       container.querySelectorAll('[class*="fixed"]'),
     ).filter((element) => !element.className.includes('sr-only'));
-    expect(fixed).toHaveLength(0);
+    expect(fixed).toEqual([screen.getByTestId('bottom-tabs')]);
   });
 
   it('keeps the skip link first and makes the main landmark focusable', () => {

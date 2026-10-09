@@ -31,7 +31,7 @@ const BASE_CLASSES =
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.98] focus-ring';
 
 const VARIANT_CLASSES = {
-  primary: 'bg-accent text-background hover:bg-accent/90',
+  primary: 'bg-accent-primary text-accent-contrast hover:bg-accent-primary/90',
   outline: 'border border-border-strong text-text-primary hover:bg-surface',
   danger: 'border border-danger/50 text-danger',
 } as const;
@@ -104,7 +104,11 @@ export function CreateInSpotifyButton({
     [description, name, playlistId, trackUris, tracks],
   );
 
-  const { state: internalState, create, retry } = useCreateInSpotify({
+  const {
+    state: internalState,
+    create,
+    retry,
+  } = useCreateInSpotify({
     buildRequest,
     request,
     onResult,
@@ -200,11 +204,7 @@ export function CreateInSpotifyButton({
             data-testid="create-in-spotify-primary"
             data-success="true"
             aria-hidden={inert ? true : undefined}
-            className={cn(
-              BASE_CLASSES,
-              sizeClasses,
-              VARIANT_CLASSES.primary,
-            )}
+            className={cn(BASE_CLASSES, sizeClasses, VARIANT_CLASSES.primary)}
           >
             <CheckMark reducedMotion={shouldReduceMotion} />
             {label}

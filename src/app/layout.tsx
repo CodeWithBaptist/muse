@@ -1,14 +1,16 @@
-import type { Metadata, Viewport } from "next";
-import type { ReactNode } from "react";
-import "@fontsource-variable/fredoka";
-import "@fontsource/bagel-fat-one/latin-400.css";
-import "./globals.css";
-import { Providers } from "./providers";
-import { UI_PREFS_BOOTSTRAP_SCRIPT } from "@/lib/ui-prefs";
+import type { Metadata, Viewport } from 'next';
+import type { ReactNode } from 'react';
+import '@fontsource-variable/fredoka';
+import '@fontsource/bagel-fat-one/latin-400.css';
+import './globals.css';
+import { Providers } from './providers';
+import { UI_PREFS_BOOTSTRAP_SCRIPT } from '@/lib/ui-prefs';
+import { colors } from '@/lib/design-tokens';
 
 export const metadata: Metadata = {
-  title: "MUSE | Music by conversation",
-  description: "Tell MUSE the mood. It answers with real songs, checked against Deezer and iTunes, Nigeria first.",
+  title: 'MUSE | Music by conversation',
+  description:
+    'Tell MUSE the mood. It answers with real songs, checked against Deezer and iTunes, Nigeria first.',
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -17,9 +19,7 @@ export const metadata: Metadata = {
       { url: '/favicon-48.png', sizes: '48x48', type: 'image/png' },
       { url: '/favicon.ico', sizes: '48x48' },
     ],
-    apple: [
-      { url: '/favicon-180.png', sizes: '180x180', type: 'image/png' },
-    ],
+    apple: [{ url: '/favicon-180.png', sizes: '180x180', type: 'image/png' }],
   },
   manifest: '/site.webmanifest',
   appleWebApp: {
@@ -30,12 +30,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0B0B0C",
-  width: "device-width",
+  themeColor: colors.accentPrimary,
+  width: 'device-width',
   initialScale: 1,
   // Lets bottom bars extend under the home indicator and pad themselves with
   // env(safe-area-inset-bottom) through --muse-safe-bottom.
-  viewportFit: "cover",
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

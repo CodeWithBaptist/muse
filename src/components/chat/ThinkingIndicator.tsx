@@ -39,7 +39,7 @@ export function ThinkingIndicator({
       data-testid="thinking-indicator"
       className="flex flex-col gap-3 py-4"
     >
-      <EqualizerBars bars={4} tone="lime" height={16} width={3} />
+      <EqualizerBars bars={4} tone="accent" height={16} width={3} />
       <motion.p
         initial={fadeIn.initial}
         animate={fadeIn.animate}

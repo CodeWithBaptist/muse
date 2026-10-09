@@ -9,6 +9,8 @@ import {
   layout,
   lightColors,
   radii,
+  vibeTintVariables,
+  vibeTints,
 } from './design-tokens';
 
 const css = readFileSync(path.resolve(__dirname, '../app/globals.css'), 'utf8');
@@ -29,7 +31,7 @@ describe('design tokens', () => {
   });
 
   it('mirrors the light theme block too, and keeps its text readable', () => {
-    const start = css.indexOf('html[data-theme="light"]');
+    const start = css.search(/html\[data-theme=["']light["']\]/);
     expect(start).toBeGreaterThan(-1);
     const block = css.slice(start, css.indexOf('}', start));
     for (const [token, variable] of Object.entries(colorVariables)) {
@@ -38,11 +40,38 @@ describe('design tokens', () => {
         lightColors[token as keyof typeof lightColors].toLowerCase(),
       );
     }
-    expect(contrastRatio(lightColors.textMuted, lightColors.background)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(lightColors.textSecondary, lightColors.surface)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(lightColors.accent, lightColors.background)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(lightColors.background, lightColors.accent)).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(lightColors.textFaint, lightColors.background)).toBeGreaterThanOrEqual(3);
+    expect(
+      contrastRatio(lightColors.textMuted, lightColors.background),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightColors.textSecondary, lightColors.surface),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightColors.accent, lightColors.background),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightColors.background, lightColors.accent),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightColors.accentPrimary, lightColors.accentContrast),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightColors.accentContrast, lightColors.accentPrimary),
+    ).toBeGreaterThanOrEqual(4.5);
+    expect(
+      contrastRatio(lightColors.accentPrimary, lightColors.background),
+    ).toBeGreaterThanOrEqual(3);
+    expect(
+      contrastRatio(lightColors.textFaint, lightColors.background),
+    ).toBeGreaterThanOrEqual(3);
+  });
+
+  it('keeps every vibe wash aligned with its blue CSS token', () => {
+    for (const [name, variable] of Object.entries(vibeTintVariables)) {
+      expect(cssValue(variable).toLowerCase()).toBe(
+        vibeTints[name as keyof typeof vibeTints].toLowerCase(),
+      );
+    }
   });
 
   it('mirrors the radius, duration, and layout tokens', () => {
@@ -97,18 +126,25 @@ describe('palette contrast', () => {
     expect(meetsAA(colors.textFaint, colors.surface, 'ui')).toBe(true);
   });
 
-  it('keeps accent and danger readable as text and as fills', () => {
+  it('keeps links, primary actions, and danger within AA contrast', () => {
     expect(meetsAA(colors.accent, colors.background, 'text')).toBe(true);
+    expect(meetsAA(colors.accent, colors.surface, 'text')).toBe(true);
+    expect(meetsAA(colors.background, colors.accent, 'text')).toBe(true);
+    expect(meetsAA(colors.accentContrast, colors.accentPrimary, 'text')).toBe(
+      true,
+    );
     expect(meetsAA(colors.danger, colors.background, 'text')).toBe(true);
     expect(meetsAA(colors.danger, colors.surface, 'text')).toBe(true);
-    // Primary button: background text on the accent fill.
-    expect(meetsAA(colors.background, colors.accent, 'text')).toBe(true);
   });
 
-  it('keeps the focus edge at the non-text minimum on both backgrounds', () => {
-    // Hairline borders are decorative. Identification of a focused field
-    // relies on the accent edge, which must meet the 3:1 UI minimum.
+  it('keeps accent edges and primary fills above the non-text minimum', () => {
     expect(contrastRatio(colors.accent, colors.background)).toBeGreaterThan(3);
     expect(contrastRatio(colors.accent, colors.surface)).toBeGreaterThan(3);
+    expect(
+      contrastRatio(colors.accentPrimary, colors.background),
+    ).toBeGreaterThan(3);
+    expect(contrastRatio(colors.accentPrimary, colors.surface)).toBeGreaterThan(
+      3,
+    );
   });
 });

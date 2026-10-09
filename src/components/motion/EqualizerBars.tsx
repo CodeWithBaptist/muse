@@ -18,7 +18,7 @@ const STATIC_SCALES = [0.5, 0.82, 0.62, 0.74, 0.56];
 
 export interface EqualizerBarsProps {
   bars?: number;
-  tone?: 'lime' | 'dark';
+  tone?: 'accent' | 'dark';
   /** Height of the tallest bar in pixels. */
   height?: number;
   /** Bar width in pixels. */
@@ -33,7 +33,7 @@ export interface EqualizerBarsProps {
 
 export function EqualizerBars({
   bars = 3,
-  tone = 'lime',
+  tone = 'accent',
   height = 14,
   width = 2,
   playing = true,
@@ -50,7 +50,10 @@ export function EqualizerBars({
       role={label ? 'img' : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
-      className={cn('muse-equalizer inline-flex items-end gap-[2px]', className)}
+      className={cn(
+        'muse-equalizer inline-flex items-end gap-[2px]',
+        className,
+      )}
     >
       {Array.from({ length: bars }).map((_, index) => {
         const ratio = BAR_RATIOS[index % BAR_RATIOS.length];
@@ -61,7 +64,7 @@ export function EqualizerBars({
             data-testid="equalizer-bar"
             className={cn(
               'muse-equalizer-bar rounded-full',
-              tone === 'lime' ? 'bg-accent' : 'bg-background',
+              tone === 'accent' ? 'bg-accent' : 'bg-background',
             )}
             style={
               {

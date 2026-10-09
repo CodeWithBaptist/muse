@@ -16,7 +16,11 @@ export const colors = {
   textSecondary: '#A1A1A8',
   textMuted: '#85858C',
   textFaint: '#6B6B73',
-  accent: '#A8E85C',
+  accent: '#5B9BFF',
+  accentPrimary: '#2F5BEA',
+  accentContrast: '#FFFFFF',
+  accentDark: '#5B9BFF',
+  accentLight: '#174CB4',
   danger: '#E8705F',
 } as const;
 
@@ -25,8 +29,8 @@ export type ColorToken = keyof typeof colors;
 /**
  * The light theme, applied under html[data-theme="light"]. Same roles; every
  * text token clears WCAG AA on the page and on the surface (faint is for
- * large text only, as in the dark theme), and the accent darkens so it still
- * reads as text on paper.
+ * large text only, as in the dark theme), and the azure link color deepens so
+ * it still reads as text on paper.
  */
 export const lightColors: Record<ColorToken, string> = {
   background: '#F7F6F2',
@@ -37,11 +41,47 @@ export const lightColors: Record<ColorToken, string> = {
   textSecondary: '#4A4A50',
   textMuted: '#5F5F66',
   textFaint: '#80808A',
-  accent: '#3F7A00',
+  accent: '#174CB4',
+  accentPrimary: '#2F5BEA',
+  accentContrast: '#FFFFFF',
+  accentDark: '#5B9BFF',
+  accentLight: '#174CB4',
   danger: '#B93A28',
 };
 
 /** CSS custom property name for each color token. */
+export const vibeTints = {
+  muse: '#5B9BFF',
+  carnival: '#3B6FEA',
+  heartbreak: '#5182EE',
+  owambe: '#4B78EB',
+  traffic: '#4771E2',
+  nightDrive: '#2F5BEA',
+  study: '#3F75EA',
+  devotion: '#638CFF',
+  sunday: '#4B7AF0',
+  grind: '#335FD8',
+  piano: '#426CDF',
+  classics: '#4D78DF',
+  calm: '#5B9BFF',
+} as const;
+
+export const vibeTintVariables: Record<keyof typeof vibeTints, string> = {
+  muse: '--color-vibe-muse',
+  carnival: '--color-vibe-carnival',
+  heartbreak: '--color-vibe-heartbreak',
+  owambe: '--color-vibe-owambe',
+  traffic: '--color-vibe-traffic',
+  nightDrive: '--color-vibe-night-drive',
+  study: '--color-vibe-study',
+  devotion: '--color-vibe-devotion',
+  sunday: '--color-vibe-sunday',
+  grind: '--color-vibe-grind',
+  piano: '--color-vibe-piano',
+  classics: '--color-vibe-classics',
+  calm: '--color-vibe-calm',
+};
+
 export const colorVariables: Record<ColorToken, string> = {
   background: '--color-background',
   surface: '--color-surface',
@@ -52,6 +92,10 @@ export const colorVariables: Record<ColorToken, string> = {
   textMuted: '--color-text-muted',
   textFaint: '--color-text-faint',
   accent: '--color-accent',
+  accentPrimary: '--color-accent-primary',
+  accentContrast: '--color-accent-contrast',
+  accentDark: '--color-accent-dark',
+  accentLight: '--color-accent-light',
   danger: '--color-danger',
 };
 

@@ -46,7 +46,7 @@ describe('step dimming', () => {
     }
   });
 
-  it('turns only the active number lime', () => {
+  it('turns only the active number accent', () => {
     expect(stepNumberIsAccent(2, 2)).toBe(true);
     expect(stepNumberIsAccent(2, 1)).toBe(false);
     expect(stepNumberIsAccent(-1, 0)).toBe(false);

@@ -363,15 +363,19 @@ describe('landing quality checklist', () => {
       css.indexOf('@theme'),
       css.indexOf('}', css.indexOf('@theme')),
     );
-    expect(theme).toContain('#0B0B0C');
-    expect(theme).toContain('#F2F1ED');
-    expect(theme).toContain('#A8E85C');
+    const normalizedTheme = theme.toLowerCase();
+    expect(normalizedTheme).toContain('#0b0b0c');
+    expect(normalizedTheme).toContain('#f2f1ed');
+    expect(normalizedTheme).toContain('#5b9bff');
 
     // The canvas fallback palette is the token values, and it is the only
     // landing source allowed to spell a colour out.
     const canvasMath = read('src/lib/landing-canvas.ts');
-    expect(canvasMath).toContain("ink: '#F2F1ED'");
-    expect(canvasMath).toContain("accent: '#A8E85C'");
+    expect(canvasMath).toContain(
+      "import { colors } from '@/lib/design-tokens'",
+    );
+    expect(canvasMath).toContain('ink: colors.textPrimary');
+    expect(canvasMath).toContain('accent: colors.accent');
 
     for (const source of LANDING_SOURCES) {
       if (source === 'src/lib/landing-canvas.ts') continue;

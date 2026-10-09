@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { LoaderCircle, Pause, Play } from "lucide-react";
-import { transitions } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { LoaderCircle, Pause, Play } from 'lucide-react';
+import { transitions } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 
 interface PlaybackButtonProps {
   playing: boolean;
@@ -33,13 +33,13 @@ export function PlaybackButton({
       title={label}
       disabled={disabled || busy}
       className={cn(
-        "inline-flex items-center justify-center rounded-full bg-accent text-background transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        'inline-flex items-center justify-center rounded-full bg-accent-primary text-accent-contrast transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,
       )}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span
-          key={busy ? "busy" : playing ? "pause" : "play"}
+          key={busy ? 'busy' : playing ? 'pause' : 'play'}
           initial={{ opacity: 0, scale: 0.78 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.78 }}

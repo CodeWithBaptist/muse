@@ -35,7 +35,7 @@ describe('PWA manifest', () => {
     expect(manifest.display).toBe('standalone');
     expect(manifest.short_name).toBe('MUSE');
     expect(manifest.background_color).toBe('#0B0B0C');
-    expect(manifest.theme_color).toBe('#0B0B0C');
+    expect(manifest.theme_color).toBe('#2F5BEA');
   });
 
   it('ships any and maskable icons at 192 and 512, and every file exists', () => {

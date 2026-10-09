@@ -10,7 +10,7 @@ describe('Button', () => {
 
   it('applies variant classes', () => {
     const { rerender } = render(<Button variant="primary">Primary</Button>);
-    expect(screen.getByRole('button').className).toContain('bg-accent');
+    expect(screen.getByRole('button').className).toContain('bg-accent-primary');
 
     rerender(<Button variant="secondary">Secondary</Button>);
     expect(screen.getByRole('button').className).toContain('bg-surface');

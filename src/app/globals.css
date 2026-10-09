@@ -20,7 +20,28 @@
   /* Large text (24px, or 19px bold), disabled states, and non-text details
    * only: 3.7:1 on the background, which is below AA for small text. */
   --color-text-faint: #6B6B73;
-  --color-accent: #A8E85C;
+  /* Azure is for links, highlights, and focus on dark surfaces. */
+  --color-accent: #5B9BFF;
+  /* Cobalt fills primary actions; white text clears AA on the fill. */
+  --color-accent-primary: #2F5BEA;
+  --color-accent-contrast: #FFFFFF;
+  /* Pinned wordmarks need both theme shades at once. */
+  --color-accent-dark: #5B9BFF;
+  --color-accent-light: #174CB4;
+  /* Vibe tints stay within the cobalt and azure family. */
+  --color-vibe-muse: #5B9BFF;
+  --color-vibe-carnival: #3B6FEA;
+  --color-vibe-heartbreak: #5182EE;
+  --color-vibe-owambe: #4B78EB;
+  --color-vibe-traffic: #4771E2;
+  --color-vibe-night-drive: #2F5BEA;
+  --color-vibe-study: #3F75EA;
+  --color-vibe-devotion: #638CFF;
+  --color-vibe-sunday: #4B7AF0;
+  --color-vibe-grind: #335FD8;
+  --color-vibe-piano: #426CDF;
+  --color-vibe-classics: #4D78DF;
+  --color-vibe-calm: #5B9BFF;
   /* Errors and destructive confirmation only. Never decorative. */
   --color-danger: #E8705F;
 
@@ -66,8 +87,8 @@
 /*
  * Light theme. A choice the visitor makes (dark stays the default and is
  * never swapped for the OS setting). Same roles, re-tuned for paper: every
- * text token clears AA on both the page and the surface, and the lime
- * accent darkens so it still reads as text.
+ * text token clears AA on both the page and the surface, and azure deepens
+ * so it still reads as text.
  */
 html[data-theme="light"] {
   --color-background: #F7F6F2;
@@ -78,7 +99,11 @@ html[data-theme="light"] {
   --color-text-secondary: #4A4A50;
   --color-text-muted: #5F5F66;
   --color-text-faint: #80808A;
-  --color-accent: #3F7A00;
+  --color-accent: #174CB4;
+  --color-accent-primary: #2F5BEA;
+  --color-accent-contrast: #FFFFFF;
+  --color-accent-dark: #5B9BFF;
+  --color-accent-light: #174CB4;
   --color-danger: #B93A28;
   color-scheme: light;
 }
@@ -369,7 +394,26 @@ html[data-theme="light"] .muse-vibe-layer {
    * the browser chrome on phones. The CSS pipeline strips vh fallbacks for
    * the project's browser targets, so none is written here. */
   .muse-shell {
-    height: 100dvh;
+    height: var(--muse-visual-viewport-height, 100dvh);
+  }
+
+  @media (max-width: 767px) {
+    .muse-shell {
+      padding-bottom: calc(
+        var(--muse-bottom-nav-height) + var(--muse-safe-bottom)
+      );
+    }
+
+    html[data-keyboard-visible="true"] .muse-shell {
+      position: fixed;
+      inset-inline: 0;
+      top: var(--muse-visual-viewport-top, 0px);
+      height: var(--muse-visual-viewport-height, 100dvh);
+    }
+
+    html[data-keyboard-visible="true"] .muse-bottom-tabs {
+      bottom: var(--muse-visual-viewport-bottom-offset, 0px);
+    }
   }
 }
 
@@ -400,7 +444,7 @@ html[data-theme="light"] .muse-vibe-layer {
 }
 
 /*
- * The lime dot: it drops from 120px above, lands, bounces up 16px once, and
+ * The accent dot: it drops from 120px above, lands, bounces up 16px once, and
  * settles. The fall accelerates, the bounce eases out, and the last stretch
  * holds at rest so the beat pulse can take over.
  */

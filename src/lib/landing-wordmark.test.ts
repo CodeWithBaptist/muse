@@ -58,7 +58,7 @@ describe('landing wordmark data', () => {
     expect(LANDING_PIECE_VIEWBOX_HEIGHT).toBe(104);
   });
 
-  it('splits the four ink letters from the lime dot', () => {
+  it('splits the four ink letters from the accent dot', () => {
     expect(LANDING_WORDMARK_LETTERS).toHaveLength(4);
     expect(LANDING_WORDMARK_LETTERS.map((piece) => piece.id)).toEqual([
       'm',

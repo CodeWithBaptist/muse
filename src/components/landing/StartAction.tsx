@@ -32,7 +32,7 @@ export function StartAction({
       {...marker}
       data-start-action
       className={cn(
-        'inline-flex items-center justify-center rounded-md bg-accent font-semibold text-background transition-colors hover:bg-accent/90 focus-ring',
+        'inline-flex items-center justify-center rounded-md bg-accent-primary font-semibold text-accent-contrast transition-colors hover:bg-accent-primary/90 focus-ring',
         size === 'sm' ? 'h-9 px-4 text-xs' : 'h-11 px-6 text-sm',
         className,
       )}

@@ -9,13 +9,13 @@ import {
 
 describe('color utilities', () => {
   it('parses 6 digit and 3 digit hex colors', () => {
-    expect(parseHex('#A8E85C')).toEqual({ r: 168, g: 232, b: 92 });
+    expect(parseHex('#5B9BFF')).toEqual({ r: 91, g: 155, b: 255 });
     expect(parseHex('fff')).toEqual({ r: 255, g: 255, b: 255 });
   });
 
   it('rejects malformed colors', () => {
     expect(() => parseHex('#12')).toThrow();
-    expect(() => parseHex('lime')).toThrow();
+    expect(() => parseHex('blue')).toThrow();
   });
 
   it('computes WCAG luminance at the extremes', () => {

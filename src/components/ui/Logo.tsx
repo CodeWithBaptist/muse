@@ -32,8 +32,8 @@ export function Logo({
     theme === 'auto'
       ? 'var(--color-accent)'
       : theme === 'dark'
-        ? '#A8E85C'
-        : '#4F8A12';
+        ? 'var(--color-accent-dark)'
+        : 'var(--color-accent-light)';
 
   if (variant === 'mark') {
     return (
