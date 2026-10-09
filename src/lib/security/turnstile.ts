@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
-import { getClientIdentifier } from './rate-limit';
+import { clientIp } from './rate-limit';
 
 /**
  * Cloudflare Turnstile bot protection for the AI endpoints.
@@ -173,8 +173,5 @@ export function enforceHumanCheck(
 
 /** The IP Cloudflare should compare the token against, when known. */
 export function clientIpForTurnstile(request: Request): string | undefined {
-  const identifier = getClientIdentifier(request);
-  if (!identifier.startsWith('ip:') || identifier === 'ip:anonymous')
-    return undefined;
-  return identifier.slice(3);
+  return clientIp(request) ?? undefined;
 }

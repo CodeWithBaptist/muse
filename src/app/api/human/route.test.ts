@@ -18,7 +18,8 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@/lib/security/rate-limit', () => ({
   enforceRateLimit: mocks.enforceRateLimit,
-  getClientIdentifier: () => 'ip:203.0.113.5',
+  getClientIdentifier: () => 'ip:hashed',
+  clientIp: () => '203.0.113.5',
 }));
 
 vi.mock('@/lib/security/turnstile', async () => {
