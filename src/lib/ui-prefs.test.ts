@@ -64,17 +64,14 @@ describe('display preferences', () => {
     window.localStorage.clear();
   });
 
-  it('defaults to dark, Lite on auto, and sound off, dropping anything unknown', () => {
-    expect(getUiPrefs()).toEqual({ theme: 'dark', lite: 'auto', sound: false });
+  it('defaults to dark and Lite on auto, dropping anything unknown', () => {
+    expect(getUiPrefs()).toEqual({ theme: 'dark', lite: 'auto' });
     expect(
       normaliseUiPrefs({ theme: 'sepia', lite: 'maybe', sound: 'yes' }),
     ).toEqual(DEFAULT_UI_PREFS);
-    expect(
-      normaliseUiPrefs({ theme: 'light', lite: 'on', sound: true }),
-    ).toEqual({
+    expect(normaliseUiPrefs({ theme: 'light', lite: 'on' })).toEqual({
       theme: 'light',
       lite: 'on',
-      sound: true,
     });
   });
 
@@ -102,7 +99,7 @@ describe('display preferences', () => {
   it('saves a choice, stamps <html> at once, and notifies subscribers', () => {
     const listener = vi.fn();
     const unsubscribe = subscribeUiPrefs(listener);
-    setUiPrefs({ theme: 'light', sound: true });
+    setUiPrefs({ theme: 'light' });
     expect(listener).toHaveBeenCalledTimes(1);
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     expect(document.documentElement.style.colorScheme).toBe('light');
@@ -112,7 +109,6 @@ describe('display preferences', () => {
     ).toEqual({
       theme: 'light',
       lite: 'auto',
-      sound: true,
     });
     setUiPrefs({ lite: 'on' });
     expect(getEffectsLevel()).toBe('lite');

@@ -10,10 +10,9 @@ import {
   type LiteMode,
   type UiTheme,
 } from '@/lib/ui-prefs';
-import { previewSound } from '@/lib/ui-sound';
 
 /**
- * Theme, Lite mode, and sound, for everyone, on every page. A button opens
+ * Theme and Lite mode, for everyone, on every page. A button opens
  * a small panel of labelled toggle groups; Escape or the close button shuts
  * it and focus returns to the button. The choices live on the device.
  */
@@ -24,9 +23,6 @@ const LITE_LABELS: Record<LiteMode, string> = {
   on: 'On',
   off: 'Off',
 };
-const SOUND_OPTIONS = ['off', 'on'] as const;
-type SoundOption = (typeof SOUND_OPTIONS)[number];
-const SOUND_LABELS: Record<SoundOption, string> = { off: 'Off', on: 'On' };
 
 interface SegmentedProps<T extends string> {
   label: string;
@@ -190,18 +186,6 @@ export function DisplayMenu({ className }: { className?: string }) {
             options={LITE_MODES}
             labels={LITE_LABELS}
             onChange={(lite) => setPrefs({ lite })}
-          />
-          <Segmented
-            label="Sound"
-            hint="Short taps and chimes. Off until you say so."
-            testId="display-sound"
-            value={prefs.sound ? 'on' : 'off'}
-            options={SOUND_OPTIONS}
-            labels={SOUND_LABELS}
-            onChange={(sound) => {
-              setPrefs({ sound: sound === 'on' });
-              if (sound === 'on') previewSound();
-            }}
           />
           {level === 'none' ? (
             <p className="text-xs text-text-muted">

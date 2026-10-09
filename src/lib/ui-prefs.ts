@@ -1,5 +1,5 @@
 /**
- * The visitor's display choices: theme, Lite mode, and interface sound.
+ * The visitor's display choices: theme and Lite mode.
  * Kept on the device, applied to <html> before the first paint by the
  * bootstrap script, and read by every effect through useEffectsLevel so
  * nothing moving ever ignores them.
@@ -16,14 +16,11 @@ export interface UiPrefs {
   theme: UiTheme;
   /** `auto` turns Lite on for slow connections and Save-Data. */
   lite: LiteMode;
-  /** Short interface sounds. Off until the visitor turns them on. */
-  sound: boolean;
 }
 
 export const DEFAULT_UI_PREFS: UiPrefs = Object.freeze({
   theme: 'dark',
   lite: 'auto',
-  sound: false,
 });
 
 export const UI_PREFS_STORAGE_KEY = 'muse.ui.prefs.v1';
@@ -38,7 +35,6 @@ export function normaliseUiPrefs(value: unknown): UiPrefs {
     lite: (LITE_MODES as readonly unknown[]).includes(candidate.lite)
       ? (candidate.lite as LiteMode)
       : DEFAULT_UI_PREFS.lite,
-    sound: candidate.sound === true,
   };
 }
 

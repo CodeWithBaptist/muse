@@ -6,9 +6,6 @@ import { DisplayMenu } from './DisplayMenu';
 import { DEFAULT_UI_PREFS, UI_PREFS_STORAGE_KEY } from '@/lib/ui-prefs';
 import { setUiPrefs } from '@/lib/ui-prefs-store';
 
-const sound = vi.hoisted(() => ({ preview: vi.fn() }));
-vi.mock('@/lib/ui-sound', () => ({ previewSound: () => sound.preview() }));
-
 describe('DisplayMenu', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -22,7 +19,6 @@ describe('DisplayMenu', () => {
       })),
     );
     setUiPrefs(DEFAULT_UI_PREFS);
-    sound.preview.mockReset();
   });
 
   it('opens from one labelled button, applies theme and Lite at once, and closes on Escape', () => {
@@ -53,28 +49,10 @@ describe('DisplayMenu', () => {
     ).toEqual({
       theme: 'light',
       lite: 'on',
-      sound: false,
     });
 
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(document.activeElement).toBe(trigger);
-  });
-
-  it('keeps sound off by default and plays one preview only when it is switched on', () => {
-    render(<DisplayMenu />);
-    fireEvent.click(screen.getByRole('button', { name: 'Display settings' }));
-    const group = screen.getByTestId('display-sound');
-    const [off, on] = Array.from(group.querySelectorAll('button'));
-    expect(off).toHaveAttribute('aria-pressed', 'true');
-    expect(sound.preview).not.toHaveBeenCalled();
-
-    fireEvent.click(on);
-    expect(sound.preview).toHaveBeenCalledTimes(1);
-    fireEvent.click(off);
-    expect(sound.preview).toHaveBeenCalledTimes(1);
-    expect(
-      JSON.parse(window.localStorage.getItem(UI_PREFS_STORAGE_KEY) ?? '').sound,
-    ).toBe(false);
   });
 });

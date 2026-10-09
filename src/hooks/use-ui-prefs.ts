@@ -11,7 +11,7 @@ import {
   subscribeUiPrefs,
 } from '@/lib/ui-prefs-store';
 
-/** The visitor's theme, Lite mode, and sound choices, kept on the device. */
+/** The visitor's theme and Lite mode choices, kept on the device. */
 export function useUiPrefs(): [UiPrefs, (next: Partial<UiPrefs>) => void] {
   const prefs = React.useSyncExternalStore(
     subscribeUiPrefs,
