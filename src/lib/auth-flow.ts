@@ -30,6 +30,8 @@ export const AUTH_ERROR_CODES = [
   'state_mismatch',
   'auth_not_configured',
   'user_not_registered',
+  'testers_only',
+  'not_a_tester',
   'token_exchange_failed',
   'auth_failed',
 ] as const;

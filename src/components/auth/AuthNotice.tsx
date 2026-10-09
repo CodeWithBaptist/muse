@@ -33,6 +33,14 @@ export const AUTH_NOTICES: Record<
     title: 'Spotify would not let this account in yet.',
     body: 'Spotify refused the request for this account. While MUSE is in development mode on Spotify, each account has to be added by whoever runs this MUSE before it can sign in. Nothing was connected.',
   },
+  testers_only: {
+    title: 'Spotify sign-in is for testers right now.',
+    body: 'MUSE works without an account: start a chat and your list is built the same way. If you are testing the Spotify features, enter your tester key below first. Nothing was connected.',
+  },
+  not_a_tester: {
+    title: 'This Spotify account is not on the tester list.',
+    body: 'Spotify approved the connection, but the account is not one of the testers for this MUSE, so nothing was saved. Ask whoever runs this MUSE to add the account, or use MUSE without signing in.',
+  },
   token_exchange_failed: {
     title: 'MUSE could not finish connecting to Spotify.',
     body: 'Spotify approved the connection but the final step failed on our side. Nothing was saved. Please try again in a moment.',

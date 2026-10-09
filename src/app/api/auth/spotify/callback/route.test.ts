@@ -151,7 +151,29 @@ describe('GET /api/auth/spotify/callback', () => {
       email: 'ada@example.com',
       images: [{ url: 'https://i.scdn.co/ada.jpg' }],
     });
+    // Testers only: Ada is on the list for these tests.
+    process.env.SPOTIFY_TESTER_EMAILS = 'ada@example.com';
+    delete process.env.TESTER_KEY;
     vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('reports testers_only when no tester access is configured, before any exchange', async () => {
+    delete process.env.SPOTIFY_TESTER_EMAILS;
+    armHandshake();
+    const response = await GET(request({ code: 'auth-code', state: 'state-123' }));
+    await expectLoginRedirect(response, 'testers_only');
+    expect(mocks.exchangeCodeForTokens).not.toHaveBeenCalled();
+  });
+
+  it('reports not_a_tester for a Spotify account that is not on the list, storing nothing', async () => {
+    process.env.SPOTIFY_TESTER_EMAILS = 'tunde@lagos.ng';
+    armHandshake();
+    const response = await GET(request({ code: 'auth-code', state: 'state-123' }));
+    await expectLoginRedirect(response, 'not_a_tester');
+    expect(mocks.exchangeCodeForTokens).toHaveBeenCalledTimes(1);
+    expect(mocks.users).toEqual([]);
+    expect(mocks.accounts).toEqual([]);
   });
 
   async function expectLoginRedirect(

@@ -48,7 +48,35 @@ describe('GET /api/auth/spotify', () => {
     mocks.deleted.length = 0;
     mocks.status = { configured: true, missing: [] };
     mocks.enforceRateLimit.mockReset().mockResolvedValue(null);
+    // Testers only: the email allowlist makes the sign-in visible for these tests.
+    process.env.SPOTIFY_TESTER_EMAILS = 'ada@example.com';
+    delete process.env.TESTER_KEY;
     vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('refuses to start when no tester access is configured', async () => {
+    delete process.env.SPOTIFY_TESTER_EMAILS;
+    const response = await GET(request('/api/auth/spotify?next=/settings'));
+    expect(response.status).toBe(303);
+    expect(response.headers.get('Location')).toBe('/login?error=testers_only&next=%2Fsettings');
+    expect(mocks.cookieJar.has('spotify_auth_state')).toBe(false);
+
+    const json = await GET(request('/api/auth/spotify', 'application/json'));
+    expect(json.status).toBe(403);
+    expect((await json.json()).code).toBe('TESTERS_ONLY');
+  });
+
+  it('in key mode starts only with a valid tester pass cookie', async () => {
+    delete process.env.SPOTIFY_TESTER_EMAILS;
+    process.env.TESTER_KEY = 'a-long-enough-tester-key-123';
+    const refused = await GET(request('/api/auth/spotify'));
+    expect(refused.headers.get('Location')).toBe('/login?error=testers_only');
+
+    const { signTesterPass } = await import('@/lib/testers');
+    mocks.cookieJar.set('muse_tester', { value: signTesterPass()!, options: {} });
+    const started = await GET(request('/api/auth/spotify'));
+    expect(started.status).toBe(307);
+    expect(started.headers.get('Location')).toContain('accounts.spotify.com/authorize');
   });
 
   it('starts the PKCE handshake and sends the browser to Spotify', async () => {

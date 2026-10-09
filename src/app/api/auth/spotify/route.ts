@@ -1,6 +1,7 @@
 import { generateSpotifyAuthUrl, generateCodeChallenge } from '@/lib/spotify';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { getSpotifyLoginStatus } from '@/lib/spotify-config';
+import { spotifyLoginVisible } from '@/lib/testers';
 import {
   AUTH_COOKIE_NEXT,
   AUTH_COOKIE_STATE,
@@ -45,6 +46,17 @@ export async function GET(request?: Request) {
   const next = request
     ? safeNextPath(new URL(request.url).searchParams.get('next'))
     : null;
+
+  // Testers only: without a tester pass (or an email allowlist) the sign-in does not start.
+  if (!(await spotifyLoginVisible())) {
+    if (wantsHtml(request)) {
+      return redirectTo(loginPathForError('testers_only', next));
+    }
+    return NextResponse.json(
+      { error: 'Spotify sign-in is for testers only.', code: 'TESTERS_ONLY' },
+      { status: 403 },
+    );
+  }
 
   const loginStatus = getSpotifyLoginStatus();
   if (!loginStatus.configured) {

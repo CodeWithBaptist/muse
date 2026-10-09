@@ -11,6 +11,7 @@ import { createSession } from '@/lib/session';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { SpotifyCallbackQuerySchema } from '@/lib/validation/api-schemas';
 import { isSpotifyLoginConfigured } from '@/lib/spotify-config';
+import { isTesterEmail, spotifyLoginVisible, testerEmails } from '@/lib/testers';
 import {
   AUTH_COOKIE_NEXT,
   AUTH_COOKIE_STATE,
@@ -82,9 +83,18 @@ export async function GET(request: Request) {
     return fail('state_mismatch');
   }
 
+  // Testers only, checked again here in case the pass vanished mid-flow.
+  if (!(await spotifyLoginVisible())) return fail('testers_only');
+
   try {
     const tokens = await exchangeCodeForTokens(code, codeVerifier);
     const profile = await getSpotifyUserProfile(tokens.access_token);
+
+    // The email allowlist is the gate when it is set; nothing is stored for others.
+    if (testerEmails().length > 0 && !isTesterEmail(profile.email)) {
+      console.warn('Spotify sign-in refused: account email is not on the tester list.');
+      return fail('not_a_tester');
+    }
 
     let [user] = await db
       .select()
