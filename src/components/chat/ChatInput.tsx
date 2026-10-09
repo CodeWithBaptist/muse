@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { ArrowUp } from 'lucide-react';
+import { playSound } from '@/lib/ui-sound';
 import { cn } from '@/lib/utils';
 import { CHAT_MESSAGE_MAX_LENGTH } from '@/lib/validation/api-schemas';
 
@@ -28,6 +29,7 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
   const handleSubmit = (event?: React.FormEvent) => {
     event?.preventDefault();
     if (value.trim() && !disabled) {
+      playSound('tap');
       onSend(value.trim());
       setValue('');
     }
