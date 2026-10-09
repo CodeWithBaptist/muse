@@ -154,7 +154,10 @@ describe('landing quality checklist', () => {
     // The shared Logo and the brand files are not touched by the landing work.
     const logo = read('src/components/ui/Logo.tsx');
     expect(logo).toContain('aria-label="muse"');
-    expect(logo).toContain("theme = 'dark'");
+    // Since the light theme shipped the default follows the page tokens, and
+    // the pinned dark colours stay available for surfaces that never change.
+    expect(logo).toContain("theme = 'auto'");
+    expect(logo).toContain("theme === 'dark'");
     expect(read('src/lib/landing-wordmark.ts')).not.toContain(
       '@/components/ui/Logo',
     );

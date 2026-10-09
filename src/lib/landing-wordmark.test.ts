@@ -41,7 +41,10 @@ describe('landing wordmark data', () => {
   it('leaves the shared Logo and the brand files alone', () => {
     const logo = read('src/components/ui/Logo.tsx');
     expect(logo).toContain('aria-label="muse"');
-    expect(logo).toContain("theme = 'dark'");
+    // Since the light theme shipped the default follows the page tokens, and
+    // the pinned dark colours stay available for surfaces that never change.
+    expect(logo).toContain("theme = 'auto'");
+    expect(logo).toContain("theme === 'dark'");
     // The landing module never imports the shared component.
     const landing = read('src/lib/landing-wordmark.ts');
     expect(landing).not.toContain('@/components/ui/Logo');

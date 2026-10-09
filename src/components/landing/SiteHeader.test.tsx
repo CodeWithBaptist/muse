@@ -2,7 +2,10 @@ import * as React from 'react';
 import { act, cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LANDING_NAV, SiteHeader } from './SiteHeader';
-import { landingNavClickHandler, prefersReducedMotion } from '@/lib/landing-scroll';
+import {
+  landingNavClickHandler,
+  prefersReducedMotion,
+} from '@/lib/landing-scroll';
 import { HERO_DOT_PULSE_SCALE } from '@/lib/hero-entrance';
 
 vi.mock('motion/react', async () => {
@@ -27,7 +30,9 @@ function makeMediaQuery(matches: boolean) {
       options?: AddEventListenerOptions,
     ) => {
       listeners.add(listener);
-      options?.signal?.addEventListener('abort', () => listeners.delete(listener));
+      options?.signal?.addEventListener('abort', () =>
+        listeners.delete(listener),
+      );
     },
     removeEventListener: (_type: string, listener: () => void) => {
       listeners.delete(listener);
@@ -54,7 +59,9 @@ describe('SiteHeader', () => {
     frameQueue = new Map();
     nextHandle = 0;
     vi.spyOn(performance, 'now').mockReturnValue(0);
-    vi.stubGlobal('requestAnimationFrame', ((callback: (time: number) => void) => {
+    vi.stubGlobal('requestAnimationFrame', ((
+      callback: (time: number) => void,
+    ) => {
       nextHandle += 1;
       frameQueue.set(nextHandle, callback);
       return nextHandle;
@@ -86,7 +93,9 @@ describe('SiteHeader', () => {
     render(<SiteHeader />);
 
     expect(screen.getByRole('img', { name: 'muse' })).toBeDefined();
-    expect(document.querySelector('[data-testid="landing-mark-dot"]')).not.toBeNull();
+    expect(
+      document.querySelector('[data-testid="landing-mark-dot"]'),
+    ).not.toBeNull();
     expect(document.querySelector('[data-piece="dot"]')).not.toBeNull();
   });
 
@@ -142,11 +151,14 @@ describe('SiteHeader', () => {
     }
   });
 
-  it('keeps the primary action on the right, as a link into the chat', () => {
+  it('keeps the primary action on the right, as a link into the chat, next to display settings', () => {
     render(<SiteHeader />);
     const start = screen.getByRole('link', { name: 'Start' });
     expect(start.getAttribute('href')).toBe('/chat');
     expect(start.className).toContain('h-9');
+    expect(
+      screen.getByRole('button', { name: 'Display settings' }),
+    ).toBeInTheDocument();
   });
 
   it('smooth scrolls only when motion is allowed', () => {

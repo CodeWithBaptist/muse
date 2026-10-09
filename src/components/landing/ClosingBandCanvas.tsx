@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { getEffectsLevel, subscribeUiPrefs } from '@/lib/ui-prefs-store';
 import { subscribeBeat } from '@/lib/beat-clock';
 import {
   BAND_HEIGHT,
@@ -62,7 +63,9 @@ export function ClosingBandCanvas({ className }: ClosingBandCanvasProps) {
       typeof window.matchMedia === 'function'
         ? window.matchMedia('(prefers-reduced-motion: reduce)')
         : null;
-    const prefersReduced = () => preference?.matches ?? false;
+    // Reduced motion, Lite mode (chosen or automatic), or a hidden tab all mean still.
+    const prefersReduced = () =>
+      (preference?.matches ?? false) || getEffectsLevel() !== 'full';
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -171,7 +174,10 @@ export function ClosingBandCanvas({ className }: ClosingBandCanvasProps) {
 
     const tick = (nowMs: number) => {
       if (!visible) return;
-      energy = easeEnergy(energy, hovered || focused || pressed ? HOVER_ENERGY_TARGET : HOVER_ENERGY_REST);
+      energy = easeEnergy(
+        energy,
+        hovered || focused || pressed ? HOVER_ENERGY_TARGET : HOVER_ENERGY_REST,
+      );
       paint(nowMs - startedAt, false);
     };
 
@@ -208,16 +214,33 @@ export function ClosingBandCanvas({ className }: ClosingBandCanvasProps) {
         : null;
     intersectionObserver?.observe(canvas);
 
-    canvas.addEventListener('pointermove', onPointerMove, { passive: true, signal });
+    canvas.addEventListener('pointermove', onPointerMove, {
+      passive: true,
+      signal,
+    });
     canvas.addEventListener('pointerleave', onPointerLeave, { signal });
-    host.addEventListener('pointerover', onPointerOver, { passive: true, signal });
-    host.addEventListener('pointerout', onPointerOut, { passive: true, signal });
+    host.addEventListener('pointerover', onPointerOver, {
+      passive: true,
+      signal,
+    });
+    host.addEventListener('pointerout', onPointerOut, {
+      passive: true,
+      signal,
+    });
     host.addEventListener('focusin', onFocusIn, { signal });
     host.addEventListener('focusout', onFocusOut, { signal });
-    host.addEventListener('touchstart', onTouchStart, { passive: true, signal });
+    host.addEventListener('touchstart', onTouchStart, {
+      passive: true,
+      signal,
+    });
     host.addEventListener('touchend', onTouchEnd, { passive: true, signal });
     host.addEventListener('touchcancel', onTouchEnd, { passive: true, signal });
     preference?.addEventListener('change', onReducedMotionChange, { signal });
+    // A theme or Lite change re-reads the tokens and starts or stops the beat.
+    const unsubscribePrefs = subscribeUiPrefs(() => {
+      measure();
+      onReducedMotionChange();
+    });
 
     paths = buildPaths();
     startedAt = performance.now();
@@ -231,6 +254,7 @@ export function ClosingBandCanvas({ className }: ClosingBandCanvasProps) {
     }
 
     return () => {
+      unsubscribePrefs();
       unsubscribe?.();
       unsubscribe = null;
       controller.abort();
@@ -245,7 +269,10 @@ export function ClosingBandCanvas({ className }: ClosingBandCanvasProps) {
       aria-hidden="true"
       data-testid={CLOSING_BAND_TESTID}
       style={{ height: BAND_HEIGHT }}
-      className={cn('pointer-events-none absolute inset-x-0 bottom-0 w-full', className)}
+      className={cn(
+        'pointer-events-none absolute inset-x-0 bottom-0 w-full',
+        className,
+      )}
     />
   );
 }

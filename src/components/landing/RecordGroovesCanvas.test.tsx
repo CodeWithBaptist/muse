@@ -403,7 +403,9 @@ describe('RecordGroovesCanvas', () => {
       `[${HERO_ACTION_ATTRIBUTE}]`,
     ) as HTMLButtonElement;
 
-    expect(media.listenerCount()).toBe(1);
+    // One from the canvas, one from the display preferences store, which
+    // also watches reduced motion while the canvas is subscribed to it.
+    expect(media.listenerCount()).toBe(2);
 
     unmount();
 
