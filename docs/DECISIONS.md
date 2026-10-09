@@ -4,6 +4,27 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: Lists are checked against Deezer and iTunes without a login, unverified picks stay, and both chat paths share one engine
+
+**Decision**
+Every list MUSE builds is verified before it is shown (`src/lib/catalogue/`). Deezer's keyless search is asked first with its advanced `artist:"" track:""` syntax, then a plain query; Apple's iTunes Search API (country NG) is the fallback, capped at eight calls per run because Apple allows roughly twenty a minute. A pick is verified when the core title and an artist match a catalogue entry, with features, remix and remaster notes, accents, and punctuation ignored. A pick whose artist exists in a catalogue but whose title was not found stays in the list as unverified with a one line reason and search links (Audiomack, Boomplay, YouTube Music). A pick is dropped only when no track search and a final Deezer artist search find any artist match. Every call has a 2.5 second timeout under a 7 second run deadline; a failed or timed-out lookup leaves a pick unverified, never dropped; stable outcomes are cached in memory for ten minutes. The stream gains a "checking" stage and the done event carries each pick's verification, source link, and the dropped count. The list footer attributes Deezer and the Apple iTunes Search API and states MUSE is not affiliated with or endorsed by either; the CSP admits their artwork hosts. Signed-in discovery now runs through the same engine (model list, verification, scope, language) with the saved conversation's last ten turns as context; the answer is stored with its list in a new nullable `messages.list` jsonb column (apply with `npm run db:push`), and the conversation endpoint returns it so a reloaded chat shows the songs again. The Spotify search engine, its candidate pipeline, and the Spotify error branches are gone from the chat route; `extractChatIntent` and the two helpers Discover still uses remain in `recommendation-engine.ts`.
+
+**Why**
+The brief asks for verification without a login, that unmatched Nigerian tracks are not dropped, that only clear hallucinations with no artist match go, that lookups run in parallel with timeouts and a short cache, and for attribution. The owner decided after Task 2 that testers move onto the new engine once verification exists, so the two paths converge here rather than maintaining a Spotify-only engine next to a catalogue-checked one. The asymmetry in the drop rule is deliberate: Deezer and iTunes are thin on Fuji, Apala, older Highlife, and much Street-pop, so a missing title is weak evidence while a missing artist across searches is strong evidence. Keeping the list on the message, rather than in the old `recommendations` table keyed by Spotify id, is the only way a saved conversation can reload its songs.
+
+**Alternatives considered**
+
+- Spotify search with an app token for verification: needs Spotify credentials on every normal path, which the brief forbids.
+- MusicBrainz as the fallback: strict rate limits (one request a second) and sparse Nigerian coverage; Apple's NG store is better here.
+- Dropping every unverified pick: cleaner lists, but it would throw away exactly the Nigerian music the product exists for.
+- A verification cache in Redis or Postgres: more hits across instances, but another dependency for a ten minute memory; revisit if Deezer quota errors appear in logs.
+- Keeping the Spotify-search engine for signed-in testers: two engines, two payload shapes, and a Spotify dependency in the chat; rejected with the owner's decision.
+
+**Impact**
+New files: `src/lib/catalogue/{types,normalise,cache,deezer,itunes,verify,search-links,index}.ts` with tests, `src/app/api/chat/signed-in-chat.test.ts`. Changed: `open-chat.ts` (`composePlaylist`, checking stage, `dropped`), `route.ts` (signed-in discovery on `composePlaylist`, `recentTurns`, `saveListAnswer`), `[id]/route.ts` (returns lists), `schema.ts` (`messages.list`), `RecommendationList.tsx` (badges, links, attribution), `ChatMessage.tsx` (empty state after a check), `next.config.ts` (img-src), `recommendation-engine.ts` (trimmed). Operational: run `npm run db:push` before signed-in testers use this build; watch logs for "Catalogue lookup failed" with Deezer code 4 (quota). Audiomack and Boomplay search URL patterns are from memory and must be checked on a phone. The tester-only "Create in Spotify" export is not reachable from new chat lists until Task 6 reattaches it to the verified list; Discover and Profile for accounts still use Spotify data until Task 7. No new environment variables.
+
+---
+
 ## 2026-10-08: MUSE speaks from Lagos by default, with scope and language the visitor controls on the device
 
 **Decision**
