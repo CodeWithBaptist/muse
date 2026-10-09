@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { Activity, Sliders, Sparkles, User } from 'lucide-react';
+import { Activity, Compass, Sliders, User } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { fadeInUp, staggerContainer } from '@/lib/motion';
 import type { ProfileInsightsData } from '@/lib/validation/api-schemas';
@@ -132,7 +132,7 @@ export function InsightCards({
       <motion.div variants={fadeInUp}>
         <Surface variant="raised" className="h-full space-y-6 rounded-2xl p-8">
           <div className="flex items-center gap-3">
-            <Sparkles size={20} className="text-accent" />
+            <Compass size={20} className="text-accent" />
             <h2 className="type-section-label !text-text-primary">
               Discovery DNA
             </h2>

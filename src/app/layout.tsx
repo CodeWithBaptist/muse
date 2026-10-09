@@ -7,8 +7,8 @@ import { Providers } from "./providers";
 import { UI_PREFS_BOOTSTRAP_SCRIPT } from "@/lib/ui-prefs";
 
 export const metadata: Metadata = {
-  title: "MUSE | AI Music Companion",
-  description: "Discover music, build playlists, and explore your taste through conversation.",
+  title: "MUSE | Music by conversation",
+  description: "Tell MUSE the mood. It answers with real songs, checked against Deezer and iTunes, Nigeria first.",
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },

@@ -9,7 +9,7 @@ import { isAiNotConnectedMessage } from '@/hooks/use-chat';
 import { motion } from 'motion/react';
 import { staggerContainer } from '@/lib/motion';
 import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
-import { Sparkles, Link2Off, RefreshCw, Compass } from 'lucide-react';
+import { KeyRound, Link2Off, RefreshCw, Compass } from 'lucide-react';
 
 interface ApiError extends Error {
   code?: string;
@@ -71,7 +71,7 @@ export default function DiscoverPage() {
           className="p-12 text-center space-y-4 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl"
         >
           <div className="w-10 h-10 rounded-full bg-surface border border-border-subtle flex items-center justify-center mx-auto">
-            <Sparkles size={18} className="text-accent" />
+            <KeyRound size={18} className="text-accent" />
           </div>
           <h2 className="text-lg font-bold text-text-primary">
             AI is not connected yet
@@ -81,8 +81,7 @@ export default function DiscoverPage() {
             <code className="font-mono text-xs text-text-primary">
               OPENAI_API_KEY
             </code>{' '}
-            in your environment variables to unlock AI-curated discovery
-            sections tailored to your taste.
+            in the environment. Discover needs it to write these sections.
           </p>
         </Surface>
       </div>
@@ -137,7 +136,7 @@ export default function DiscoverPage() {
           className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-12 text-center"
         >
           <h2 className="font-semibold text-text-primary">
-            Unable to curate recommendations right now
+            Discover could not load
           </h2>
           <p className="text-xs text-text-muted">
             {(error as Error).message}

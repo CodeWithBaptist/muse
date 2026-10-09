@@ -163,7 +163,7 @@ describe('LoginScreen tester access', () => {
     );
     render(<LoginScreen spotifyLoginAvailable={false} testerAccess="key" />);
     fireEvent.change(screen.getByLabelText('Tester key'), { target: { value: 'nope' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Unlock' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
     await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('That tester key is not right.'));
     expect(fetchMock).toHaveBeenCalledWith('/api/tester', expect.objectContaining({ method: 'POST' }));
     expect(JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body))).toEqual({ key: 'nope' });

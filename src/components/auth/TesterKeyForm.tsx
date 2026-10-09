@@ -74,7 +74,7 @@ export function TesterKeyForm({ className }: { className?: string }) {
           size="md"
           disabled={status === 'checking' || !key.trim()}
         >
-          {status === 'checking' ? 'Checking' : 'Unlock'}
+          {status === 'checking' ? 'Checking' : 'Continue'}
         </Button>
       </div>
       <p id={errorId} role="alert" className="min-h-5 pt-2 text-sm text-danger">

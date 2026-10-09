@@ -37,7 +37,7 @@ const CAPABILITIES = [
   },
 ] as const;
 
-/** The rolling column, with the first phrase repeated so the loop is seamless. */
+/** The rolling column, with the first phrase repeated so the loop has no visible join. */
 const ROLL_COLUMN = [...ROLLING_PHRASES, ROLLING_PHRASES[0]];
 
 /**

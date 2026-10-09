@@ -57,7 +57,7 @@ describe('Landing Page', () => {
     for (const content of [
       'Your music,',
       'understood.',
-      'Discover music, build playlists',
+      'Tell MUSE the mood.',
       '>Start<',
       'See how it works',
       'See it work',

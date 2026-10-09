@@ -75,8 +75,8 @@ export function Hero({ authError }: HeroProps) {
             className="muse-hero-fade max-w-2xl mx-auto text-text-secondary text-lg md:text-xl font-medium text-balance leading-relaxed"
             style={heroFadeStyle(HERO_SUBTEXT_START_MS)}
           >
-            Discover music, build playlists, and explore your taste through
-            conversation.
+            Tell MUSE the mood. It answers with real songs, checked against
+            Deezer and iTunes, Nigeria first.
           </p>
         </div>
 

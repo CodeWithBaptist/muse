@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Link2Off, RefreshCw, Sparkles } from 'lucide-react';
+import { KeyRound, Link2Off, RefreshCw } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { Button } from '@/components/ui/Button';
 import { HumanCheckCard } from '@/components/security/HumanCheckCard';
@@ -205,7 +205,7 @@ export function ProfileView({ lastfmEnabled }: ProfileViewProps) {
           className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-10 text-center"
         >
           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-surface">
-            <Sparkles size={18} className="text-accent" />
+            <KeyRound size={18} className="text-accent" />
           </div>
           <h2 className="text-lg font-bold text-text-primary">
             AI is not connected yet

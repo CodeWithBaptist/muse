@@ -121,7 +121,7 @@ describe('WhatItDoes', () => {
     render(<WhatItDoes />);
 
     expect(column().getAttribute('aria-hidden')).toBe('true');
-    // Six phrases plus the repeated first one, so the loop is seamless.
+    // Six phrases plus the repeated first one, so the loop has no visible join.
     expect(column().children).toHaveLength(
       rollingPositionCount(ROLLING_PHRASES.length),
     );
