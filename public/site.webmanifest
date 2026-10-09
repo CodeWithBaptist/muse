@@ -1,21 +1,41 @@
 {
-  "name": "MUSE AI Music Companion",
+  "id": "/",
+  "name": "MUSE",
   "short_name": "MUSE",
-  "description": "Discover music, build playlists, and explore your taste through conversation.",
-  "start_url": "/",
+  "description": "Tell MUSE the mood or the moment and get a playlist of real songs, Nigeria first.",
+  "start_url": "/chat",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
+  "lang": "en-NG",
+  "dir": "ltr",
   "background_color": "#0B0B0C",
   "theme_color": "#0B0B0C",
+  "categories": ["music", "entertainment"],
   "icons": [
     {
       "src": "/favicon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/favicon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

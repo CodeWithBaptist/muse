@@ -22,6 +22,11 @@ export const metadata: Metadata = {
     ],
   },
   manifest: '/site.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'MUSE',
+    statusBarStyle: 'black-translucent',
+  },
 };
 
 export const viewport: Viewport = {
