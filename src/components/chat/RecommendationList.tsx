@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { motion } from 'motion/react';
-import { BadgeCheck, CircleHelp, ListMusic } from 'lucide-react';
+import { BadgeCheck, CircleHelp } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
 import { fadeInUp, transitions } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -11,8 +11,22 @@ import { searchLinksFor } from '@/lib/catalogue/search-links';
 import type { ListedTrack, TrackVerification } from '@/lib/catalogue/types';
 import { PlaylistActions } from './PlaylistActions';
 import { TrackLinks } from './TrackLinks';
+import { VinylDisc } from './VinylDisc';
+import { WordReveal } from './WordReveal';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/use-auth';
+import { useTilt } from '@/hooks/use-tilt';
+import { useEffectsLevel } from '@/hooks/use-ui-prefs';
+import { useVibe } from '@/hooks/use-vibe';
+import { BeatVisualizer } from '@/components/motion/BeatVisualizer';
+import { claimCelebration } from '@/lib/celebrate-store';
+import { playSound } from '@/lib/ui-sound';
+import { paletteForVibe } from '@/lib/vibe-palette';
+
+/** The arrival burst, fetched only when a fresh playlist lands under full effects. */
+const NotesBurst = dynamic(() => import('@/components/motion/NotesBurst'), {
+  ssr: false,
+});
 
 /** Tester-only Spotify export, loaded only for signed-in testers so guests never download it. */
 const SpotifyListExport = dynamic(
@@ -155,6 +169,91 @@ export interface RecommendationListProps {
   dropped?: number;
 }
 
+interface RecommendationRowProps {
+  track: ListedTrack;
+  index: number;
+}
+
+function RecommendationRow({ track, index }: RecommendationRowProps) {
+  const tilt = useTilt();
+  return (
+    <motion.li
+      data-testid="recommendation-row"
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
+      transition={{
+        ...transitions.standard,
+        delay: Math.min(index * 0.04, 0.4),
+      }}
+      className="group"
+    >
+      <div
+        className="muse-tilt flex gap-4 px-5 py-3.5"
+        onPointerMove={tilt.onPointerMove}
+        onPointerLeave={tilt.onPointerLeave}
+      >
+        <span className="w-6 shrink-0 pt-0.5 text-right text-xs tabular-nums text-text-muted">
+          {index + 1}
+        </span>
+        <VinylDisc
+          artworkUrl={track.verification?.artworkUrl}
+          index={index}
+          className="mt-0.5"
+        />
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="text-sm font-semibold text-text-primary">
+              {track.title}
+            </span>
+            <span className="text-xs font-medium text-text-secondary">
+              {track.artist}
+            </span>
+            <RegionBadge region={track.region} />
+            {track.verification ? (
+              <VerificationBadge verification={track.verification} />
+            ) : null}
+          </div>
+          <p className="text-sm leading-relaxed text-text-secondary">
+            <WordReveal
+              text={track.why}
+              startDelayMs={Math.min(index, 8) * 140}
+            />
+          </p>
+          {track.verification?.status === 'unverified' ? (
+            <UnverifiedHelp
+              track={{ ...track, verification: track.verification }}
+            />
+          ) : null}
+          <TrackLinks track={track} className="pt-1" />
+        </div>
+      </div>
+    </motion.li>
+  );
+}
+
+/**
+ * Plays the arrival burst and chime once for a list that just came back from
+ * MUSE. Claiming happens a frame after mount so history restores stay quiet
+ * and the check never runs during render.
+ */
+function useArrival(): [boolean, () => void] {
+  const [burst, setBurst] = React.useState(false);
+  const effects = useEffectsLevel();
+  React.useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      if (!claimCelebration()) return;
+      playSound('arrive');
+      if (effects === 'full') setBurst(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+    // Runs once per mount on purpose: an arrival is a moment, not a state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const done = React.useCallback(() => setBurst(false), []);
+  return [burst, done];
+}
+
 export function RecommendationList({
   tracks,
   title,
@@ -163,6 +262,8 @@ export function RecommendationList({
 }: RecommendationListProps) {
   const headingId = React.useId();
   const { authenticated } = useAuth();
+  const [burst, finishBurst] = useArrival();
+  const palette = paletteForVibe(useVibe());
   if (tracks.length === 0) return null;
 
   const checked = tracks.some((track) => track.verification);
@@ -174,12 +275,19 @@ export function RecommendationList({
     <Surface
       variant="raised"
       data-testid="recommendation-list"
+      data-arrival={burst ? 'burst' : 'quiet'}
       aria-labelledby={headingId}
       className="overflow-hidden border-accent/20 bg-accent/[0.02]"
     >
       <div className="flex items-start gap-4 border-b border-border-subtle px-5 py-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-strong bg-surface">
-          <ListMusic size={18} className="text-accent" aria-hidden="true" />
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-strong bg-surface">
+          <BeatVisualizer />
+          {burst ? (
+            <NotesBurst
+              colours={[palette.a, palette.b, palette.c, '#A8E85C']}
+              onDone={finishBurst}
+            />
+          ) : null}
         </div>
         <div className="min-w-0 flex-1">
           <h3
@@ -202,45 +310,7 @@ export function RecommendationList({
         className="divide-y divide-border-subtle"
       >
         {tracks.map((track, index) => (
-          <motion.li
-            key={track.id}
-            data-testid="recommendation-row"
-            variants={fadeInUp}
-            initial="initial"
-            animate="animate"
-            transition={{
-              ...transitions.standard,
-              delay: Math.min(index * 0.04, 0.4),
-            }}
-            className="flex gap-4 px-5 py-3.5"
-          >
-            <span className="w-6 shrink-0 pt-0.5 text-right text-xs tabular-nums text-text-muted">
-              {index + 1}
-            </span>
-            <div className="min-w-0 flex-1 space-y-1">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <span className="text-sm font-semibold text-text-primary">
-                  {track.title}
-                </span>
-                <span className="text-xs font-medium text-text-secondary">
-                  {track.artist}
-                </span>
-                <RegionBadge region={track.region} />
-                {track.verification ? (
-                  <VerificationBadge verification={track.verification} />
-                ) : null}
-              </div>
-              <p className="text-sm leading-relaxed text-text-secondary">
-                {track.why}
-              </p>
-              {track.verification?.status === 'unverified' ? (
-                <UnverifiedHelp
-                  track={{ ...track, verification: track.verification }}
-                />
-              ) : null}
-              <TrackLinks track={track} className="pt-1" />
-            </div>
-          </motion.li>
+          <RecommendationRow key={track.id} track={track} index={index} />
         ))}
       </ol>
 

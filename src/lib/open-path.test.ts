@@ -34,6 +34,9 @@ const ENTRY_POINTS = [
   'app/(app)/profile/page.tsx',
   'components/shell/DisplayMenu.tsx',
   'components/motion/VibeBackdrop.tsx',
+  'components/motion/NotesBurst.tsx',
+  'components/motion/BeatVisualizer.tsx',
+  'components/chat/VinylDisc.tsx',
   'lib/ui-sound.ts',
 ];
 const FORBIDDEN = [

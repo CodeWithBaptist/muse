@@ -9,6 +9,7 @@ import { useChatPreferences } from '@/hooks/use-chat-preferences';
 import { compactTaste } from '@/lib/taste/types';
 import { getTasteSnapshot } from '@/lib/taste/store';
 import { setVibe } from '@/lib/vibe-store';
+import { celebrate } from '@/lib/celebrate-store';
 import {
   appendGuestMessage,
   clearGuestMessages,
@@ -380,6 +381,9 @@ export function useChat(initialConversationId?: string) {
         isPlaylistSuggestion: Boolean(data.isPlaylistSuggestion),
         noResults: Boolean(data.noResults),
       };
+      if (reply.recommendations && reply.recommendations.length > 0) {
+        celebrate();
+      }
       if (authenticated) {
         setLocalMessages((prev) => [...prev, reply]);
         void refetchConversations();
