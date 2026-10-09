@@ -17,6 +17,11 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({
   redirect: mocks.redirect,
+  useRouter: () => ({ refresh: () => {} }),
+}));
+
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => undefined }),
 }));
 
 vi.mock('@/lib/session', () => ({
@@ -50,6 +55,9 @@ function configureSpotify() {
   process.env.SPOTIFY_REDIRECT_URI =
     'http://127.0.0.1:3000/api/auth/spotify/callback';
   process.env.ENCRYPTION_KEY = '0123456789abcdef0123456789abcdef';
+  // Testers only: an email allowlist makes the sign-in visible on the page.
+  process.env.SPOTIFY_TESTER_EMAILS = 'ada@example.com';
+  delete process.env.TESTER_KEY;
 }
 
 describe('/login', () => {
@@ -141,6 +149,22 @@ describe('/login', () => {
     await expect(
       LoginPage({ searchParams: Promise.resolve({}) }),
     ).rejects.toThrow('NEXT_REDIRECT:/chat');
+  });
+
+  it('hides the sign-in entirely when no tester access is configured', async () => {
+    delete process.env.SPOTIFY_TESTER_EMAILS;
+    render(await LoginPage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByTestId('tester-access-hidden')).toBeDefined();
+    expect(screen.queryByRole('link', { name: /Spotify/ })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Start' }).getAttribute('href')).toBe('/chat');
+  });
+
+  it('asks for the tester key when one is configured and the visitor has no pass', async () => {
+    delete process.env.SPOTIFY_TESTER_EMAILS;
+    process.env.TESTER_KEY = 'a-long-enough-tester-key-123';
+    render(await LoginPage({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByTestId('tester-key-form')).toBeDefined();
+    expect(screen.queryByRole('link', { name: /Spotify/ })).toBeNull();
   });
 
   it('still renders when the session lookup fails, and logs the failure', async () => {

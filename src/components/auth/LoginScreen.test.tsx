@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginScreen, SPOTIFY_ACCESS_ITEMS } from './LoginScreen';
 import { AUTH_NOTICES } from './AuthNotice';
@@ -15,6 +15,10 @@ vi.mock('@/hooks/use-auth', () => ({
     isLoading: false,
     logout: async () => {},
   }),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: () => {} }),
 }));
 
 vi.mock('motion/react', async () => {
@@ -132,5 +136,37 @@ describe('LoginScreen', () => {
       ).toBe(true);
       for (const scope of scopes) expect(source, scope).toContain(`'${scope}'`);
     }
+  });
+});
+
+describe('LoginScreen tester access', () => {
+  it('asks for a tester key and offers the no-account way in when a key is required', () => {
+    render(<LoginScreen spotifyLoginAvailable={false} testerAccess="key" />);
+    expect(screen.getByTestId('tester-key-form')).toBeDefined();
+    expect(screen.getByLabelText('Tester key')).toBeDefined();
+    expect(screen.queryByRole('link', { name: /Continue with Spotify|Connect/ })).toBeNull();
+    expect(screen.queryByText('What MUSE will ask for')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Start' }).getAttribute('href')).toBe('/chat');
+  });
+
+  it('shows nothing to sign in to when no tester access is configured', () => {
+    render(<LoginScreen spotifyLoginAvailable={false} testerAccess="hidden" />);
+    expect(screen.getByTestId('tester-access-hidden')).toBeDefined();
+    expect(screen.queryByTestId('tester-key-form')).toBeNull();
+    expect(screen.queryByText('What MUSE will ask for')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Start' }).getAttribute('href')).toBe('/chat');
+  });
+
+  it('sends the key to the server and shows the server\u2019s answer when it is wrong', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: 'That tester key is not right.' }), { status: 403 }),
+    );
+    render(<LoginScreen spotifyLoginAvailable={false} testerAccess="key" />);
+    fireEvent.change(screen.getByLabelText('Tester key'), { target: { value: 'nope' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock' }));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('That tester key is not right.'));
+    expect(fetchMock).toHaveBeenCalledWith('/api/tester', expect.objectContaining({ method: 'POST' }));
+    expect(JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body))).toEqual({ key: 'nope' });
+    fetchMock.mockRestore();
   });
 });

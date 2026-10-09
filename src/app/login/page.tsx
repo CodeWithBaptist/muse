@@ -1,17 +1,18 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { LoginScreen } from '@/components/auth/LoginScreen';
+import { LoginScreen, type TesterAccess } from '@/components/auth/LoginScreen';
 import { readAuthErrorParam } from '@/components/auth/AuthNotice';
 import { DEFAULT_AFTER_LOGIN, safeNextPath } from '@/lib/auth-flow';
 import { getSession } from '@/lib/session';
 import { isSpotifyLoginConfigured } from '@/lib/spotify-config';
+import { spotifyAccessMode, spotifyLoginVisible } from '@/lib/testers';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Sign in to MUSE',
   description:
-    'Connect your Spotify account to MUSE. You see exactly what is asked for and can disconnect at any time.',
+    'Tester sign-in for the Spotify features of MUSE. Everyone else can chat without an account.',
   robots: { index: false, follow: false },
 };
 
@@ -42,11 +43,21 @@ export default async function LoginPage({
     redirect(next ?? DEFAULT_AFTER_LOGIN);
   }
 
+  // Testers only: the sign-in appears with a tester pass or an email allowlist.
+  const mode = spotifyAccessMode();
+  const visible = await spotifyLoginVisible();
+  const testerAccess: TesterAccess = visible
+    ? 'visible'
+    : mode === 'key'
+      ? 'key'
+      : 'hidden';
+
   return (
     <LoginScreen
-      spotifyLoginAvailable={isSpotifyLoginConfigured()}
+      spotifyLoginAvailable={visible && isSpotifyLoginConfigured()}
       authError={readAuthErrorParam(params)}
       next={next}
+      testerAccess={testerAccess}
     />
   );
 }

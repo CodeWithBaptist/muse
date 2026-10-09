@@ -8,6 +8,17 @@ import { fadeInUp, staggerContainer, transitions } from '@/lib/motion';
 import { AuthNotice } from './AuthNotice';
 import { SpotifyConnectLink } from './SpotifyConnectLink';
 import { SPOTIFY_UNAVAILABLE_EXPLANATION } from './spotify-connect-copy';
+import { TesterKeyForm } from './TesterKeyForm';
+import { StartAction } from '@/components/landing/StartAction';
+
+function StartWithoutAccount() {
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <StartAction size="md" />
+      <p className="text-sm text-text-muted">Chat without an account.</p>
+    </div>
+  );
+}
 
 /**
  * What MUSE asks Spotify for, in the order it matters to the person
@@ -37,6 +48,13 @@ export const SPOTIFY_ACCESS_ITEMS = [
   },
 ] as const;
 
+/**
+ * How this visitor may reach the Spotify sign-in. The sign-in is for testers
+ * only: `visible` shows it, `key` asks for a tester key first, `hidden`
+ * means no tester access is configured on this MUSE at all.
+ */
+export type TesterAccess = 'visible' | 'key' | 'hidden';
+
 export interface LoginScreenProps {
   /** Whether the server has what it needs to complete a Spotify sign-in. */
   spotifyLoginAvailable: boolean;
@@ -44,12 +62,15 @@ export interface LoginScreenProps {
   authError?: string;
   /** Validated in-app path to return to after Spotify, if any. */
   next?: string | null;
+  /** Defaults to visible so existing callers and tests keep their behaviour. */
+  testerAccess?: TesterAccess;
 }
 
 export function LoginScreen({
   spotifyLoginAvailable,
   authError,
   next,
+  testerAccess = 'visible',
 }: LoginScreenProps) {
   const reducedMotion = useReducedMotion();
   const unavailableNoteId = React.useId();
@@ -77,12 +98,13 @@ export function LoginScreen({
             <Logo variant="wordmark" size={104} />
           </Link>
           <div className="space-y-3">
-            <p className="type-section-label">Sign in</p>
+            <p className="type-section-label">Testers</p>
             <h1 className="type-page-title">Connect your Spotify.</h1>
             <p className="max-w-prose text-base leading-relaxed text-text-secondary">
-              MUSE works inside your own Spotify account. Connecting takes you
-              to Spotify, where you see exactly what is being asked and decide
-              whether to allow it.
+              Spotify sign-in is only for people testing the Spotify features of
+              MUSE. Everyone else can start a chat without an account and gets
+              the same lists. Connecting takes you to Spotify, where you see
+              exactly what is being asked and decide whether to allow it.
             </p>
           </div>
         </motion.header>
@@ -93,52 +115,76 @@ export function LoginScreen({
           </motion.div>
         ) : null}
 
-        <motion.section
-          {...item}
-          aria-labelledby="spotify-access-heading"
-          className="space-y-4"
-        >
-          <h2 id="spotify-access-heading" className="type-section-label">
-            What MUSE will ask for
-          </h2>
-          <ul className="divide-y divide-border-subtle rounded-md border border-border-subtle bg-surface">
-            {SPOTIFY_ACCESS_ITEMS.map((access) => (
-              <li key={access.title} className="space-y-1 px-4 py-3">
-                <p className="text-sm font-semibold text-text-primary">
-                  {access.title}
-                </p>
-                <p className="text-sm leading-relaxed text-text-secondary">
-                  {access.detail}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </motion.section>
+        {testerAccess === 'key' ? (
+          <motion.div {...item} className="space-y-4">
+            <TesterKeyForm />
+            <StartWithoutAccount />
+          </motion.div>
+        ) : null}
 
-        <motion.div {...item} className="space-y-4">
-          <SpotifyConnectLink
-            available={spotifyLoginAvailable}
-            next={next}
-            unavailableDescriptionId={
-              spotifyLoginAvailable ? undefined : unavailableNoteId
-            }
-            className="w-full"
-          />
-          {spotifyLoginAvailable ? null : (
+        {testerAccess === 'hidden' ? (
+          <motion.div {...item} className="space-y-4">
             <p
-              id={unavailableNoteId}
               className="text-sm leading-relaxed text-text-secondary"
-              data-spotify-login-note
+              data-testid="tester-access-hidden"
             >
-              {SPOTIFY_UNAVAILABLE_EXPLANATION}
+              Tester access is not set up on this MUSE, so there is nothing to
+              sign in to here.
             </p>
-          )}
-          <p className="text-sm leading-relaxed text-text-muted">
-            MUSE never sees your Spotify password. You can disconnect at any
-            time from Settings in MUSE or from the apps page of your Spotify
-            account.
-          </p>
-        </motion.div>
+            <StartWithoutAccount />
+          </motion.div>
+        ) : null}
+
+        {testerAccess === 'visible' ? (
+          <motion.section
+            {...item}
+            aria-labelledby="spotify-access-heading"
+            className="space-y-4"
+          >
+            <h2 id="spotify-access-heading" className="type-section-label">
+              What MUSE will ask for
+            </h2>
+            <ul className="divide-y divide-border-subtle rounded-md border border-border-subtle bg-surface">
+              {SPOTIFY_ACCESS_ITEMS.map((access) => (
+                <li key={access.title} className="space-y-1 px-4 py-3">
+                  <p className="text-sm font-semibold text-text-primary">
+                    {access.title}
+                  </p>
+                  <p className="text-sm leading-relaxed text-text-secondary">
+                    {access.detail}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </motion.section>
+        ) : null}
+
+        {testerAccess === 'visible' ? (
+          <motion.div {...item} className="space-y-4">
+            <SpotifyConnectLink
+              available={spotifyLoginAvailable}
+              next={next}
+              unavailableDescriptionId={
+                spotifyLoginAvailable ? undefined : unavailableNoteId
+              }
+              className="w-full"
+            />
+            {spotifyLoginAvailable ? null : (
+              <p
+                id={unavailableNoteId}
+                className="text-sm leading-relaxed text-text-secondary"
+                data-spotify-login-note
+              >
+                {SPOTIFY_UNAVAILABLE_EXPLANATION}
+              </p>
+            )}
+            <p className="text-sm leading-relaxed text-text-muted">
+              MUSE never sees your Spotify password. You can disconnect at any
+              time from Settings in MUSE or from the apps page of your Spotify
+              account.
+            </p>
+          </motion.div>
+        ) : null}
 
         <motion.footer
           {...item}
