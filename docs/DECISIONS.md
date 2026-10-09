@@ -4,6 +4,28 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-09: Payments are a Paystack scaffold in naira behind one flag that stays off
+
+**Decision**
+MUSE gains a `/plus` page, a plan table (Free, Plus), a thin Paystack client, and two routes (`POST /api/billing/checkout`, `POST /api/billing/webhook`), all behind `PAYMENTS_ENABLED`. The flag is off: every billing route answers 503 `PAYMENTS_DISABLED` before reading a body, Paystack is never called, the page shows the plans and says "Plus is not open yet. Nothing is charged.", and the Plus price is `null` so that even with the flag on the checkout refuses with `PRICE_NOT_SET` until the owner sets a number. Entitlements are a pure function returning `free`. Free is today's MUSE; Plus is longer lists, more hourly room, unlimited taste profiles, and service while the shared budget rests. No Plus benefit depends on Spotify, and a test fails if the word appears in the Plus plan. The registrations, keys, legal text, and code TODOs needed before the flag flips are listed in `docs/PAYMENTS.md`.
+
+**Why**
+The brief asked for a payments scaffold with no real payments. Putting the refusal before body parsing, and the price before the Paystack call, means the scaffold cannot charge by accident in any configuration. Paystack was the owner's choice; its hosted page keeps card data off MUSE entirely, and its webhook signature is an HMAC of the raw body with the secret key, which the route checks in constant time before anything else. The identity question (a paid visitor needs an identity that is not Spotify) is the real design decision, and it is deferred rather than guessed, which is also why no schema is added yet.
+
+**Alternatives considered**
+
+- Flutterwave: equally viable in naira; the owner chose Paystack.
+- Inline popup with a public key: needs a client script and a public key for no gain over the hosted page.
+- Adding plan columns to `users` now: would tie payment identity to Spotify accounts, which the brief forbids.
+
+**Impact**
+
+- New env names (values never in the repo): `PAYMENTS_ENABLED`, `PAYSTACK_SECRET_KEY`. Nothing to set on Vercel yet.
+- `/plus` is an open path in the shell; the open-path test covers the page, both routes, and the plan table.
+- Terms and Privacy need a payments section before launch (flagged in `docs/PAYMENTS.md`, lawyer review).
+
+---
+
 ## 2026-10-09: The interface is alive on transform and opacity, and every effect answers to one effects level
 
 **Decision**
