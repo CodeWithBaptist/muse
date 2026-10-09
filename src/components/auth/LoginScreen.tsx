@@ -81,7 +81,7 @@ export function LoginScreen({
   return (
     <main
       id="main-content"
-      className="flex min-h-dvh flex-col bg-background px-6 py-8 text-text-primary sm:py-12"
+      className="flex min-h-dvh flex-col bg-background px-4 py-8 text-text-primary sm:px-6 sm:py-12"
     >
       <motion.div
         className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-10"

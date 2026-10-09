@@ -24,6 +24,7 @@ import { ChatPreferenceControls } from '@/components/chat/ChatPreferenceControls
 import { VibeChips } from '@/components/chat/VibeChips';
 import { TasteHint } from '@/components/chat/TasteHint';
 import { Button } from '@/components/ui/Button';
+import { BackToTop } from '@/components/ui/BackToTop';
 import { cn } from '@/lib/utils';
 
 function AiNotConnectedBanner() {
@@ -258,7 +259,7 @@ export default function ChatPage() {
         id="conversation-history-panel"
         data-testid="conversation-history-panel"
         hidden={!historyOpen || isGuest}
-        className="max-h-60 overflow-y-auto border-b border-border-subtle bg-surface/60 px-6 py-4"
+        className="max-h-60 overflow-y-auto border-b border-border-subtle bg-surface/60 px-4 py-4 sm:px-6"
       >
         <div className="mx-auto max-w-4xl space-y-2">
           {conversations.length === 0 ? (
@@ -292,7 +293,7 @@ export default function ChatPage() {
                     type="button"
                     onClick={() => void deleteConversation(conv.id)}
                     aria-label={`Delete conversation ${conv.title}`}
-                    className="p-1 text-text-muted transition-colors hover:text-red-400"
+                    className="p-1 text-text-muted transition-colors hover:text-danger"
                   >
                     <Trash2 size={14} aria-hidden="true" />
                   </button>
@@ -303,86 +304,99 @@ export default function ChatPage() {
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        role="log"
-        aria-label="Conversation messages"
-        aria-live="polite"
-        aria-relevant="additions"
-        aria-atomic="false"
-        aria-busy={isThinking}
-        className="flex-1 overflow-y-auto px-6 py-8 space-y-12 scroll-smooth"
-      >
-        {messages.length === 0 ? (
-          <div className="max-w-4xl mx-auto pt-12 space-y-12 pb-24">
-            <div className="space-y-4">
-              <h1 className="type-page-title !text-[clamp(32px,5vw,40px)]">
-                Say the vibe.
-              </h1>
-              <p className="text-text-secondary text-lg font-medium">
-                A mood, an artist, a place, a time of day. MUSE answers with
-                real songs, Nigeria first.
-              </p>
-            </div>
-
-            {isAiNotConnected && <AiNotConnectedBanner />}
-
-            {error && errorKind === 'human_check' && (
-              <HumanCheckCard onVerified={retryLastMessage} />
-            )}
-
-            {error &&
-              !isAiNotConnected &&
-              errorKind &&
-              errorKind !== 'ai_not_connected' &&
-              errorKind !== 'human_check' && (
-                <DistinctChatErrorBanner
-                  kind={errorKind as BannerErrorKind}
-                  message={error.message}
-                  onRetry={retryLastMessage}
-                />
-              )}
-
-            <VibeChips onPick={sendMessage} disabled={isThinking} />
-            <TasteHint />
-          </div>
-        ) : (
-          <div className="max-w-4xl mx-auto space-y-12 pb-24">
-            {messages.map((msg, i) => (
-              <ChatMessage key={i} message={msg} />
-            ))}
-
-            {isThinking && !isAiNotConnected && (
-              <div className="mr-auto">
-                <ThinkingIndicator
-                  stage={thinkingStage}
-                  language={preferences.language}
-                />
+      <div className="relative min-h-0 flex-1">
+        <div
+          ref={scrollRef}
+          role="log"
+          aria-label="Conversation messages"
+          aria-live="polite"
+          aria-relevant="additions"
+          aria-atomic="false"
+          aria-busy={isThinking}
+          className="h-full overflow-y-auto px-4 py-6 sm:px-6 sm:py-8 space-y-12 scroll-smooth"
+        >
+          {messages.length === 0 ? (
+            <div className="max-w-4xl mx-auto pt-12 space-y-12 pb-24">
+              <div className="space-y-4">
+                <h1 className="type-page-title !text-[clamp(32px,5vw,40px)]">
+                  Say the vibe.
+                </h1>
+                <p className="text-text-secondary text-lg font-medium">
+                  A mood, an artist, a place, a time of day. MUSE answers with
+                  real songs, Nigeria first.
+                </p>
               </div>
-            )}
 
-            {isAiNotConnected && <AiNotConnectedBanner />}
+              {isAiNotConnected && <AiNotConnectedBanner />}
 
-            {error && errorKind === 'human_check' && (
-              <HumanCheckCard onVerified={retryLastMessage} />
-            )}
-
-            {error &&
-              !isAiNotConnected &&
-              errorKind &&
-              errorKind !== 'ai_not_connected' &&
-              errorKind !== 'human_check' && (
-                <DistinctChatErrorBanner
-                  kind={errorKind as BannerErrorKind}
-                  message={error.message}
-                  onRetry={retryLastMessage}
-                />
+              {error && errorKind === 'human_check' && (
+                <HumanCheckCard onVerified={retryLastMessage} />
               )}
-          </div>
-        )}
+
+              {error &&
+                !isAiNotConnected &&
+                errorKind &&
+                errorKind !== 'ai_not_connected' &&
+                errorKind !== 'human_check' && (
+                  <DistinctChatErrorBanner
+                    kind={errorKind as BannerErrorKind}
+                    message={error.message}
+                    onRetry={retryLastMessage}
+                  />
+                )}
+
+              <VibeChips onPick={sendMessage} disabled={isThinking} />
+              <TasteHint />
+            </div>
+          ) : (
+            <div className="max-w-4xl mx-auto space-y-12 pb-24">
+              {messages.map((msg, i) => (
+                <ChatMessage key={i} message={msg} />
+              ))}
+
+              {isThinking && !isAiNotConnected && (
+                <div className="mr-auto">
+                  <ThinkingIndicator
+                    stage={thinkingStage}
+                    language={preferences.language}
+                  />
+                </div>
+              )}
+
+              {isAiNotConnected && <AiNotConnectedBanner />}
+
+              {error && errorKind === 'human_check' && (
+                <HumanCheckCard onVerified={retryLastMessage} />
+              )}
+
+              {error &&
+                !isAiNotConnected &&
+                errorKind &&
+                errorKind !== 'ai_not_connected' &&
+                errorKind !== 'human_check' && (
+                  <DistinctChatErrorBanner
+                    kind={errorKind as BannerErrorKind}
+                    message={error.message}
+                    onRetry={retryLastMessage}
+                  />
+                )}
+            </div>
+          )}
+        </div>
+
+        {/* Floats over the conversation, above the composer, once it has been
+            scrolled. The composer sits outside this wrapper, so the control
+            never covers the send button. */}
+        <BackToTop
+          scrollerRef={scrollRef}
+          className="absolute bottom-5 right-4 z-30 sm:right-6"
+        />
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-6 bg-background/95 border-t border-border-subtle">
+      {/* In flow, not overlaid: the floating back to top control sits at the
+          bottom of the message wrapper, and the composer below it always
+          keeps its full height, even when the textarea grows. */}
+      <div className="shrink-0 p-4 sm:p-6 bg-background/95 border-t border-border-subtle">
         <div className="max-w-4xl mx-auto">
           <ChatInput
             onSend={sendMessage}

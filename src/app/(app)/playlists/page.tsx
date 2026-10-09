@@ -173,7 +173,7 @@ export default function PlaylistsPage() {
   const spotifyPlaylists = spotifyData?.items ?? [];
 
   return (
-    <div className="p-8 space-y-12 pb-32">
+    <div className="p-4 space-y-12 pb-32 sm:p-6 lg:p-8">
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div className="space-y-2">
           <h1 className="type-page-title">Playlists</h1>
@@ -195,9 +195,9 @@ export default function PlaylistsPage() {
         <Surface
           role="alert"
           aria-live="assertive"
-          className="rounded-lg border-red-500/40 bg-red-500/[0.04] p-4"
+          className="rounded-lg border-danger/40 bg-danger/[0.04] p-4"
         >
-          <p className="text-xs font-medium text-red-300">{actionError}</p>
+          <p className="text-xs font-medium text-danger">{actionError}</p>
         </Surface>
       )}
 
@@ -225,7 +225,7 @@ export default function PlaylistsPage() {
         ) : museError ? (
           <Surface
             role="alert"
-            className="space-y-2 rounded-xl border-dashed border-border-strong bg-transparent p-8 text-center"
+            className="space-y-2 rounded-xl border-dashed border-border-strong bg-transparent p-6 sm:p-8 text-center"
           >
             <p className="text-sm font-semibold text-text-primary">
               Unable to load saved MUSE playlists
@@ -237,7 +237,7 @@ export default function PlaylistsPage() {
         ) : musePlaylists.length === 0 ? (
           <Surface
             data-testid="empty-muse-playlists"
-            className="p-10 text-center space-y-4 border-dashed border-border-strong bg-transparent rounded-2xl"
+            className="p-6 sm:p-10 text-center space-y-4 border-dashed border-border-strong bg-transparent rounded-2xl"
           >
             <Music2 size={32} className="text-text-muted mx-auto" />
             <div className="space-y-1 max-w-md mx-auto">
@@ -277,7 +277,7 @@ export default function PlaylistsPage() {
                   <Surface
                     variant="raised"
                     data-testid="muse-playlist-card"
-                    className="p-6 space-y-6 rounded-xl border-border-subtle"
+                    className="p-4 sm:p-6 space-y-6 rounded-xl border-border-subtle"
                   >
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div className="flex-1 min-w-0 space-y-2">
@@ -380,7 +380,7 @@ export default function PlaylistsPage() {
                           onClick={() => handleDeletePlaylist(playlist.id)}
                           aria-label={`Delete playlist ${playlist.name}`}
                           title="Delete playlist"
-                          className="p-2 rounded-md text-text-muted hover:text-red-400 hover:bg-background transition-colors"
+                          className="p-2 rounded-md text-text-muted hover:text-danger hover:bg-background transition-colors"
                         >
                           <Trash2 size={15} />
                         </button>
@@ -442,7 +442,7 @@ export default function PlaylistsPage() {
         ) : spotifyError ? (
           <Surface
             role="alert"
-            className="space-y-3 rounded-xl border-dashed border-border-strong bg-transparent p-8 text-center"
+            className="space-y-3 rounded-xl border-dashed border-border-strong bg-transparent p-6 sm:p-8 text-center"
           >
             <Link2Off size={20} className="text-text-muted mx-auto" />
             <p className="text-xs text-text-secondary">

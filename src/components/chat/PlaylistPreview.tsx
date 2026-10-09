@@ -139,7 +139,7 @@ export function PlaylistPreview({
       </div>
 
       {draftStatus === 'error' && (
-        <p role="alert" className="text-xs font-medium text-red-400">
+        <p role="alert" className="text-xs font-medium text-danger">
           Unable to save this playlist to MUSE right now.
         </p>
       )}

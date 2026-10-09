@@ -145,7 +145,7 @@ export function PlansView({ status, returned }: PlansViewProps) {
   const open = status.enabled && status.configured && plusPriced;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-10 px-6 py-10">
+    <div className="mx-auto max-w-4xl space-y-10 px-4 py-10 sm:px-6">
       <div className="space-y-3">
         <h1 className="type-page-title">MUSE Plus</h1>
         <p className="max-w-2xl text-lg font-medium text-text-secondary">
@@ -171,7 +171,7 @@ export function PlansView({ status, returned }: PlansViewProps) {
 
       <Surface
         variant="base"
-        className="space-y-4 p-6"
+        className="space-y-4 p-4 sm:p-6"
         data-testid="plus-checkout"
       >
         {open ? (

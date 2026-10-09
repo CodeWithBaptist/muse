@@ -5,6 +5,7 @@ import { HowItWorks } from './HowItWorks';
 import { WhatItDoes } from './WhatItDoes';
 import { ClosingBand } from './ClosingBand';
 import { SiteFooter } from './SiteFooter';
+import { BackToTop } from '@/components/ui/BackToTop';
 
 /**
  * The landing page body.
@@ -36,6 +37,9 @@ export function LandingPage({ authError }: LandingPageProps) {
         <ClosingBand />
       </main>
       <SiteFooter />
+      {/* Floating companion to the footer link: in reach while reading, and
+          hidden (and out of the tab order) until the page is scrolled. */}
+      <BackToTop className="fixed bottom-5 right-5 z-50 sm:bottom-6 sm:right-6" />
     </div>
   );
 }

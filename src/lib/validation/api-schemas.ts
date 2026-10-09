@@ -193,11 +193,18 @@ export const PlaybackStartResponseSchema = z.object({
   success: z.literal(true),
 });
 
+/**
+ * The playlist lengths a tester can pick as their default. The list is shared
+ * by the settings page and the profile insights so the two never drift.
+ */
+export const PLAYLIST_LENGTH_OPTIONS = ['10', '15', '20', '30', '40'] as const;
+export type PlaylistLengthOption = (typeof PLAYLIST_LENGTH_OPTIONS)[number];
+
 export const UserPreferencesInputSchema = z.object({
   discoveryStyle: z
     .enum(['balanced', 'deep_cuts', 'familiar'])
     .default('balanced'),
-  playlistLength: z.enum(['10', '15', '20']).default('15'),
+  playlistLength: z.enum(PLAYLIST_LENGTH_OPTIONS).default('15'),
   explicitContent: z.enum(['allow', 'clean']).default('allow'),
   favoriteGenres: z.string().trim().max(200).default(''),
   playbackPreference: z.enum(['muse', 'spotify']).default('muse'),

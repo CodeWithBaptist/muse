@@ -33,7 +33,7 @@ const BASE_CLASSES =
 const VARIANT_CLASSES = {
   primary: 'bg-accent text-background hover:bg-accent/90',
   outline: 'border border-border-strong text-text-primary hover:bg-surface',
-  danger: 'border border-red-500/50 text-red-400',
+  danger: 'border border-danger/50 text-danger',
 } as const;
 
 export interface CreateInSpotifyButtonProps {

@@ -124,7 +124,7 @@ export function ProfileView({ lastfmEnabled }: ProfileViewProps) {
   const result = write.data ?? null;
 
   return (
-    <div className="space-y-10 p-6 pb-32 sm:p-8">
+    <div className="space-y-10 p-4 pb-32 sm:p-6 lg:p-8">
       <header className="space-y-3">
         <h1 className="type-page-title">Profile</h1>
         <p className="type-body max-w-2xl text-text-secondary">
@@ -202,7 +202,7 @@ export function ProfileView({ lastfmEnabled }: ProfileViewProps) {
       {kind === 'ai_not_connected' ? (
         <Surface
           data-testid="ai-not-connected-state"
-          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-10 text-center"
+          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-6 sm:p-10 text-center"
         >
           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-surface">
             <KeyRound size={18} className="text-accent" />
@@ -231,7 +231,7 @@ export function ProfileView({ lastfmEnabled }: ProfileViewProps) {
       {kind === 'spotify_disconnected' ? (
         <Surface
           data-testid="profile-spotify-disconnected"
-          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-10 text-center"
+          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-6 sm:p-10 text-center"
         >
           <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle bg-surface">
             <Link2Off size={18} className="text-accent" />
@@ -259,7 +259,7 @@ export function ProfileView({ lastfmEnabled }: ProfileViewProps) {
       {kind === 'resting' || kind === 'rate_limited' || kind === 'other' ? (
         <Surface
           role="alert"
-          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-8 text-center"
+          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-6 sm:p-8 text-center"
         >
           <p className="type-body font-semibold text-text-primary">
             {kind === 'resting'

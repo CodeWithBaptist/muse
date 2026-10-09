@@ -377,6 +377,8 @@ describe('Stage E: Product Completeness', () => {
 
     fireEvent.click(screen.getByText('Deep cuts'));
     fireEvent.click(screen.getByRole('button', { name: /open in spotify/i }));
+    // The longest default playlist length is 40 tracks, and it saves as such.
+    fireEvent.click(screen.getByRole('button', { name: '40 tracks' }));
     fireEvent.click(screen.getByRole('button', { name: /save preferences/i }));
 
     await waitFor(() => {
@@ -384,6 +386,7 @@ describe('Stage E: Product Completeness', () => {
     });
     expect(savedPayloads[0].discoveryStyle).toBe('deep_cuts');
     expect(savedPayloads[0].playbackPreference).toBe('spotify');
+    expect(savedPayloads[0].playlistLength).toBe('40');
 
     fireEvent.click(
       screen.getByRole('button', { name: /clear conversation history/i })

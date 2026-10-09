@@ -39,7 +39,7 @@ export default function LibraryPage() {
     activeTab === 'top-artists' || activeTab === 'top-tracks';
 
   return (
-    <div className="p-8 space-y-10 min-h-full">
+    <div className="p-4 space-y-10 min-h-full sm:p-6 lg:p-8">
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <h1 className="type-page-title">Library</h1>

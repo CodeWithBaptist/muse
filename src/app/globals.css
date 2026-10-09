@@ -84,6 +84,16 @@ html[data-theme="light"] {
 }
 
 /*
+ * The dark theme is the default, and it owns the native controls too: without
+ * `color-scheme: dark` the browser would paint checkboxes, selects, and any
+ * remaining native surface in the light style. The light block above sets its
+ * own, so each theme matches its own controls.
+ */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/*
  * Effects levels, stamped on <html> by the head script and kept current by
  * the preferences store. `full` is everything. `lite` (chosen, or Save-Data,
  * 2G, or a 2 GB phone) removes the decorative layers and holds the
@@ -226,6 +236,26 @@ html[data-theme="light"] .muse-vibe-layer {
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+
+  /*
+   * Scrollbars are hidden on every scroll container, in both themes: the page,
+   * the app shell, chat, and the horizontal rails. Scrolling itself is
+   * untouched (wheel, touch, keyboard, and scroll anchoring all still work);
+   * only the bar is gone, so nothing on screen competes with the content for
+   * width and the chrome stays out of the way on phones.
+   */
+  *,
+  *::before,
+  *::after {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 }
 
 @layer utilities {
@@ -311,6 +341,19 @@ html[data-theme="light"] .muse-vibe-layer {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Same rule as the global one above, kept as a utility for the horizontal
+   * rails that scroll on phones (library filters, Discover sections). */
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   .focus-ring {
