@@ -10,6 +10,7 @@ import { transitions } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
 import { Logo } from '@/components/ui/Logo';
 import { SETTINGS_NAV, isActivePath, navItemsFor } from './shell-nav';
+import { DisplayMenu } from './DisplayMenu';
 
 /**
  * Desktop navigation, shown from the lg breakpoint up. Phones get the bottom
@@ -89,6 +90,7 @@ export function Sidebar() {
 
       <div className="mt-auto space-y-3 border-t border-border-subtle p-3">
         <div className="flex items-center gap-3 px-3 pt-2">
+          <DisplayMenu className="-ml-2" />
           {authenticated && user?.avatarUrl ? (
             <img
               src={user.avatarUrl}
@@ -110,7 +112,9 @@ export function Sidebar() {
                 : 'Guest'}
             </div>
             <div className="type-section-label truncate">
-              {authenticated ? 'Spotify connected' : 'Chat stays on this device'}
+              {authenticated
+                ? 'Spotify connected'
+                : 'Chat stays on this device'}
             </div>
           </div>
         </div>
@@ -140,7 +144,9 @@ export function Sidebar() {
                 onClick={() => void handleLogout()}
                 disabled={logoutState.pending}
                 aria-busy={logoutState.pending || undefined}
-                aria-describedby={logoutState.error ? 'sidebar-logout-error' : undefined}
+                aria-describedby={
+                  logoutState.error ? 'sidebar-logout-error' : undefined
+                }
                 className={cn(
                   NAV_LINK,
                   'w-full text-text-secondary hover:bg-surface hover:text-text-primary disabled:opacity-60',

@@ -22,6 +22,25 @@ export const colors = {
 
 export type ColorToken = keyof typeof colors;
 
+/**
+ * The light theme, applied under html[data-theme="light"]. Same roles; every
+ * text token clears WCAG AA on the page and on the surface (faint is for
+ * large text only, as in the dark theme), and the accent darkens so it still
+ * reads as text on paper.
+ */
+export const lightColors: Record<ColorToken, string> = {
+  background: '#F7F6F2',
+  surface: '#FFFFFF',
+  borderSubtle: '#E4E3DE',
+  borderStrong: '#C9C8C2',
+  textPrimary: '#141414',
+  textSecondary: '#4A4A50',
+  textMuted: '#5F5F66',
+  textFaint: '#80808A',
+  accent: '#3F7A00',
+  danger: '#B93A28',
+};
+
 /** CSS custom property name for each color token. */
 export const colorVariables: Record<ColorToken, string> = {
   background: '--color-background',

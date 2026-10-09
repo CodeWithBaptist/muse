@@ -6,10 +6,12 @@ import { cn } from '@/lib/utils';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/hooks/use-auth';
 import { SETTINGS_NAV, isActivePath } from './shell-nav';
+import { DisplayMenu } from './DisplayMenu';
 
 /**
- * The phone header: wordmark on the left, Settings on the right. Everything
- * else lives in the bottom tabs, so this bar never needs a menu button.
+ * The phone header: wordmark on the left, Display and Settings on the right.
+ * Everything else lives in the bottom tabs, so this bar never needs a menu
+ * button.
  * It is in normal flow inside the shell column, not fixed, so it respects the
  * top safe area on notched phones through its own padding.
  */
@@ -32,21 +34,24 @@ export function TopBar() {
           <Logo variant="wordmark" size={80} />
         </Link>
       </div>
-      {authenticated ? (
-        <Link
-          href={SETTINGS_NAV.href}
-          aria-label={SETTINGS_NAV.label}
-          aria-current={settingsActive ? 'page' : undefined}
-          className={cn(
-            'inline-flex h-11 w-11 items-center justify-center rounded-md transition-colors focus-ring',
-            settingsActive
-              ? 'bg-surface text-text-primary'
-              : 'text-text-secondary hover:bg-surface hover:text-text-primary',
-          )}
-        >
-          <SETTINGS_NAV.icon className="h-5 w-5" aria-hidden="true" />
-        </Link>
-      ) : null}
+      <div className="flex items-center gap-1">
+        <DisplayMenu />
+        {authenticated ? (
+          <Link
+            href={SETTINGS_NAV.href}
+            aria-label={SETTINGS_NAV.label}
+            aria-current={settingsActive ? 'page' : undefined}
+            className={cn(
+              'inline-flex h-11 w-11 items-center justify-center rounded-md transition-colors focus-ring',
+              settingsActive
+                ? 'bg-surface text-text-primary'
+                : 'text-text-secondary hover:bg-surface hover:text-text-primary',
+            )}
+          >
+            <SETTINGS_NAV.icon className="h-5 w-5" aria-hidden="true" />
+          </Link>
+        ) : null}
+      </div>
     </header>
   );
 }

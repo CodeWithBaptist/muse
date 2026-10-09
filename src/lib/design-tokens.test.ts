@@ -7,6 +7,7 @@ import {
   colors,
   durations,
   layout,
+  lightColors,
   radii,
 } from './design-tokens';
 
@@ -25,6 +26,23 @@ describe('design tokens', () => {
         colors[token as keyof typeof colors].toLowerCase(),
       );
     }
+  });
+
+  it('mirrors the light theme block too, and keeps its text readable', () => {
+    const start = css.indexOf('html[data-theme="light"]');
+    expect(start).toBeGreaterThan(-1);
+    const block = css.slice(start, css.indexOf('}', start));
+    for (const [token, variable] of Object.entries(colorVariables)) {
+      const match = block.match(new RegExp(`${variable}:\\s*([^;]+);`));
+      expect(match?.[1].trim().toLowerCase()).toBe(
+        lightColors[token as keyof typeof lightColors].toLowerCase(),
+      );
+    }
+    expect(contrastRatio(lightColors.textMuted, lightColors.background)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(lightColors.textSecondary, lightColors.surface)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(lightColors.accent, lightColors.background)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(lightColors.background, lightColors.accent)).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(lightColors.textFaint, lightColors.background)).toBeGreaterThanOrEqual(3);
   });
 
   it('mirrors the radius, duration, and layout tokens', () => {

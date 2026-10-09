@@ -63,6 +63,45 @@
   --container-page: 72rem;
 }
 
+/*
+ * Light theme. A choice the visitor makes (dark stays the default and is
+ * never swapped for the OS setting). Same roles, re-tuned for paper: every
+ * text token clears AA on both the page and the surface, and the lime
+ * accent darkens so it still reads as text.
+ */
+html[data-theme="light"] {
+  --color-background: #F7F6F2;
+  --color-surface: #FFFFFF;
+  --color-border-subtle: #E4E3DE;
+  --color-border-strong: #C9C8C2;
+  --color-text-primary: #141414;
+  --color-text-secondary: #4A4A50;
+  --color-text-muted: #5F5F66;
+  --color-text-faint: #80808A;
+  --color-accent: #3F7A00;
+  --color-danger: #B93A28;
+  color-scheme: light;
+}
+
+/*
+ * Effects levels, stamped on <html> by the head script and kept current by
+ * the preferences store. `full` is everything. `lite` (chosen, or Save-Data,
+ * 2G, or a 2 GB phone) removes the decorative layers and holds the
+ * decorative loops still, while state changes stay animated. `none`
+ * (prefers-reduced-motion) does the same and the media query below finishes
+ * the job for everything else.
+ */
+html[data-effects="lite"] .muse-effect-full,
+html[data-effects="none"] .muse-effect-full {
+  display: none !important;
+}
+
+html[data-effects="lite"] .muse-decorative,
+html[data-effects="none"] .muse-decorative {
+  animation: none !important;
+  transition: none !important;
+}
+
 @layer base {
   *, ::before, ::after {
     border-color: var(--color-border-subtle);
