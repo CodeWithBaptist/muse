@@ -6,6 +6,8 @@ import type { SpotifyTrackItem } from '@/lib/validation/api-schemas';
 import type { ListedTrack } from '@/lib/catalogue/types';
 import { useAuth } from '@/hooks/use-auth';
 import { useChatPreferences } from '@/hooks/use-chat-preferences';
+import { compactTaste } from '@/lib/taste/types';
+import { getTasteSnapshot } from '@/lib/taste/store';
 import {
   appendGuestMessage,
   clearGuestMessages,
@@ -29,6 +31,12 @@ export interface Message {
   isPlaylistSuggestion?: boolean;
   isStreaming?: boolean;
   noResults?: boolean;
+}
+
+/** The listening snapshot on this device, trimmed for the prompt; nothing at all when there is none. */
+function tasteForRequest(): { taste?: ReturnType<typeof compactTaste> } {
+  const snapshot = getTasteSnapshot();
+  return snapshot ? { taste: compactTaste(snapshot) } : {};
 }
 
 /**
@@ -255,11 +263,17 @@ export function useChat(initialConversationId?: string) {
           },
           body: JSON.stringify(
             authenticated
-              ? { content, conversationId: activeConversationId, preferences }
+              ? {
+                  content,
+                  conversationId: activeConversationId,
+                  preferences,
+                  ...tasteForRequest(),
+                }
               : {
                   content,
                   history: historyForRequest(getGuestMessages(), content),
                   preferences,
+                  ...tasteForRequest(),
                 },
           ),
         });

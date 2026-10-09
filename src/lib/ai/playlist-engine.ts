@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { jsonCompletionText, sanitizePromptInput } from './provider';
 import { playlistSystemPrompt } from './muse-prompt';
+import { TASTE_PROMPT_GUIDANCE, formatTasteForPrompt } from './taste-context';
+import type { TasteSnapshot } from '@/lib/taste/types';
 import {
   DEFAULT_CHAT_PREFERENCES,
   type ChatPreferences,
@@ -344,8 +346,10 @@ export function buildPlaylistPrompt(
   userMessage: string,
   history: ChatTurn[] = [],
   preferences: ChatPreferences = DEFAULT_CHAT_PREFERENCES,
+  taste: TasteSnapshot | null = null,
 ): string {
   const safeMessage = sanitizePromptInput(userMessage, 500);
+  const tasteBlock = formatTasteForPrompt(taste);
   const turns = history
     .slice(-6)
     .map(
@@ -355,10 +359,12 @@ export function buildPlaylistPrompt(
     .join('\n');
 
   return [
+    tasteBlock,
     turns ? `<conversation>\n${turns}\n</conversation>` : '',
     `<user_message>${safeMessage}</user_message>`,
     '',
     `Build a playlist of ${PLAYLIST_MIN_TRACKS} to ${PLAYLIST_MAX_TRACKS} real songs for this request.`,
+    tasteBlock ? TASTE_PROMPT_GUIDANCE : '',
     preferences.scope === 'nigeria'
       ? 'Lead with Nigerian music unless the request clearly asks for something else.'
       : 'Pick from anywhere in the world; no regional lean.',
@@ -376,6 +382,8 @@ export interface BuildPlaylistOptions {
   /** Injected in tests; defaults to the provider. */
   complete?: (prompt: string, system: string) => Promise<string>;
   preferences?: ChatPreferences;
+  /** The visitor's listening, when they brought it; shapes the picks. */
+  taste?: TasteSnapshot | null;
 }
 
 export interface BuiltPlaylist extends PlaylistAnswer {
@@ -400,7 +408,12 @@ export async function buildOpenPlaylist(
 
   const preferences = options.preferences ?? DEFAULT_CHAT_PREFERENCES;
   const system = playlistSystemPrompt(preferences);
-  const prompt = buildPlaylistPrompt(userMessage, history, preferences);
+  const prompt = buildPlaylistPrompt(
+    userMessage,
+    history,
+    preferences,
+    options.taste ?? null,
+  );
   const first = parsePlaylistAnswer(await complete(prompt, system));
   if (first.ok) return { ...first.value, short: first.short };
 

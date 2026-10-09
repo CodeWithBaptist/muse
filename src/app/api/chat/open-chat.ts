@@ -10,6 +10,11 @@ import { verifyTracks, type VerifiedTrack } from '@/lib/catalogue';
 import type { ChatHistoryTurn } from '@/lib/validation/api-schemas';
 import { chatSystemPrompt } from '@/lib/ai/muse-prompt';
 import {
+  TASTE_PROMPT_GUIDANCE,
+  formatTasteForPrompt,
+} from '@/lib/ai/taste-context';
+import type { TasteSnapshot } from '@/lib/taste/types';
+import {
   DEFAULT_CHAT_PREFERENCES,
   type ChatLanguage,
   type ChatPreferences,
@@ -66,6 +71,8 @@ export interface OpenChatInput {
   content: string;
   history: ChatHistoryTurn[];
   preferences: ChatPreferences;
+  /** Listening the visitor brought from Last.fm or an export; optional. */
+  taste?: TasteSnapshot | null;
 }
 
 export interface OpenPlaylistPayload {
@@ -109,6 +116,7 @@ export async function composePlaylist(
 ): Promise<OpenPlaylistPayload> {
   const playlist = await buildOpenPlaylist(input.content, input.history, {
     preferences: input.preferences,
+    taste: input.taste ?? null,
   });
   onChecking?.();
   const checked = await verifyTracks(playlist.tracks);
@@ -126,8 +134,17 @@ export async function composePlaylist(
 }
 
 function replyMessages(input: OpenChatInput) {
+  const tasteBlock = formatTasteForPrompt(input.taste);
+  const system = [
+    chatSystemPrompt(input.preferences, {
+      hasListeningData: Boolean(tasteBlock),
+    }),
+    tasteBlock ? `${TASTE_PROMPT_GUIDANCE}\n${tasteBlock}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
   return [
-    { role: 'system' as const, content: chatSystemPrompt(input.preferences) },
+    { role: 'system' as const, content: system },
     ...historyAsMessages(input.history),
     { role: 'user' as const, content: sanitizePromptInput(input.content, 500) },
   ];

@@ -10,6 +10,7 @@ import { Surface } from '@/components/ui/Surface';
 import { HumanCheckCard } from '@/components/security/HumanCheckCard';
 import { ChatPreferenceControls } from '@/components/chat/ChatPreferenceControls';
 import { VibeChips } from '@/components/chat/VibeChips';
+import { TasteHint } from '@/components/chat/TasteHint';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -319,6 +320,7 @@ export default function ChatPage() {
               )}
 
             <VibeChips onPick={sendMessage} disabled={isThinking} />
+            <TasteHint />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-12 pb-24">

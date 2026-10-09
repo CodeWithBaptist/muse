@@ -54,7 +54,7 @@ export function sanitizePromptInput(input: string, maxLength = 1000): string {
   return input
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ')
     .replace(/<\|im_start\|>|<\|im_end\|>|<\|endoftext\|>/gi, '')
-    .replace(/<\/?(system|user_message|spotify_context|user_preferences|developer|assistant)>/gi, '')
+    .replace(/<\/?(system|user_message|spotify_context|user_preferences|listener_taste|developer|assistant)>/gi, '')
     .replace(/\b(ignore\s+(all\s+)?(previous|prior|above)\s+instructions)\b/gi, '[filtered]')
     .trim()
     .slice(0, maxLength);

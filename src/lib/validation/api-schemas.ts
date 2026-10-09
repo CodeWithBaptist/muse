@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CHAT_LANGUAGES, MUSIC_SCOPES } from '@/lib/chat-preferences';
+import { TasteSnapshotSchema } from '@/lib/taste/types';
 
 export interface SpotifyImage {
   url: string;
@@ -66,6 +67,8 @@ export const ChatPostInputSchema = z.object({
   conversationId: z.string().uuid().optional(),
   history: z.array(ChatHistoryTurnSchema).max(CHAT_HISTORY_MAX_TURNS).optional(),
   preferences: ChatPreferencesSchema.optional(),
+  /** The visitor's listening snapshot, sent from the device; never stored. */
+  taste: TasteSnapshotSchema.nullable().optional(),
 });
 
 export const ChatIdParamSchema = z.object({

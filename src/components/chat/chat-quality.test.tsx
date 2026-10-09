@@ -12,6 +12,7 @@ import {
 } from './ThinkingIndicator';
 import ChatPage from '@/app/(app)/chat/page';
 import { setChatPreferences } from '@/lib/chat-preferences-store';
+import { clearTasteSnapshot, setTasteSnapshot } from '@/lib/taste/store';
 
 const auth = vi.hoisted(() => ({ authenticated: false, isLoading: false }));
 
@@ -472,6 +473,41 @@ describe('Stage D Chat Quality', () => {
       ],
       preferences: { scope: 'nigeria', language: 'english' },
     });
+  });
+
+  it('sends the listening kept on the device with each message, trimmed to what the prompt needs', async () => {
+    const bodies: Array<{ taste?: { topArtists: unknown[]; label: string } }> = [];
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('/api/ai/status')) {
+        return new Response(JSON.stringify({ connected: true }), { status: 200 });
+      }
+      if (url === '/api/chat' && init?.method === 'POST') {
+        bodies.push(JSON.parse(String(init.body)));
+        return new Response(
+          JSON.stringify({ role: 'assistant', content: 'Oya.', intent: 'general_chat' }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+    setTasteSnapshot({
+      source: 'spotify_export',
+      label: 'Spotify data export',
+      topArtists: Array.from({ length: 20 }, (_, i) => ({ name: `Artist ${i}`, plays: 20 - i })),
+      topTracks: [],
+      recentTracks: [],
+      capturedAt: '2024-03-01T00:00:00.000Z',
+    });
+    try {
+      renderWithQueryClient(<ChatPage />);
+      fireEvent.click(screen.getByText('Owambe'));
+      await waitFor(() => expect(bodies).toHaveLength(1));
+      expect(bodies[0].taste?.label).toBe('Spotify data export');
+      expect(bodies[0].taste?.topArtists).toHaveLength(10);
+    } finally {
+      clearTasteSnapshot();
+    }
   });
 
   it('offers the nine vibes and remembers the scope and language choices on the device', async () => {
