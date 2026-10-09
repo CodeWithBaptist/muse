@@ -4,6 +4,31 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-08: Personalisation comes from Last.fm or a Spotify data export, is read on the device, and lives only in the browser
+
+**Decision**
+A visitor brings their listening in one of two ways, neither needing an account. A public Last.fm username goes to `POST /api/taste/lastfm`, where the server calls Last.fm with `LASTFM_API_KEY` (top artists and top tracks over six months, plus recent plays) and returns a compact snapshot; the username is not stored and the key never leaves the server. A Spotify data export (the ZIP Spotify emails, or the `StreamingHistory` JSON files inside it) is opened in the browser: both layouts are recognised, podcasts and anything under thirty seconds are skipped, and only the summary (top artists, top tracks, recent plays, date range, play count) is kept. The ZIP reader (`fflate`) loads only when a ZIP is chosen. The snapshot is stored in `localStorage` (`muse.taste.v1`), travels with each chat request trimmed to ten items per list, and is posted to `POST /api/taste/insights` when the visitor asks for "Your taste in words". The server validates it, frames it as data inside `<listener_taste>`, and never writes it anywhere. The Profile page is now open to everyone and is where both sources, the snapshot, and the written profile live; signed-in testers keep an opt-in button that writes from the Spotify account they connected.
+
+**Why**
+The brief asked for Last.fm plus a server-parsed export with the raw file not stored. The product owner chose on-device parsing instead on 2026-10-08, for three reasons: Vercel caps request bodies at 4.5 MB and extended history exports are often far larger; the extended layout carries IP addresses and device strings that should not transit MUSE at all; and uploading tens of megabytes on Nigerian mobile data is a real cost when a few kilobytes of summary do the job. Browser-only storage matches the earlier rule that the server keeps counters only for people without an account. Opening the Profile page keeps "Your taste in words" where the landing page says it is, without a login.
+
+**Alternatives considered**
+
+- Server-side parsing as written: a 4.5 MB ceiling, the sensitive fields in transit, and a second code path to keep honest.
+- Saving snapshots for signed-in testers in `music_profiles`: a table write and a deletion path for a feature testers can reproduce in one tap.
+- A "Personalise" sheet inside the chat instead of the Profile page: hides the feature from the navigation and duplicates the profile view.
+- Reading `YourLibrary.json` (saved tracks) too: a useful signal, left out to keep the first version small; the parser is a pure function and can grow.
+
+**Impact**
+
+- New env name in `.env.example`: `LASTFM_API_KEY` (server only, optional). Without it the Profile page says Last.fm import is not switched on; the export path still works.
+- New routes: `POST /api/taste/lastfm` (10 per minute per IP) and `POST /api/taste/insights` (same protections as the chat: origin check, 15 per minute per IP, human check when on, daily AI budget).
+- The chat request schema gains an optional `taste` field; both chat paths pass it to the playlist prompt and the reply prompt, and the open path stops telling visitors it has no access to their listening when they brought it. `listener_taste` was added to the prompt sanitiser's stripped tags.
+- Last.fm's terms ask for a link back where its data is shown; the snapshot card links to the profile. The privacy page needs a paragraph on both sources (Task 10).
+- Guests now see two tabs, Chat and Profile. Discover, Library, and Playlists stay tester-only.
+
+---
+
 ## 2026-10-08: Spotify sign-in and Create in Spotify are for testers only, and the no-account path is proven never to touch Spotify
 
 **Decision**
