@@ -1,7 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { revealStyle, useRevealOnce, CAPABILITY_STAGGER_MS } from '@/hooks/use-reveal-once';
+import {
+  revealStyle,
+  useRevealOnce,
+  CAPABILITY_STAGGER_MS,
+} from '@/hooks/use-reveal-once';
 import { prefersReducedMotion } from '@/lib/landing-scroll';
 import { ROLLING_PHRASES } from '@/lib/landing-sample';
 import {
@@ -19,19 +23,21 @@ const CAPABILITIES = [
   },
   {
     title: 'Why this',
-    description: 'Every recommendation can explain itself in a sentence.',
+    description: 'Each recommendation comes with a one-line reason.',
   },
   {
-    title: 'Playlists in Spotify',
-    description: 'Turn a conversation into a playlist in your own account.',
+    title: 'Open anywhere',
+    description:
+      'Every song links to Audiomack, Boomplay, Spotify, Apple Music, YouTube Music, and Deezer. Copy, download, or share the list.',
   },
   {
     title: 'Your taste in words',
-    description: 'A profile that describes how you listen, written for humans.',
+    description:
+      'A profile written from a Last.fm account or your Spotify data export, if you add one.',
   },
 ] as const;
 
-/** The rolling column, with the first phrase repeated so the loop is seamless. */
+/** The rolling column, with the first phrase repeated so the loop has no visible join. */
 const ROLL_COLUMN = [...ROLLING_PHRASES, ROLLING_PHRASES[0]];
 
 /**
@@ -128,7 +134,9 @@ export function WhatItDoes() {
       if (document.hidden) stop();
       else start();
     };
-    document.addEventListener('visibilitychange', onVisibilityChange, { signal });
+    document.addEventListener('visibilitychange', onVisibilityChange, {
+      signal,
+    });
 
     return () => {
       stop();

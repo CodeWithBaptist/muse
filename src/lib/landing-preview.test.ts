@@ -3,7 +3,6 @@ import {
   LANDING_SAMPLE,
   SAMPLE_PROMPT,
   SAMPLE_REPLY,
-  SAMPLE_SPOTIFY_URL,
   SAMPLE_THINKING_LINES,
   SAMPLE_TRACKS,
 } from './landing-sample';
@@ -13,7 +12,6 @@ import {
   PREVIEW_REPLY_WORD_MS,
   PREVIEW_THINKING_LINE_MS,
   PREVIEW_VISIBLE_THRESHOLD,
-  previewCreateState,
   previewFinalState,
   previewReplayState,
   previewStartState,
@@ -31,26 +29,42 @@ describe('landing sample data', () => {
     expect(SAMPLE_REPLY.split(/\s+/).length).toBeGreaterThan(4);
     expect(SAMPLE_THINKING_LINES).toHaveLength(2);
     expect(SAMPLE_TRACKS).toHaveLength(3);
-    // Sample ids are not Spotify ids, so the real TrackRow renders no links.
+    // Sample ids are not Spotify ids, so the real TrackRow renders no links,
+    // and durations are left out because the sample never looks them up.
     for (const track of SAMPLE_TRACKS) {
       expect(track.id).toMatch(/^sample-/);
-      expect(track.durationMs).toBeGreaterThan(0);
+      expect(track.durationMs).toBeUndefined();
+      expect(track.reason.length).toBeGreaterThan(0);
     }
+    // Real songs from more than one artist, nothing invented.
+    expect(
+      new Set(SAMPLE_TRACKS.map((track) => track.artist)).size,
+    ).toBeGreaterThanOrEqual(2);
+    expect(
+      SAMPLE_TRACKS.map((track) => `${track.name} by ${track.artist}`),
+    ).toEqual([
+      'Free Mind by Tems',
+      'Essence by Wizkid, Tems',
+      'Calm Down by Rema',
+    ]);
     expect(PREVIEW_VISIBLE_THRESHOLD).toBe(0.4);
   });
 });
 
 describe('preview timeline', () => {
   it('runs the phases strictly in order', () => {
-    expect(timeline.typingEnd).toBe(SAMPLE_PROMPT.length * PREVIEW_PROMPT_CHAR_MS);
+    expect(timeline.typingEnd).toBe(
+      SAMPLE_PROMPT.length * PREVIEW_PROMPT_CHAR_MS,
+    );
     expect(timeline.thinkingEnd).toBe(
-      timeline.typingEnd + SAMPLE_THINKING_LINES.length * PREVIEW_THINKING_LINE_MS,
+      timeline.typingEnd +
+        SAMPLE_THINKING_LINES.length * PREVIEW_THINKING_LINE_MS,
     );
     expect(timeline.replyEnd).toBeGreaterThan(timeline.thinkingEnd);
     expect(timeline.rowsEnd).toBeGreaterThan(timeline.replyEnd);
-    expect(timeline.creatingEnd).toBeGreaterThan(timeline.rowsEnd);
-    expect(timeline.createdEnd).toBeGreaterThan(timeline.creatingEnd);
-    expect(timeline.playingAt).toBeGreaterThan(timeline.createdEnd);
+    expect(timeline.copyingEnd).toBeGreaterThan(timeline.rowsEnd);
+    expect(timeline.copiedEnd).toBeGreaterThan(timeline.copyingEnd);
+    expect(timeline.playingAt).toBeGreaterThan(timeline.copiedEnd);
     expect(timeline.totalMs).toBe(timeline.playingAt);
     // The whole demo stays a one-off sequence of about seven seconds.
     expect(timeline.totalMs).toBeGreaterThan(5000);
@@ -92,7 +106,7 @@ describe('preview state machine', () => {
     expect(first.phase).toBe('thinking');
     expect(first.typedPrompt).toBe(SAMPLE_PROMPT);
     expect(SAMPLE_THINKING_LINES[first.thinkingLineIndex]).toBe(
-      'Understanding your vibe',
+      'Reading your request',
     );
     expect(first.replyWords).toBe(0);
 
@@ -102,7 +116,7 @@ describe('preview state machine', () => {
     );
     expect(second.phase).toBe('thinking');
     expect(SAMPLE_THINKING_LINES[second.thinkingLineIndex]).toBe(
-      'Finding something that fits',
+      'Finding tracks',
     );
 
     const last = previewStateAt(LANDING_SAMPLE, timeline.thinkingEnd - 1);
@@ -139,23 +153,23 @@ describe('preview state machine', () => {
 
     const allRows = previewStateAt(LANDING_SAMPLE, timeline.rowsEnd);
     expect(allRows.visibleTracks).toBe(SAMPLE_TRACKS.length);
-    expect(allRows.createStatus).toBe('idle');
+    expect(allRows.actionStatus).toBe('idle');
   });
 
   it('creates, confirms, opens, then plays the first row', () => {
-    const creating = previewStateAt(LANDING_SAMPLE, timeline.creatingEnd - 1);
-    expect(creating.phase).toBe('creating');
-    expect(creating.createStatus).toBe('loading');
+    const creating = previewStateAt(LANDING_SAMPLE, timeline.copyingEnd - 1);
+    expect(creating.phase).toBe('copying');
+    expect(creating.actionStatus).toBe('loading');
 
-    const created = previewStateAt(LANDING_SAMPLE, timeline.creatingEnd);
-    expect(created.phase).toBe('created');
-    expect(created.createStatus).toBe('success');
+    const created = previewStateAt(LANDING_SAMPLE, timeline.copyingEnd);
+    expect(created.phase).toBe('copied');
+    expect(created.actionStatus).toBe('success');
     expect(created.done).toBe(false);
     expect(created.playing).toBe(false);
 
-    const open = previewStateAt(LANDING_SAMPLE, timeline.createdEnd);
+    const open = previewStateAt(LANDING_SAMPLE, timeline.copiedEnd);
     expect(open.phase).toBe('open');
-    expect(open.createStatus).toBe('open');
+    expect(open.actionStatus).toBe('open');
     expect(open.done).toBe(false);
     expect(open.playing).toBe(false);
 
@@ -169,9 +183,9 @@ describe('preview state machine', () => {
 
   it('keeps the prompt in the thread from thinking onward', () => {
     expect(previewStateAt(LANDING_SAMPLE, 0).promptInThread).toBe(false);
-    expect(previewStateAt(LANDING_SAMPLE, timeline.typingEnd).promptInThread).toBe(
-      true,
-    );
+    expect(
+      previewStateAt(LANDING_SAMPLE, timeline.typingEnd).promptInThread,
+    ).toBe(true);
     expect(promptIsInThread('idle')).toBe(false);
     expect(promptIsInThread('typing')).toBe(false);
     expect(promptIsInThread('thinking')).toBe(true);
@@ -184,9 +198,9 @@ describe('preview state machine', () => {
     expect(previewStateAt(LANDING_SAMPLE, timeline.totalMs + 60_000)).toEqual(
       final,
     );
-    expect(previewStateAt(LANDING_SAMPLE, timeline.totalMs + 60_000)).not.toEqual(
-      IDLE_PREVIEW_STATE,
-    );
+    expect(
+      previewStateAt(LANDING_SAMPLE, timeline.totalMs + 60_000),
+    ).not.toEqual(IDLE_PREVIEW_STATE);
   });
 
   it('never goes backwards in time', () => {
@@ -212,7 +226,7 @@ describe('preview state machine', () => {
     const reduced = previewStartState(LANDING_SAMPLE, true);
     expect(reduced).toEqual(previewFinalState(LANDING_SAMPLE));
     expect(reduced.done).toBe(true);
-    expect(reduced.createStatus).toBe('open');
+    expect(reduced.actionStatus).toBe('open');
     expect(reduced.replyWords).toBe(replyWordCount(SAMPLE_REPLY));
 
     // Without reduced motion the same call starts the sequence instead.
@@ -220,28 +234,5 @@ describe('preview state machine', () => {
     expect(normal.phase).toBe('typing');
     expect(normal.typedPrompt).toBe('');
     expect(normal.done).toBe(false);
-  });
-
-  it('maps the create control to a controlled state', () => {
-    const idle = previewCreateState(LANDING_SAMPLE, IDLE_PREVIEW_STATE);
-    expect(idle.status).toBe('idle');
-    expect(idle.spotifyUrl).toBeNull();
-
-    const loading = previewCreateState(LANDING_SAMPLE, {
-      ...IDLE_PREVIEW_STATE,
-      createStatus: 'loading',
-    });
-    expect(loading.status).toBe('loading');
-    expect(loading.requestedCount).toBe(SAMPLE_TRACKS.length);
-
-    const open = previewCreateState(LANDING_SAMPLE, {
-      ...IDLE_PREVIEW_STATE,
-      createStatus: 'open',
-    });
-    expect(open.status).toBe('open');
-    expect(open.spotifyUrl).toBe(SAMPLE_SPOTIFY_URL);
-    expect(open.addedCount).toBe(SAMPLE_TRACKS.length);
-    expect(open.failedTrackUris).toEqual([]);
-    expect(open.error).toBeNull();
   });
 });

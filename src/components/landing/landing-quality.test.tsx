@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import HomePage from '@/app/page';
+import { LandingPage } from '@/components/landing/LandingPage';
 import { HERO_WORDMARK_PIECES } from '@/components/landing/HeroWordmark';
 import { LANDING_WORDMARK_PIECES } from '@/lib/landing-wordmark';
 
@@ -27,9 +27,13 @@ const LANDING_SOURCES = [
   'src/components/landing/Hero.tsx',
   'src/components/landing/HeroWordmark.tsx',
   'src/components/landing/LandingMark.tsx',
-  'src/components/landing/SpotifyPrimaryAction.tsx',
+  'src/components/landing/StartAction.tsx',
+  'src/components/auth/AuthNotice.tsx',
+  'src/components/auth/spotify-connect-copy.ts',
+  'src/components/landing/LandingPage.tsx',
   'src/components/landing/RecordGroovesCanvas.tsx',
   'src/components/landing/ProductPreview.tsx',
+  'src/components/landing/SampleListActions.tsx',
   'src/components/landing/HowItWorks.tsx',
   'src/components/landing/WhatItDoes.tsx',
   'src/components/landing/ClosingBand.tsx',
@@ -63,7 +67,7 @@ const CANVAS_SOURCES = [
 
 describe('landing quality checklist', () => {
   it('1. keeps both canvases decorative, behind the content, and unclickable', () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const canvases = [...document.querySelectorAll('canvas')];
     expect(canvases).toHaveLength(2);
@@ -85,13 +89,15 @@ describe('landing quality checklist', () => {
     const hero = document.querySelector('.muse-hero') as HTMLElement;
     expect(hero.className).toContain('relative');
     expect(hero.className).toContain('overflow-hidden');
-    expect(hero.className).toContain('min-h-[calc(100svh-var(--muse-header-height))]');
+    expect(hero.className).toContain(
+      'min-h-[calc(100svh-var(--muse-header-height))]',
+    );
 
     expect(document.querySelector('img[loading="lazy"]')).toBeNull();
   });
 
   it('2. paints the hero text without waiting for hydration', () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading.textContent).toMatch(/your music,/i);
@@ -128,7 +134,9 @@ describe('landing quality checklist', () => {
     // visuals are aria-hidden decoration whose scripts start from a blank frame,
     // so they are out of scope here; the server render check in landing.test.tsx
     // covers them without JavaScript.
-    const hidden = [...document.querySelectorAll<HTMLElement>('[style]')].filter(
+    const hidden = [
+      ...document.querySelectorAll<HTMLElement>('[style]'),
+    ].filter(
       (element) =>
         element.style.opacity === '0' &&
         !element.closest('[aria-hidden="true"]'),
@@ -138,11 +146,15 @@ describe('landing quality checklist', () => {
 
   it('3. keeps the wordmark shapes identical to the brand mark', () => {
     const brand = read('src/assets/brand/muse-wordmark.svg');
-    const brandPaths = [...brand.matchAll(/d="([^"]+)"/g)].map((match) => match[1]);
+    const brandPaths = [...brand.matchAll(/d="([^"]+)"/g)].map(
+      (match) => match[1],
+    );
     expect(brandPaths).toHaveLength(5);
 
     for (const brandPath of brandPaths) {
-      expect(HERO_WORDMARK_PIECES.some((piece) => piece.d === brandPath)).toBe(true);
+      expect(HERO_WORDMARK_PIECES.some((piece) => piece.d === brandPath)).toBe(
+        true,
+      );
       expect(
         LANDING_WORDMARK_PIECES.some((piece) => piece.d === brandPath),
       ).toBe(true);
@@ -151,7 +163,10 @@ describe('landing quality checklist', () => {
     // The shared Logo and the brand files are not touched by the landing work.
     const logo = read('src/components/ui/Logo.tsx');
     expect(logo).toContain('aria-label="muse"');
-    expect(logo).toContain("theme = 'dark'");
+    // Since the light theme shipped the default follows the page tokens, and
+    // the pinned dark colours stay available for surfaces that never change.
+    expect(logo).toContain("theme = 'auto'");
+    expect(logo).toContain("theme === 'dark'");
     expect(read('src/lib/landing-wordmark.ts')).not.toContain(
       '@/components/ui/Logo',
     );
@@ -184,7 +199,9 @@ describe('landing quality checklist', () => {
     );
 
     // The rolling word is the only interval outside the demo and the steps.
-    expect(read('src/components/landing/WhatItDoes.tsx')).toContain('setInterval');
+    expect(read('src/components/landing/WhatItDoes.tsx')).toContain(
+      'setInterval',
+    );
 
     // Reveals happen once, and never re-run on the way back up.
     const reveal = read('src/hooks/use-reveal-once.ts');
@@ -203,18 +220,21 @@ describe('landing quality checklist', () => {
         'scrollY',
         'onScroll',
       ]) {
-        expect(contents.includes(token), `${source} contains ${token}`).toBe(false);
+        expect(contents.includes(token), `${source} contains ${token}`).toBe(
+          false,
+        );
       }
     }
   });
 
   it('5. labels the scripted preview, keeps it inert, and never leaves it empty', () => {
-    const { container } = render(<HomePage />);
+    const { container } = render(<LandingPage />);
 
     expect(screen.getByText('Sample')).toBeDefined();
     expect(screen.getByRole('button', { name: 'Replay' })).toBeDefined();
     expect(
-      screen.getAllByText(/Nothing here contacts Spotify or OpenAI/i).length,
+      screen.getAllByText(/Nothing here contacts OpenAI or any music service/i)
+        .length,
     ).toBeGreaterThan(0);
 
     // The hint and the placeholder are in the first paint, before the sequence.
@@ -234,7 +254,9 @@ describe('landing quality checklist', () => {
     expect(sample?.getAttribute('aria-hidden')).toBe('true');
 
     // The animated conversation is decorative, so it is not exposed as a list.
-    expect(screen.queryByRole('list', { name: /sample recommended tracks/i })).toBeNull();
+    expect(
+      screen.queryByRole('list', { name: /sample recommended tracks/i }),
+    ).toBeNull();
   });
 
   it('6. starts the preview only when it is 40 percent visible', () => {
@@ -293,7 +315,11 @@ describe('landing quality checklist', () => {
 
     // The hero entrance never holds a transform after it finishes, or the
     // button pressed transforms would be overridden.
-    for (const step of ['muse-hero-letter', 'muse-hero-line', 'muse-hero-fade']) {
+    for (const step of [
+      'muse-hero-letter',
+      'muse-hero-line',
+      'muse-hero-fade',
+    ]) {
       const block = css.slice(css.indexOf(`.${step} {`));
       const rule = block.slice(0, block.indexOf('}'));
       expect(rule).toContain('backwards');
@@ -315,7 +341,9 @@ describe('landing quality checklist', () => {
     for (const source of LANDING_SOURCES) {
       const contents = read(source);
       for (const token of forbidden) {
-        expect(contents.includes(token), `${source} contains ${token}`).toBe(false);
+        expect(contents.includes(token), `${source} contains ${token}`).toBe(
+          false,
+        );
       }
     }
 
@@ -364,7 +392,7 @@ describe('landing quality checklist', () => {
   });
 
   it('10. keeps the first tab stop, the focus rings, and the hover attributes', () => {
-    render(<HomePage />);
+    render(<LandingPage />);
 
     const focusable = document.querySelectorAll(
       'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -373,20 +401,21 @@ describe('landing quality checklist', () => {
     expect(first.tagName).toBe('A');
     expect(first.getAttribute('href')).toBe('#main-content');
 
-    const connect = screen.getAllByRole('button', { name: /connect spotify/i });
-    expect(connect.length).toBe(3);
-    expect(screen.getByRole('button', { name: /see how it works/i })).toBeDefined();
+    const start = screen.getAllByRole('link', { name: 'Start' });
+    expect(start.length).toBe(3);
+    for (const link of start) expect(link.className).toContain('focus-ring');
+    expect(
+      screen.getByRole('button', { name: /see how it works/i }),
+    ).toBeDefined();
 
     // Both hero actions carry the hover attribute, so touch and keyboard focus
     // lift the record just like the pointer does.
     const hero = document.querySelector('.muse-hero') as HTMLElement;
-    expect(
-      hero.querySelectorAll('[data-muse-hero-action]').length,
-    ).toBe(2);
+    expect(hero.querySelectorAll('[data-muse-hero-action]').length).toBe(2);
     // The closing action drives the closing band energy.
-    expect(
-      document.querySelectorAll('[data-muse-closing-action]').length,
-    ).toBe(1);
+    expect(document.querySelectorAll('[data-muse-closing-action]').length).toBe(
+      1,
+    );
 
     // Focus rings stay visible everywhere.
     const css = read('src/app/globals.css');
@@ -422,9 +451,10 @@ describe('landing quality checklist', () => {
         'margin',
         'filter:',
       ]) {
-        expect(block.includes(property), `${keyframe} animates ${property}`).toBe(
-          false,
-        );
+        expect(
+          block.includes(property),
+          `${keyframe} animates ${property}`,
+        ).toBe(false);
       }
     }
 
@@ -501,18 +531,19 @@ describe('landing quality checklist', () => {
 
     const rail = read('src/components/landing/HowItWorks.tsx');
     expect(rail).toContain('late night Afrobeats but chill');
-    expect(rail).toContain('Found 20 tracks');
-    expect(rail).toContain(
-      'Why this: slower and warmer, like your late night listening.',
-    );
+    // No invented result counts: the last thinking line is the product's own.
+    expect(rail).not.toContain('Found 20 tracks');
+    expect(rail).toContain('I found a few things');
+    // The reason line is derived from the first sample track, never retyped.
+    expect(rail).toContain('LANDING_SAMPLE.tracks[0].reason');
 
     const rolling = read('src/lib/landing-sample.ts');
     for (const phrase of [
       'a late night drive',
+      'Lagos traffic',
+      'Rema, but calmer',
       'songs like Brent Faiyaz',
-      'something completely new',
       'a 2am Afrobeats mix',
-      'music to lock in',
       'slow mornings',
     ]) {
       expect(rolling).toContain(phrase);
@@ -520,7 +551,7 @@ describe('landing quality checklist', () => {
   });
 
   it('14. only claims what is built today', () => {
-    render(<HomePage />);
+    render(<LandingPage />);
     const text = document.body.textContent ?? '';
 
     for (const removed of [
@@ -531,12 +562,21 @@ describe('landing quality checklist', () => {
       'millions of tracks',
       'MUSE Intelligence',
       'Designed for the',
+      'looks for real tracks on Spotify',
+      'creates the playlist in your Spotify account',
+      'Playlists in Spotify',
+      'Create in Spotify',
     ]) {
       expect(text, `the page still claims ${removed}`).not.toContain(removed);
     }
 
     // No invented numbers, testimonials, or legal text on the landing.
-    for (const invented of ['testimonial', 'as seen in', 'trusted by', 'users worldwide']) {
+    for (const invented of [
+      'testimonial',
+      'as seen in',
+      'trusted by',
+      'users worldwide',
+    ]) {
       expect(text.toLowerCase()).not.toContain(invented);
     }
   });
@@ -557,7 +597,9 @@ describe('landing quality checklist', () => {
       );
       for (const specifier of imports) {
         if (specifier.startsWith('@/') || specifier.startsWith('.')) continue;
-        expect(allowed.has(specifier), `${source} imports ${specifier}`).toBe(true);
+        expect(allowed.has(specifier), `${source} imports ${specifier}`).toBe(
+          true,
+        );
       }
     }
   });

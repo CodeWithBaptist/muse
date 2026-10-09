@@ -11,23 +11,20 @@ import {
   History,
   MessageSquarePlus,
   RefreshCw,
-  Sparkles,
+  Smartphone,
+  KeyRound,
   Terminal,
   Trash2,
   WifiOff,
+  Moon,
 } from 'lucide-react';
 import { Surface } from '@/components/ui/Surface';
+import { HumanCheckCard } from '@/components/security/HumanCheckCard';
+import { ChatPreferenceControls } from '@/components/chat/ChatPreferenceControls';
+import { VibeChips } from '@/components/chat/VibeChips';
+import { TasteHint } from '@/components/chat/TasteHint';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
-
-const SUGGESTED_PROMPTS = [
-  'Late night Afrobeats',
-  'Something completely new',
-  'Songs like Brent Faiyaz but less sad',
-  'Music for a 2am drive',
-  'Ambient study session',
-  '90s Hip Hop deep cuts',
-];
 
 function AiNotConnectedBanner() {
   return (
@@ -36,17 +33,18 @@ function AiNotConnectedBanner() {
       data-testid="ai-not-connected-state"
       className="p-6 border-border-strong bg-surface/80 flex items-start gap-4 rounded-xl"
     >
-      <Sparkles className="text-accent shrink-0 mt-0.5" size={20} />
+      <KeyRound className="text-accent shrink-0 mt-0.5" size={20} />
       <div className="space-y-2">
         <h2 className="text-sm font-bold text-text-primary tracking-wide">
           AI is not connected yet
         </h2>
         <p className="text-sm text-text-secondary leading-relaxed">
-          MUSE needs an OpenAI API key to respond in chat and curate recommendations. Add{' '}
+          MUSE needs an OpenAI API key to respond in chat and curate
+          recommendations. Add{' '}
           <code className="text-xs font-mono text-text-primary bg-background/60 px-1.5 py-0.5 rounded">
             OPENAI_API_KEY
           </code>{' '}
-          to your environment variables to enable AI features.
+          to the environment and restart.
         </p>
         <div className="flex items-center gap-2 pt-1 text-[10px] text-text-muted font-mono uppercase tracking-wider">
           <Terminal size={12} />
@@ -57,8 +55,13 @@ function AiNotConnectedBanner() {
   );
 }
 
+type BannerErrorKind = Exclude<
+  ChatErrorKind,
+  'ai_not_connected' | 'human_check'
+>;
+
 interface DistinctErrorBannerProps {
-  kind: Exclude<ChatErrorKind, 'ai_not_connected'>;
+  kind: BannerErrorKind;
   message: string;
   onRetry: () => void;
 }
@@ -69,7 +72,7 @@ function DistinctChatErrorBanner({
   onRetry,
 }: DistinctErrorBannerProps) {
   const meta: Record<
-    Exclude<ChatErrorKind, 'ai_not_connected'>,
+    BannerErrorKind,
     {
       title: string;
       description: string;
@@ -87,14 +90,24 @@ function DistinctChatErrorBanner({
     spotify_error: {
       title: 'Spotify error',
       description:
-        message || 'Spotify could not be reached right now. Please try again in a moment.',
+        message ||
+        'Spotify could not be reached right now. Please try again in a moment.',
       icon: AlertCircle,
       action: 'retry',
+    },
+    ai_resting: {
+      title: 'MUSE is resting',
+      description:
+        message ||
+        'MUSE has reached its daily limit for AI answers. It will be back after midnight, Lagos time.',
+      icon: Moon,
+      action: 'none',
     },
     rate_limited: {
       title: 'Rate limited',
       description:
-        message || 'Too many requests in a short window. Wait a moment and try again.',
+        message ||
+        'Too many requests in a short window. Wait a moment and try again.',
       icon: Clock,
       action: 'retry',
     },
@@ -108,7 +121,8 @@ function DistinctChatErrorBanner({
     ai_error: {
       title: 'AI error',
       description:
-        message || 'MUSE could not complete that response right now. Please try again.',
+        message ||
+        'MUSE could not complete that response right now. Please try again.',
       icon: AlertCircle,
       action: 'retry',
     },
@@ -127,7 +141,9 @@ function DistinctChatErrorBanner({
       <div className="flex items-start gap-4">
         <Icon className="text-accent shrink-0 mt-0.5" size={20} />
         <div className="space-y-1">
-          <h3 className="text-sm font-bold text-text-primary">{config.title}</h3>
+          <h3 className="text-sm font-bold text-text-primary">
+            {config.title}
+          </h3>
           <p className="text-sm text-text-secondary leading-relaxed">
             {config.description}
           </p>
@@ -160,11 +176,13 @@ function DistinctChatErrorBanner({
 export default function ChatPage() {
   const {
     messages,
+    isGuest,
+    preferences,
+    setPreferences,
     sendMessage,
     retryLastMessage,
     isThinking,
     thinkingStage,
-    lastPrompt,
     error,
     errorKind,
     isAiNotConnected,
@@ -187,43 +205,59 @@ export default function ChatPage() {
   return (
     <div className="h-full flex flex-col relative">
       {/* Top conversation history bar */}
-      <div className="px-6 py-3 border-b border-border-subtle flex items-center justify-between gap-4 bg-background">
+      <div className="px-4 sm:px-6 py-3 border-b border-border-subtle flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-background">
         <div className="flex items-center gap-3 min-w-0">
-          <button
-            type="button"
-            onClick={() => setHistoryOpen((prev) => !prev)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface border border-border-subtle transition-colors"
-            aria-expanded={historyOpen}
-            aria-controls="conversation-history-panel"
-          >
-            <History size={14} />
-            <span>History ({conversations.length})</span>
-          </button>
+          {isGuest ? (
+            <span
+              data-testid="chat-on-device-note"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary border border-border-subtle"
+            >
+              <Smartphone size={14} aria-hidden="true" />
+              <span>Saved on this device only</span>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setHistoryOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary hover:text-text-primary hover:bg-surface border border-border-subtle transition-colors"
+              aria-expanded={historyOpen}
+              aria-controls="conversation-history-panel"
+            >
+              <History size={14} />
+              <span>History ({conversations.length})</span>
+            </button>
+          )}
           {activeConversationId && (
             <span className="text-xs text-text-muted truncate">
-              {conversations.find((c) => c.id === activeConversationId)?.title ||
-                'Active conversation'}
+              {conversations.find((c) => c.id === activeConversationId)
+                ?.title || 'Active conversation'}
             </span>
           )}
         </div>
 
-        {(messages.length > 0 || activeConversationId) && (
-          <button
-            type="button"
-            onClick={startNewChat}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-accent hover:bg-surface transition-colors"
-          >
-            <MessageSquarePlus size={14} />
-            <span>New chat</span>
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <ChatPreferenceControls
+            preferences={preferences}
+            onChange={setPreferences}
+          />
+          {(messages.length > 0 || activeConversationId) && (
+            <button
+              type="button"
+              onClick={startNewChat}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-accent hover:bg-surface transition-colors"
+            >
+              <MessageSquarePlus size={14} />
+              <span>New chat</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Collapsible conversation history drawer */}
       <div
         id="conversation-history-panel"
         data-testid="conversation-history-panel"
-        hidden={!historyOpen}
+        hidden={!historyOpen || isGuest}
         className="max-h-60 overflow-y-auto border-b border-border-subtle bg-surface/60 px-6 py-4"
       >
         <div className="mx-auto max-w-4xl space-y-2">
@@ -283,36 +317,34 @@ export default function ChatPage() {
           <div className="max-w-4xl mx-auto pt-12 space-y-12 pb-24">
             <div className="space-y-4">
               <h1 className="type-page-title !text-[clamp(32px,5vw,40px)]">
-                What are we listening to?
+                Say the vibe.
               </h1>
               <p className="text-text-secondary text-lg font-medium">
-                Tell me the mood, sound, artist, or moment.
+                A mood, an artist, a place, a time of day. MUSE answers with
+                real songs, Nigeria first.
               </p>
             </div>
 
             {isAiNotConnected && <AiNotConnectedBanner />}
 
-            {error && !isAiNotConnected && errorKind && errorKind !== 'ai_not_connected' && (
-              <DistinctChatErrorBanner
-                kind={errorKind}
-                message={error.message}
-                onRetry={retryLastMessage}
-              />
+            {error && errorKind === 'human_check' && (
+              <HumanCheckCard onVerified={retryLastMessage} />
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {SUGGESTED_PROMPTS.map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => sendMessage(prompt)}
-                  className="p-6 text-left rounded-xl bg-surface border border-border-subtle hover:border-accent/50 hover:bg-surface/80 transition-all group"
-                >
-                  <div className="text-sm font-semibold text-text-secondary group-hover:text-text-primary transition-colors">
-                    {prompt}
-                  </div>
-                </button>
-              ))}
-            </div>
+            {error &&
+              !isAiNotConnected &&
+              errorKind &&
+              errorKind !== 'ai_not_connected' &&
+              errorKind !== 'human_check' && (
+                <DistinctChatErrorBanner
+                  kind={errorKind as BannerErrorKind}
+                  message={error.message}
+                  onRetry={retryLastMessage}
+                />
+              )}
+
+            <VibeChips onPick={sendMessage} disabled={isThinking} />
+            <TasteHint />
           </div>
         ) : (
           <div className="max-w-4xl mx-auto space-y-12 pb-24">
@@ -322,19 +354,30 @@ export default function ChatPage() {
 
             {isThinking && !isAiNotConnected && (
               <div className="mr-auto">
-                <ThinkingIndicator stage={thinkingStage} prompt={lastPrompt} />
+                <ThinkingIndicator
+                  stage={thinkingStage}
+                  language={preferences.language}
+                />
               </div>
             )}
 
             {isAiNotConnected && <AiNotConnectedBanner />}
 
-            {error && !isAiNotConnected && errorKind && errorKind !== 'ai_not_connected' && (
-              <DistinctChatErrorBanner
-                kind={errorKind}
-                message={error.message}
-                onRetry={retryLastMessage}
-              />
+            {error && errorKind === 'human_check' && (
+              <HumanCheckCard onVerified={retryLastMessage} />
             )}
+
+            {error &&
+              !isAiNotConnected &&
+              errorKind &&
+              errorKind !== 'ai_not_connected' &&
+              errorKind !== 'human_check' && (
+                <DistinctChatErrorBanner
+                  kind={errorKind as BannerErrorKind}
+                  message={error.message}
+                  onRetry={retryLastMessage}
+                />
+              )}
           </div>
         )}
       </div>

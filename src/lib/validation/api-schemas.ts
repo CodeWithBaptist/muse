@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { CHAT_LANGUAGES, MUSIC_SCOPES } from '@/lib/chat-preferences';
+import { TasteSnapshotSchema } from '@/lib/taste/types';
 
 export interface SpotifyImage {
   url: string;
@@ -30,13 +32,43 @@ export interface SpotifyTrackItem {
   reason?: string;
 }
 
+/**
+ * Longest message MUSE accepts. A mood, an artist, or a moment fits easily;
+ * anything longer mostly costs tokens. The composer enforces the same number
+ * so people are never surprised by the server.
+ */
+export const CHAT_MESSAGE_MAX_LENGTH = 500;
+
+/**
+ * Recent turns a visitor without an account sends back for context. Their
+ * chat lives in the browser, so the server never has it unless they send it.
+ * Ten turns at most; assistant turns may carry a longer intro than a message.
+ */
+export const CHAT_HISTORY_MAX_TURNS = 10;
+
+export const ChatHistoryTurnSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string().trim().min(1).max(1000),
+});
+export type ChatHistoryTurn = z.infer<typeof ChatHistoryTurnSchema>;
+
+/** Scope and language choices, kept on the device and sent with each message. */
+export const ChatPreferencesSchema = z.object({
+  scope: z.enum(MUSIC_SCOPES).optional(),
+  language: z.enum(CHAT_LANGUAGES).optional(),
+});
+
 export const ChatPostInputSchema = z.object({
   content: z
     .string()
     .trim()
     .min(1, 'Content is required')
-    .max(2000, 'Message is too long'),
+    .max(CHAT_MESSAGE_MAX_LENGTH, `Message is too long (${CHAT_MESSAGE_MAX_LENGTH} characters max)`),
   conversationId: z.string().uuid().optional(),
+  history: z.array(ChatHistoryTurnSchema).max(CHAT_HISTORY_MAX_TURNS).optional(),
+  preferences: ChatPreferencesSchema.optional(),
+  /** The visitor's listening snapshot, sent from the device; never stored. */
+  taste: TasteSnapshotSchema.nullable().optional(),
 });
 
 export const ChatIdParamSchema = z.object({

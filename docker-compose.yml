@@ -1,0 +1,37 @@
+# Local development database for MUSE.
+#
+# Start it with `npm run db:up` (or `docker compose up -d db`), then point
+# DATABASE_URL at it:
+#
+#   DATABASE_URL=postgresql://muse:muse@127.0.0.1:5432/muse
+#
+# These credentials are for local development only. Production databases are
+# configured through the deployment environment, never through this file.
+#
+# The data lives in a named volume, so it survives `docker compose down`.
+# Remove it with `docker compose down -v` when you want a clean database.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: muse-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: muse
+      POSTGRES_PASSWORD: muse
+      POSTGRES_DB: muse
+    ports:
+      # Override the host port with MUSE_DB_PORT if 5432 is already taken,
+      # and update DATABASE_URL to match.
+      - '${MUSE_DB_PORT:-5432}:5432'
+    volumes:
+      - muse-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U muse -d muse']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+volumes:
+  muse-db-data:

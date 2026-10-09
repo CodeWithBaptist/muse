@@ -3,16 +3,15 @@
  *
  * The preview plays one scripted conversation once, when it is at least 40
  * percent visible: a prompt types in, MUSE thinks through two lines, the reply
- * reveals word by word, the example rows rise in, and the real Create in
- * Spotify control moves through creating, created, and open. Nothing here
- * contacts Spotify and no playlist exists: the on screen label says Sample.
+ * reveals word by word, the example rows rise in, and the list actions walk
+ * through copying, copied, and the open-in links. Nothing here contacts any
+ * service and no list leaves the page: the on screen label says Sample.
  *
  * Everything is derived from one elapsed time, so the machine is a pure
  * function: `previewStateAt(sample, elapsedMs)`. The component replays it, and
  * the tests step through the same numbers.
  */
 
-import { SUCCESS_HOLD_MS, type CreateInSpotifyState } from '@/lib/playlist-export';
 import type { LandingSample } from '@/lib/landing-sample';
 
 export const PREVIEW_PROMPT_CHAR_MS = 42;
@@ -20,9 +19,10 @@ export const PREVIEW_THINKING_LINE_MS = 1000;
 export const PREVIEW_REPLY_WORD_MS = 55;
 export const PREVIEW_ROW_STAGGER_MS = 50;
 export const PREVIEW_ROWS_DELAY_MS = 220;
-export const PREVIEW_CREATE_MS = 900;
+export const PREVIEW_COPY_MS = 900;
 export const PREVIEW_ACTION_DELAY_MS = 200;
-export const PREVIEW_CREATED_MS = SUCCESS_HOLD_MS;
+/** How long "Copied" holds before the open-in links appear. */
+export const PREVIEW_COPIED_MS = 1200;
 /** Pause between the open control and the first row starting to play. */
 export const PREVIEW_PLAY_DELAY_MS = 500;
 /** How much of the preview has to be visible before it starts. */
@@ -34,12 +34,13 @@ export type PreviewPhase =
   | 'thinking'
   | 'replying'
   | 'rows'
-  | 'creating'
-  | 'created'
+  | 'copying'
+  | 'copied'
   | 'open'
   | 'playing';
 
-export type PreviewCreateStatus = 'idle' | 'loading' | 'success' | 'open';
+/** idle: Copy list offered; loading: copying; success: copied; open: open-in links shown. */
+export type PreviewActionStatus = 'idle' | 'loading' | 'success' | 'open';
 
 export interface PreviewState {
   phase: PreviewPhase;
@@ -55,7 +56,7 @@ export interface PreviewState {
   replyWords: number;
   /** How many example rows have risen in. */
   visibleTracks: number;
-  createStatus: PreviewCreateStatus;
+  actionStatus: PreviewActionStatus;
   /** True when the sequence has reached its last state. */
   done: boolean;
 }
@@ -66,8 +67,8 @@ export interface PreviewTimeline {
   thinkingEnd: number;
   replyEnd: number;
   rowsEnd: number;
-  creatingEnd: number;
-  createdEnd: number;
+  copyingEnd: number;
+  copiedEnd: number;
   playingAt: number;
   totalMs: number;
 }
@@ -81,20 +82,23 @@ export function previewTimeline(sample: LandingSample): PreviewTimeline {
   const typingEnd = sample.prompt.length * PREVIEW_PROMPT_CHAR_MS;
   const thinkingEnd =
     typingEnd + sample.thinkingLines.length * PREVIEW_THINKING_LINE_MS;
-  const replyEnd = thinkingEnd + replyWordCount(sample.reply) * PREVIEW_REPLY_WORD_MS;
+  const replyEnd =
+    thinkingEnd + replyWordCount(sample.reply) * PREVIEW_REPLY_WORD_MS;
   const rowsEnd =
-    replyEnd + PREVIEW_ROWS_DELAY_MS + sample.tracks.length * PREVIEW_ROW_STAGGER_MS;
-  const creatingEnd = rowsEnd + PREVIEW_ACTION_DELAY_MS + PREVIEW_CREATE_MS;
-  const createdEnd = creatingEnd + PREVIEW_CREATED_MS;
-  const playingAt = createdEnd + PREVIEW_PLAY_DELAY_MS;
+    replyEnd +
+    PREVIEW_ROWS_DELAY_MS +
+    sample.tracks.length * PREVIEW_ROW_STAGGER_MS;
+  const copyingEnd = rowsEnd + PREVIEW_ACTION_DELAY_MS + PREVIEW_COPY_MS;
+  const copiedEnd = copyingEnd + PREVIEW_COPIED_MS;
+  const playingAt = copiedEnd + PREVIEW_PLAY_DELAY_MS;
 
   return {
     typingEnd,
     thinkingEnd,
     replyEnd,
     rowsEnd,
-    creatingEnd,
-    createdEnd,
+    copyingEnd,
+    copiedEnd,
     playingAt,
     totalMs: playingAt,
   };
@@ -112,7 +116,7 @@ export const IDLE_PREVIEW_STATE: PreviewState = {
   thinkingLineIndex: -1,
   replyWords: 0,
   visibleTracks: 0,
-  createStatus: 'idle',
+  actionStatus: 'idle',
   done: false,
 };
 
@@ -121,8 +125,8 @@ const PHASES_WITH_PROMPT: readonly PreviewPhase[] = [
   'thinking',
   'replying',
   'rows',
-  'creating',
-  'created',
+  'copying',
+  'copied',
   'open',
   'playing',
 ];
@@ -158,22 +162,22 @@ export function previewStateAt(
   if (time >= timeline.playingAt) {
     return {
       ...settled('playing'),
-      createStatus: 'open',
+      actionStatus: 'open',
       playing: true,
       done: true,
     };
   }
 
-  if (time >= timeline.createdEnd) {
-    return { ...settled('open'), createStatus: 'open' };
+  if (time >= timeline.copiedEnd) {
+    return { ...settled('open'), actionStatus: 'open' };
   }
 
-  if (time >= timeline.creatingEnd) {
-    return { ...settled('created'), createStatus: 'success' };
+  if (time >= timeline.copyingEnd) {
+    return { ...settled('copied'), actionStatus: 'success' };
   }
 
   if (time >= timeline.rowsEnd + PREVIEW_ACTION_DELAY_MS) {
-    return { ...settled('creating'), createStatus: 'loading' };
+    return { ...settled('copying'), actionStatus: 'loading' };
   }
 
   if (time >= timeline.rowsEnd) {
@@ -185,7 +189,9 @@ export function previewStateAt(
       ...settled('rows'),
       replyWords: wordCount,
       visibleTracks: clampCount(
-        1 + (time - timeline.replyEnd - PREVIEW_ROWS_DELAY_MS) / PREVIEW_ROW_STAGGER_MS,
+        1 +
+          (time - timeline.replyEnd - PREVIEW_ROWS_DELAY_MS) /
+            PREVIEW_ROW_STAGGER_MS,
         trackCount,
       ),
     };
@@ -243,44 +249,4 @@ export function previewReplayState(): PreviewState {
 /** True while the phase shows the prompt as a message in the thread. */
 export function promptIsInThread(phase: PreviewPhase): boolean {
   return PHASES_WITH_PROMPT.includes(phase);
-}
-
-/**
- * The controlled state handed to the real Create in Spotify control. The
- * control is inert in the demo, so the URL is only ever rendered as text on a
- * span, never as a link.
- */
-export function previewCreateState(
-  sample: LandingSample,
-  state: PreviewState,
-): CreateInSpotifyState {
-  const requestedCount = sample.tracks.length;
-  const created: CreateInSpotifyState = {
-    status: 'success',
-    spotifyUrl: sample.spotifyUrl,
-    spotifyPlaylistId: null,
-    requestedCount,
-    addedCount: requestedCount,
-    failedTrackUris: [],
-    error: null,
-    retryingFailedOnly: false,
-  };
-
-  switch (state.createStatus) {
-    case 'loading':
-      return { ...created, status: 'loading' };
-    case 'success':
-      return created;
-    case 'open':
-      return { ...created, status: 'open' };
-    case 'idle':
-    default:
-      return {
-        ...created,
-        status: 'idle',
-        spotifyUrl: null,
-        requestedCount: 0,
-        addedCount: 0,
-      };
-  }
 }

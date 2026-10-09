@@ -57,12 +57,18 @@ describe('SiteFooter', () => {
   it('makes the mark a link back to the top of the page', () => {
     render(<SiteFooter />);
 
-    const mark = screen.getByRole('link', { name: 'MUSE, back to the top of the page' });
+    const mark = screen.getByRole('link', {
+      name: 'MUSE, back to the top of the page',
+    });
     expect(mark.getAttribute('href')).toBe(LANDING_TOP_FRAGMENT);
     // The real wordmark, not a word of text, and the lime dot with it.
-    expect(mark.querySelector('[role="img"][aria-label="muse"]')).not.toBeNull();
+    expect(
+      mark.querySelector('[role="img"][aria-label="muse"]'),
+    ).not.toBeNull();
     expect(mark.querySelector('[data-piece="dot"]')).not.toBeNull();
-    expect(mark.querySelector('[data-testid="landing-mark-dot"]')).not.toBeNull();
+    expect(
+      mark.querySelector('[data-testid="landing-mark-dot"]'),
+    ).not.toBeNull();
 
     const event = click(mark);
 
@@ -119,14 +125,16 @@ describe('SiteFooter', () => {
   it('still links the three real pages', () => {
     render(<SiteFooter />);
 
-    expect(screen.getByRole('link', { name: 'Privacy' }).getAttribute('href')).toBe(
-      '/privacy',
-    );
-    expect(screen.getByRole('link', { name: 'Terms' }).getAttribute('href')).toBe(
-      '/terms',
-    );
     expect(
-      screen.getByRole('link', { name: 'Spotify attribution' }).getAttribute('href'),
+      screen.getByRole('link', { name: 'Privacy' }).getAttribute('href'),
+    ).toBe('/privacy');
+    expect(
+      screen.getByRole('link', { name: 'Terms' }).getAttribute('href'),
+    ).toBe('/terms');
+    expect(
+      screen
+        .getByRole('link', { name: 'Spotify attribution' })
+        .getAttribute('href'),
     ).toBe('/spotify-attribution');
   });
 });

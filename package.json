@@ -1,8 +1,17 @@
 {
   "name": "muse",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
+    "dev:stack": "node scripts/dev.mjs",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:push": "drizzle-kit push",
+    "verify": "npm run typecheck && npm run lint && npm run test",
+    "format:check": "prettier --check .",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -16,8 +25,10 @@
     "@fontsource-variable/fredoka": "^5.3.0",
     "@fontsource/bagel-fat-one": "^5.3.0",
     "@tanstack/react-query": "^5.104.0",
+    "@upstash/redis": "^1.39.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "0.45.2",
+    "fflate": "^0.8.3",
     "lucide-react": "^1.49.0",
     "motion": "^13.5.0",
     "nanoid": "^6.0.1",

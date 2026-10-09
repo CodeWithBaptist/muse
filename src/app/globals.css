@@ -1,23 +1,39 @@
 @import "tailwindcss";
 
-@theme {
+/*
+ * Design tokens. `static` makes Tailwind emit every variable here even when no
+ * utility uses it, so components can rely on var(--duration-fast) and friends
+ * from inline styles and JavaScript.
+ *
+ * The mirror in src/lib/design-tokens.ts is checked against this file by a
+ * unit test, so update both together.
+ */
+@theme static {
   --color-background: #0B0B0C;
   --color-surface: #111113;
   --color-border-subtle: #232326;
   --color-border-strong: #34343A;
   --color-text-primary: #F2F1ED;
   --color-text-secondary: #A1A1A8;
+  /* The darkest tone allowed for small text: 5.4:1 on the background. */
   --color-text-muted: #85858C;
+  /* Large text (24px, or 19px bold), disabled states, and non-text details
+   * only: 3.7:1 on the background, which is below AA for small text. */
+  --color-text-faint: #6B6B73;
   --color-accent: #A8E85C;
+  /* Errors and destructive confirmation only. Never decorative. */
+  --color-danger: #E8705F;
 
   --font-ui: "Fredoka Variable", system-ui, sans-serif;
   --font-display: "Bagel Fat One", system-ui, sans-serif;
   --font-sans: var(--font-ui);
 
+  /* Controls and small surfaces stay between 2px and 6px. 8px is for large
+   * containers such as artwork tiles and sheets. */
   --radius-xs: 2px;
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 
   --duration-instant: 90ms;
   --duration-fast: 140ms;
@@ -30,10 +46,136 @@
 
   /* Height of the sticky landing header. The hero sizes itself against it. */
   --muse-header-height: 64px;
+
+  /* App shell layout. Desktop keeps the sidebar and Now Playing beside the
+   * main column; tablet keeps the sidebar; mobile uses the top bar and the
+   * bottom navigation. Heights include no safe-area inset; add
+   * var(--muse-safe-bottom) where a bar touches the bottom edge. */
+  --muse-sidebar-width: 240px;
+  --muse-now-playing-width: 280px;
+  --muse-topbar-height: 64px;
+  --muse-bottom-nav-height: 64px;
+  --muse-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --muse-safe-top: env(safe-area-inset-top, 0px);
+
+  /* Reading measures for editorial columns. */
+  --container-reading: 44rem;
+  --container-page: 72rem;
+}
+
+/*
+ * Light theme. A choice the visitor makes (dark stays the default and is
+ * never swapped for the OS setting). Same roles, re-tuned for paper: every
+ * text token clears AA on both the page and the surface, and the lime
+ * accent darkens so it still reads as text.
+ */
+html[data-theme="light"] {
+  --color-background: #F7F6F2;
+  --color-surface: #FFFFFF;
+  --color-border-subtle: #E4E3DE;
+  --color-border-strong: #C9C8C2;
+  --color-text-primary: #141414;
+  --color-text-secondary: #4A4A50;
+  --color-text-muted: #5F5F66;
+  --color-text-faint: #80808A;
+  --color-accent: #3F7A00;
+  --color-danger: #B93A28;
+  color-scheme: light;
+}
+
+/*
+ * Effects levels, stamped on <html> by the head script and kept current by
+ * the preferences store. `full` is everything. `lite` (chosen, or Save-Data,
+ * 2G, or a 2 GB phone) removes the decorative layers and holds the
+ * decorative loops still, while state changes stay animated. `none`
+ * (prefers-reduced-motion) does the same and the media query below finishes
+ * the job for everything else.
+ */
+html[data-effects="lite"] .muse-effect-full,
+html[data-effects="none"] .muse-effect-full {
+  display: none !important;
+}
+
+html[data-effects="lite"] .muse-decorative,
+html[data-effects="none"] .muse-decorative {
+  animation: none !important;
+  transition: none !important;
+}
+
+/*
+ * Vibe tint. One flat wash at the top of the page in the colour of the last
+ * prompt. A new colour fades in as its own layer; nothing drifts or blurs.
+ * Hidden under Lite and reduced motion by the rules above.
+ */
+.muse-vibe-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.muse-vibe-layer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--vibe-tint) var(--vibe-strength, 9%), transparent)
+      0%,
+    transparent 58%
+  );
+}
+
+html[data-theme="light"] .muse-vibe-layer {
+  --vibe-strength: 7%;
+}
+
+.muse-vibe-layer[data-entering="true"] {
+  animation: muse-vibe-layer-in 1200ms var(--ease-standard) both;
+}
+
+@keyframes muse-vibe-layer-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Press feedback for chips and small buttons: a short dip on transform. */
+.muse-press {
+  transition:
+    transform 120ms var(--ease-standard),
+    border-color 160ms var(--ease-standard),
+    color 160ms var(--ease-standard);
+}
+
+.muse-press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Staggered rise for lists of chips and cards. Set --muse-rise-index per item. */
+.muse-rise {
+  animation: muse-rise 420ms var(--ease-emphasized) both;
+  animation-delay: calc(var(--muse-rise-index, 0) * 45ms);
+}
+
+@keyframes muse-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 @layer base {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     border-color: var(--color-border-subtle);
   }
 
@@ -46,9 +188,32 @@
     letter-spacing: -0.01em;
   }
 
-  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-    outline: 2px solid var(--color-accent) !important;
+  /*
+   * Focus. Controls get a 2px accent ring with a 2px gap. Text fields get an
+   * accent edge instead, because a floating ring around a bordered field reads
+   * as two outlines. Components may refine either (the chat input softens its
+   * edge), but a control must never remove its indicator without supplying
+   * another one.
+   */
+  :where(a, button, summary, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+  }
+
+  :where(input, select, textarea):focus-visible {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+
+  /* Native checkboxes, radios, and ranges pick up the accent. */
+  :where(input, select, textarea) {
+    accent-color: var(--color-accent);
+  }
+
+  /* No grey tap flash on mobile; pressed states come from the controls. */
+  html {
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Utility for display text */
@@ -86,6 +251,17 @@
     color: var(--color-text-primary);
   }
 
+  /* Headings inside a page: section titles in Discover, Library, Settings. */
+  .type-heading {
+    font-family: var(--font-ui);
+    font-weight: 600;
+    font-variation-settings: "wght" 600;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    color: var(--color-text-primary);
+  }
+
   .type-section-label {
     font-family: var(--font-ui);
     font-weight: 600;
@@ -94,6 +270,17 @@
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--color-text-muted);
+  }
+
+  /* Durations, counts, timestamps. Secondary tone, small, never below 12px. */
+  .type-meta {
+    font-family: var(--font-ui);
+    font-weight: 500;
+    font-variation-settings: "wght" 500;
+    font-size: 12px;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
+    color: var(--color-text-secondary);
   }
 
   .type-body {
@@ -133,6 +320,13 @@
   .focus-ring:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
+  }
+
+  /* The app shell fills the visible viewport. Dynamic viewport units follow
+   * the browser chrome on phones. The CSS pipeline strips vh fallbacks for
+   * the project's browser targets, so none is written here. */
+  .muse-shell {
+    height: 100dvh;
   }
 }
 
@@ -377,7 +571,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

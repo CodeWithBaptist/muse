@@ -1,4 +1,8 @@
-import { exchangeCodeForTokens, getSpotifyUserProfile } from '@/lib/spotify';
+import {
+  exchangeCodeForTokens,
+  getSpotifyUserProfile,
+  SpotifyAuthRequestError,
+} from '@/lib/spotify';
 import { db } from '@/db';
 import { users, spotifyAccounts } from '@/db/schema';
 import { eq } from 'drizzle-orm';
@@ -6,11 +10,31 @@ import { encrypt } from '@/lib/encryption';
 import { createSession } from '@/lib/session';
 import { enforceRateLimit } from '@/lib/security/rate-limit';
 import { SpotifyCallbackQuerySchema } from '@/lib/validation/api-schemas';
+import { isSpotifyLoginConfigured } from '@/lib/spotify-config';
+import { isTesterEmail, spotifyLoginVisible, testerEmails } from '@/lib/testers';
+import {
+  AUTH_COOKIE_NEXT,
+  AUTH_COOKIE_STATE,
+  AUTH_COOKIE_VERIFIER,
+  AUTH_HANDSHAKE_COOKIES,
+  DEFAULT_AFTER_LOGIN,
+  loginPathForError,
+  redirectTo,
+  safeNextPath,
+  type AuthErrorCode,
+} from '@/lib/auth-flow';
 import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 
+/**
+ * Finishes the Spotify sign-in.
+ *
+ * Every way this can stop maps to one error code, and the login page explains
+ * each. The handshake cookies are cleared on every path so a stale state can
+ * never be replayed, and all redirects are relative so they land on the origin
+ * the visitor is actually using.
+ */
 export async function GET(request: Request) {
   const rateLimited = await enforceRateLimit(request, {
     scope: 'auth:spotify:callback',
@@ -26,61 +50,99 @@ export async function GET(request: Request) {
     error: url.searchParams.get('error') ?? undefined,
   });
 
-  if (!parsedQuery.success) {
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url));
-  }
+  const cookieStore = await cookies();
+  const storedState = cookieStore.get(AUTH_COOKIE_STATE)?.value;
+  const codeVerifier = cookieStore.get(AUTH_COOKIE_VERIFIER)?.value;
+  const next = safeNextPath(cookieStore.get(AUTH_COOKIE_NEXT)?.value);
 
+  const clearHandshake = () => {
+    for (const name of AUTH_HANDSHAKE_COOKIES) cookieStore.delete(name);
+  };
+  const fail = (code: AuthErrorCode) => {
+    clearHandshake();
+    return redirectTo(loginPathForError(code, next));
+  };
+
+  if (!parsedQuery.success) return fail('auth_failed');
   const { code, state, error } = parsedQuery.data;
 
-  const cookieStore = await cookies();
-  const storedState = cookieStore.get('spotify_auth_state')?.value;
-  const codeVerifier = cookieStore.get('spotify_code_verifier')?.value;
+  if (!isSpotifyLoginConfigured()) return fail('auth_not_configured');
 
-  if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
-    return NextResponse.redirect(new URL('/?error=auth_not_configured', request.url));
+  // Spotify sends error=access_denied when the visitor declines on its page.
+  if (error) {
+    return fail(error === 'access_denied' ? 'access_denied' : 'auth_failed');
   }
 
-  if (error || !code || !state || state !== storedState || !codeVerifier) {
-    console.error('Auth error or state mismatch during Spotify callback');
-    return NextResponse.redirect(new URL('/?error=auth_failed', request.url));
+  // No handshake cookies: the ten minute window passed or cookies are blocked.
+  if (!storedState || !codeVerifier) return fail('session_expired');
+
+  if (!code || !state) return fail('auth_failed');
+
+  if (state !== storedState) {
+    console.error('Spotify callback state did not match the stored state.');
+    return fail('state_mismatch');
   }
+
+  // Testers only, checked again here in case the pass vanished mid-flow.
+  if (!(await spotifyLoginVisible())) return fail('testers_only');
 
   try {
     const tokens = await exchangeCodeForTokens(code, codeVerifier);
     const profile = await getSpotifyUserProfile(tokens.access_token);
 
-    let [user] = await db.select().from(users).where(eq(users.spotifyId, profile.id));
+    // The email allowlist is the gate when it is set; nothing is stored for others.
+    if (testerEmails().length > 0 && !isTesterEmail(profile.email)) {
+      console.warn('Spotify sign-in refused: account email is not on the tester list.');
+      return fail('not_a_tester');
+    }
+
+    let [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.spotifyId, profile.id));
 
     if (!user) {
-      [user] = await db.insert(users).values({
-        spotifyId: profile.id,
-        displayName: profile.display_name,
-        email: profile.email,
-        avatarUrl: profile.images?.[0]?.url,
-      }).returning();
+      [user] = await db
+        .insert(users)
+        .values({
+          spotifyId: profile.id,
+          displayName: profile.display_name,
+          email: profile.email,
+          avatarUrl: profile.images?.[0]?.url,
+        })
+        .returning();
     } else {
-      await db.update(users).set({
-        displayName: profile.display_name,
-        email: profile.email,
-        avatarUrl: profile.images?.[0]?.url,
-        updatedAt: new Date(),
-      }).where(eq(users.id, user.id));
+      await db
+        .update(users)
+        .set({
+          displayName: profile.display_name,
+          email: profile.email,
+          avatarUrl: profile.images?.[0]?.url,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, user.id));
     }
 
     const encryptedAccessToken = encrypt(tokens.access_token);
     const encryptedRefreshToken = encrypt(tokens.refresh_token);
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000);
 
-    const [existingAccount] = await db.select().from(spotifyAccounts).where(eq(spotifyAccounts.userId, user.id));
+    const [existingAccount] = await db
+      .select()
+      .from(spotifyAccounts)
+      .where(eq(spotifyAccounts.userId, user.id));
 
     if (existingAccount) {
-      await db.update(spotifyAccounts).set({
-        accessToken: encryptedAccessToken,
-        refreshToken: encryptedRefreshToken,
-        expiresAt,
-        scope: tokens.scope,
-        updatedAt: new Date(),
-      }).where(eq(spotifyAccounts.userId, user.id));
+      await db
+        .update(spotifyAccounts)
+        .set({
+          accessToken: encryptedAccessToken,
+          refreshToken: encryptedRefreshToken,
+          expiresAt,
+          scope: tokens.scope,
+          updatedAt: new Date(),
+        })
+        .where(eq(spotifyAccounts.userId, user.id));
     } else {
       await db.insert(spotifyAccounts).values({
         userId: user.id,
@@ -92,13 +154,18 @@ export async function GET(request: Request) {
     }
 
     await createSession(user.id);
+    clearHandshake();
 
-    cookieStore.delete('spotify_auth_state');
-    cookieStore.delete('spotify_code_verifier');
-
-    return NextResponse.redirect(new URL('/chat', request.url));
+    return redirectTo(next ?? DEFAULT_AFTER_LOGIN);
   } catch (err) {
+    // Spotify answers 403 for accounts the app owner has not added while the
+    // app is in Spotify's development mode. Everything else is a failure on
+    // the way to a session; nothing was saved in either case.
+    if (err instanceof SpotifyAuthRequestError && err.status === 403) {
+      console.error('Spotify refused the account during sign-in (403).');
+      return fail('user_not_registered');
+    }
     console.error('Failed to handle Spotify callback:', err);
-    return NextResponse.redirect(new URL('/?error=token_exchange_failed', request.url));
+    return fail('token_exchange_failed');
   }
 }

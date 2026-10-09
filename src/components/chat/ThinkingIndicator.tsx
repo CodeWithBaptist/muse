@@ -4,101 +4,32 @@ import * as React from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { fadeIn, transitions } from '@/lib/motion';
 import { EqualizerBars } from '@/components/motion/EqualizerBars';
+import type { ChatLanguage } from '@/lib/chat-preferences';
 
-const DEFAULT_MESSAGES = [
-  'Understanding your vibe',
-  'Looking through your music',
-  'Finding something that fits',
-  'Building your mix',
-];
-
-/** How long each contextual line stays on screen while the request runs. */
-export const THINKING_MESSAGE_INTERVAL_MS = 1000;
-
-export function getContextualLoadingMessages(prompt?: string): string[] {
-  if (!prompt) return DEFAULT_MESSAGES;
-  const normalized = prompt.toLowerCase();
-
-  if (/playlist|mix|collection|setlist/.test(normalized)) {
-    return [
-      'Shaping your playlist concept',
-      'Searching Spotify catalog',
-      'Sequencing tracks that flow together',
-      'Building your mix',
-    ];
-  }
-
-  if (/like|similar|artist|band|sound of/.test(normalized)) {
-    return [
-      'Mapping artist sonic textures',
-      'Searching Spotify catalog',
-      'Selecting standout cuts',
-      'Writing track notes',
-    ];
-  }
-
-  if (/why|history|who|what|explain|taste/.test(normalized)) {
-    return [
-      'Reading your question',
-      'Checking your listening context',
-      'Composing response',
-    ];
-  }
-
-  return DEFAULT_MESSAGES;
-}
+/** What the indicator says before the server reports a real stage. */
+export const WAITING_LINE: Record<ChatLanguage, string> = {
+  english: 'Finding tracks',
+  pidgin: 'Dey find the tracks',
+  mix: 'Finding tracks',
+};
 
 interface ThinkingIndicatorProps {
-  /** Real stage reported by the streaming response, when one has arrived. */
+  /** Stage reported by the streaming response, once one has arrived. */
   stage?: string | null;
-  prompt?: string;
-  intervalMs?: number;
+  /** The language MUSE is speaking; the waiting line follows it. */
+  language?: ChatLanguage;
 }
 
 /**
- * Thinking indicator for a request that is really running. The bars animate
- * only while this component is mounted, which only happens while a request is
- * in flight. When the AI is not connected the chat screen shows that state
- * instead of this indicator.
+ * Shown only while a request is really running, so the bars always mean
+ * something. The server's stage line wins as soon as it arrives.
  */
 export function ThinkingIndicator({
   stage,
-  prompt,
-  intervalMs = THINKING_MESSAGE_INTERVAL_MS,
+  language = 'english',
 }: ThinkingIndicatorProps) {
   const shouldReduceMotion = useReducedMotion() ?? false;
-  const messages = React.useMemo(
-    () => getContextualLoadingMessages(prompt),
-    [prompt],
-  );
-  const promptKey = prompt ?? '';
-  const [rotation, setRotation] = React.useState({
-    key: promptKey,
-    index: 0,
-  });
-
-  const stageLabel = stage?.trim() ? stage.trim() : null;
-  // A new prompt starts its own rotation from the first line.
-  const messageIndex = rotation.key === promptKey ? rotation.index : 0;
-
-  React.useEffect(() => {
-    if (stageLabel || messages.length <= 1) return;
-    const timer = setInterval(() => {
-      setRotation((current) => ({
-        key: promptKey,
-        index:
-          current.key === promptKey
-            ? (current.index + 1) % messages.length
-            : 1,
-      }));
-    }, intervalMs);
-    return () => clearInterval(timer);
-  }, [intervalMs, messages.length, promptKey, stageLabel]);
-
-  const activeLabel =
-    stageLabel ??
-    messages[Math.min(messageIndex, messages.length - 1)] ??
-    DEFAULT_MESSAGES[0];
+  const label = stage?.trim() || WAITING_LINE[language];
 
   return (
     <div
@@ -112,13 +43,11 @@ export function ThinkingIndicator({
       <motion.p
         initial={fadeIn.initial}
         animate={fadeIn.animate}
-        transition={
-          shouldReduceMotion ? { duration: 0 } : transitions.standard
-        }
-        key={activeLabel}
+        transition={shouldReduceMotion ? { duration: 0 } : transitions.standard}
+        key={label}
         className="text-xs font-semibold uppercase tracking-widest text-text-muted"
       >
-        {activeLabel}
+        {label}
       </motion.p>
     </div>
   );

@@ -18,7 +18,7 @@ export const ROLL_EASING = 'cubic-bezier(0.16, 1, 0.3, 1)';
 
 /**
  * The number of positions in the column: one per phrase, plus the repeated
- * first phrase that makes the loop seamless.
+ * first phrase that hides the join of the loop.
  */
 export function rollingPositionCount(phraseCount: number): number {
   return Math.max(0, phraseCount) + 1;

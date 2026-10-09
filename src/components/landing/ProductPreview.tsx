@@ -5,11 +5,10 @@ import { Surface } from '@/components/ui/Surface';
 import { Logo } from '@/components/ui/Logo';
 import { EqualizerBars } from '@/components/motion/EqualizerBars';
 import { TrackRow } from '@/components/chat/TrackRow';
-import { CreateInSpotifyButton } from '@/components/playlist/CreateInSpotifyButton';
+import { SampleListActions } from './SampleListActions';
 import { LANDING_SAMPLE } from '@/lib/landing-sample';
 import {
   PREVIEW_VISIBLE_THRESHOLD,
-  previewCreateState,
   previewFinalState,
   previewStateAt,
   previewTimeline,
@@ -207,8 +206,8 @@ export function ProductPreview() {
   const showReply =
     phase === 'replying' ||
     phase === 'rows' ||
-    phase === 'creating' ||
-    phase === 'created' ||
+    phase === 'copying' ||
+    phase === 'copied' ||
     phase === 'open' ||
     phase === 'playing';
   const showRows = state.visibleTracks > 0;
@@ -230,11 +229,12 @@ export function ProductPreview() {
       </div>
 
       <p className="sr-only">
-        An animated sample conversation. A listener asks for something for a late
-        night drive. MUSE thinks for a moment, replies with a short
-        recommendation, and shows three example tracks with an example Create in
-        Spotify control. Nothing here contacts Spotify or OpenAI, no playlist is
-        created, and every control in the sample is inert.
+        An animated sample conversation. A listener asks for something for a
+        late night drive. MUSE thinks for a moment, replies with a short
+        recommendation, shows three example tracks, and copies the list before
+        the open-in links appear. Nothing here contacts OpenAI, a music
+        catalogue, or any music service, nothing is copied or shared, and every
+        control in the sample is inert.
       </p>
 
       <Surface
@@ -351,15 +351,9 @@ export function ProductPreview() {
                   </div>
 
                   <div className="mt-4 flex flex-col gap-2 border-t border-border-subtle pt-4 sm:flex-row sm:items-center sm:justify-between">
-                    <CreateInSpotifyButton
-                      name={LANDING_SAMPLE.playlistName}
-                      trackUris={[]}
-                      state={previewCreateState(LANDING_SAMPLE, state)}
-                      inert
-                      size="sm"
-                    />
+                    <SampleListActions status={state.actionStatus} />
                     <span className="text-xs text-text-muted">
-                      No playlist is created from this sample.
+                      Nothing is copied or shared from this sample.
                     </span>
                   </div>
                 </div>
@@ -390,8 +384,8 @@ export function ProductPreview() {
       </Surface>
 
       <p className="mx-auto mt-4 max-w-3xl text-xs text-text-muted">
-        Sample conversation. Nothing here contacts Spotify or OpenAI and no
-        playlist is created.
+        Sample conversation. Nothing here contacts OpenAI or any music service,
+        and nothing is copied or shared.
       </p>
     </section>
   );

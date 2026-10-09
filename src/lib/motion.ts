@@ -85,6 +85,24 @@ export const headerItem = {
   },
 };
 
+// Stagger limits from the motion system: 30ms to 50ms between items, and no
+// sequence longer than about 400ms. Items past the cap arrive together.
+export const STAGGER_MIN = 0.03;
+export const STAGGER_MAX = 0.05;
+export const STAGGER_SEQUENCE_CAP = 0.4;
+
+/**
+ * Delay for the nth item of a staggered reveal. The step is clamped to the
+ * allowed range and the total sequence never exceeds the cap, whatever the
+ * list length.
+ */
+export function staggerDelay(index: number, step = 0.04): number {
+  const clampedStep = Math.min(Math.max(step, STAGGER_MIN), STAGGER_MAX);
+  const maxSteps = Math.floor(STAGGER_SEQUENCE_CAP / clampedStep);
+  const position = Math.min(Math.max(index, 0), maxSteps);
+  return position * clampedStep;
+}
+
 // Track rows rise in one by one: 8px, 50ms apart, capped so long lists reveal
 // the first eight rows with a stagger and the rest together (under 400ms total).
 export const TRACK_ROW_STAGGER = 0.05;
@@ -94,6 +112,22 @@ export function trackRowRevealDelay(index: number): number {
   const step = Math.min(Math.max(index, 0), TRACK_ROW_STAGGER_STEPS - 1);
   return step * TRACK_ROW_STAGGER;
 }
+
+// Page transitions: a crossfade with a 12px entering offset, leaving upward.
+// Reduced motion keeps the crossfade and drops the offset.
+export const pageTransition = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -12 },
+  transition: transitions.standard,
+};
+
+export const pageTransitionReduced = {
+  initial: { opacity: 0, y: 0 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: 0 },
+  transition: { duration: durations.fast },
+};
 
 export const trackRowReveal = {
   initial: { opacity: 0, y: 8 },

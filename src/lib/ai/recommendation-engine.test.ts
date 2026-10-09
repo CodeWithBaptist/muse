@@ -1,20 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   extractChatIntent,
-  orchestrateRecommendations,
   sanitizeSpotifyQuery,
   sanitizeUserPromptText,
 } from './recommendation-engine';
-import { spotifyService } from '../spotify-service';
 import * as aiProvider from './provider';
 
-vi.mock('../spotify-service', () => ({
-  spotifyService: {
-    search: vi.fn(),
-    getTopArtists: vi.fn(),
-    getTopTracks: vi.fn(),
-  },
-}));
 
 vi.mock('./provider', () => ({
   structuredCompletion: vi.fn(),
@@ -63,61 +54,5 @@ describe('Recommendation Engine & Structured AI Intent (Stage C)', () => {
 
     const cleanQuery = sanitizeSpotifyQuery('genre:jazz\n<script>alert(1)</script>');
     expect(cleanQuery).toBe('genre:jazz script alert(1) /script');
-  });
-
-  it('orchestrates search, deduplicates candidates, and drops AI-invented track IDs', async () => {
-    const userId = 'user-123';
-    const userMessage = 'uplifting R&B';
-
-    vi.mocked(aiProvider.structuredCompletion)
-      .mockResolvedValueOnce({
-        searchQueries: ['genre:rnb style:uplifting', 'genre:rnb style:uplifting'],
-        reasoning: 'Searching for upbeat R&B.',
-      })
-      .mockResolvedValueOnce({
-        explanations: [
-          { trackId: '1', reason: 'Great warm R&B groove.' },
-          { trackId: 'hallucinated-track-999', reason: 'Invented track that does not exist in Spotify.' },
-          { trackId: '1', reason: 'Duplicate track selection.' },
-        ],
-        intro: 'Here is some uplifting R&B.',
-      });
-
-    vi.mocked(spotifyService.search).mockResolvedValue({
-      tracks: {
-        items: [
-          {
-            id: '1',
-            name: 'Song 1',
-            artists: [{ name: 'Artist 1' }],
-            album: { name: 'Album 1' },
-          },
-          {
-            id: '2',
-            name: 'Song 1',
-            artists: [{ name: 'Artist 1' }],
-            album: { name: 'Album 1 Deluxe' },
-          },
-        ],
-      },
-    });
-
-    vi.mocked(spotifyService.getTopArtists).mockResolvedValue({ items: [] });
-    vi.mocked(spotifyService.getTopTracks).mockResolvedValue({ items: [] });
-
-    const result = await orchestrateRecommendations(userId, userMessage);
-
-    expect(result.message).toBe('Here is some uplifting R&B.');
-    expect(result.tracks).toHaveLength(1);
-    expect(result.tracks[0].id).toBe('1');
-    expect(result.tracks[0].reason).toBe('Great warm R&B groove.');
-    // Duplicate query was deduplicated so search is only called once
-    expect(spotifyService.search).toHaveBeenCalledTimes(1);
-    expect(spotifyService.search).toHaveBeenCalledWith(
-      userId,
-      'genre:rnb style:uplifting',
-      ['track'],
-      8
-    );
   });
 });

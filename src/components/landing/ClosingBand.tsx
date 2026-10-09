@@ -1,7 +1,7 @@
 'use client';
 
 import { useRevealOnce } from '@/hooks/use-reveal-once';
-import { SpotifyPrimaryAction } from './SpotifyPrimaryAction';
+import { StartAction } from './StartAction';
 import { ClosingBandCanvas } from './ClosingBandCanvas';
 
 /**
@@ -34,7 +34,7 @@ export function ClosingBand() {
           Start with a feeling.
         </h2>
         <div className="pt-2">
-          <SpotifyPrimaryAction actionAttribute="data-muse-closing-action" />
+          <StartAction actionAttribute="data-muse-closing-action" />
         </div>
       </div>
     </section>

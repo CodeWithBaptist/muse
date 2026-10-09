@@ -68,7 +68,7 @@ export function NowPlaying() {
       <aside
         aria-label="Now playing"
         data-testid="now-playing-panel"
-        className="hidden w-[280px] flex-col border-l border-border-subtle bg-background xl:flex"
+        className="hidden w-[var(--muse-now-playing-width)] shrink-0 flex-col border-l border-border-subtle bg-background xl:flex"
       >
         <div className="flex flex-1 flex-col items-center justify-center space-y-6 p-6 text-center">
           <Surface
@@ -124,7 +124,7 @@ export function NowPlaying() {
     <aside
       aria-label="Now playing"
       data-testid="now-playing-panel"
-      className="hidden w-[280px] flex-col border-l border-border-subtle bg-background xl:flex"
+      className="hidden w-[var(--muse-now-playing-width)] shrink-0 flex-col border-l border-border-subtle bg-background xl:flex"
     >
       <div className="flex flex-1 flex-col justify-between space-y-6 overflow-y-auto p-6">
         <div className="space-y-4">
@@ -137,7 +137,7 @@ export function NowPlaying() {
                 type="button"
                 onClick={clearTrack}
                 aria-label="Clear selected track"
-                className="rounded p-1 text-text-muted transition-colors hover:text-text-primary"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-surface hover:text-text-primary focus-ring"
               >
                 <X size={14} />
               </button>
@@ -217,7 +217,7 @@ export function NowPlaying() {
                 href={spotifyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-border-strong px-4 py-2.5 text-xs font-semibold text-text-primary transition-colors hover:bg-surface"
+                className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-md border border-border-strong px-4 text-xs font-semibold text-text-primary transition-colors hover:bg-surface focus-ring"
               >
                 <span>Open in Spotify</span>
                 <ExternalLink size={14} />
@@ -226,7 +226,7 @@ export function NowPlaying() {
             {availability === "reconnect-required" && (
               <a
                 href="/api/auth/spotify"
-                className="inline-flex w-full items-center justify-center rounded-md px-4 py-2 text-xs font-semibold text-accent hover:bg-surface"
+                className="inline-flex min-h-10 w-full items-center justify-center rounded-md px-4 text-xs font-semibold text-accent hover:bg-surface focus-ring"
               >
                 Reconnect Spotify
               </a>

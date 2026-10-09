@@ -1,4 +1,13 @@
 import { pgTable, text, timestamp, uuid, integer, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
+import type { VerifiedTrack } from "@/lib/catalogue/types";
+
+/** Shape of messages.list: a title, the checked picks, and what the check left out. */
+export interface StoredMessageList {
+  title: string;
+  tracks: VerifiedTrack[];
+  short: boolean;
+  dropped: number;
+}
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -51,6 +60,8 @@ export const messages = pgTable("messages", {
   conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: 'cascade' }),
   role: text("role", { enum: ["user", "assistant", "system"] }).notNull(),
   content: text("content").notNull(),
+  /** The verified list MUSE answered with, when the message carried one. */
+  list: jsonb("list").$type<StoredMessageList>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

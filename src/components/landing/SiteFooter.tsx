@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { ArrowUp } from 'lucide-react';
-import { LANDING_TOP_FRAGMENT, landingTopClickHandler } from '@/lib/landing-scroll';
+import {
+  LANDING_TOP_FRAGMENT,
+  landingTopClickHandler,
+} from '@/lib/landing-scroll';
 import { LandingMark } from './LandingMark';
 
 /**

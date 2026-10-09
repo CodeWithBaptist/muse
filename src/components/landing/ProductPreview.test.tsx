@@ -49,7 +49,9 @@ function makeMediaQuery(matches: boolean) {
       options?: AddEventListenerOptions,
     ) => {
       listeners.add(listener);
-      options?.signal?.addEventListener('abort', () => listeners.delete(listener));
+      options?.signal?.addEventListener('abort', () =>
+        listeners.delete(listener),
+      );
     },
     removeEventListener: (_type: string, listener: () => void) => {
       listeners.delete(listener);
@@ -129,11 +131,13 @@ describe('ProductPreview', () => {
 
     expect(phase()).toBe('playing');
     expect(screen.getByText('Sample')).toBeDefined();
-    // The sample ids are not Spotify ids, so no row renders a link.
+    // The sample ids are sample ids, so no row renders a link.
     expect(screen.queryByTestId('track-row-open-in-spotify')).toBeNull();
     expect(
-      document.querySelector('[data-testid="create-in-spotify-primary"]'),
-    ).not.toBeNull();
+      document
+        .querySelector('[data-testid="sample-list-actions"]')
+        ?.getAttribute('data-status'),
+    ).toBe('open');
   });
 
   it('never looks empty: the hint and the placeholder are there before it starts', () => {
@@ -172,10 +176,14 @@ describe('ProductPreview', () => {
     expect(phase()).toBe('thinking');
     // The text has left the input and joined the thread.
     expect(input()?.value).toBe('');
-    expect(document.body.textContent).toContain(LANDING_SAMPLE.thinkingLines[0]);
+    expect(document.body.textContent).toContain(
+      LANDING_SAMPLE.thinkingLines[0],
+    );
 
     await advance(PREVIEW_THINKING_LINE_MS);
-    expect(document.body.textContent).toContain(LANDING_SAMPLE.thinkingLines[1]);
+    expect(document.body.textContent).toContain(
+      LANDING_SAMPLE.thinkingLines[1],
+    );
 
     await advance(
       timeline.thinkingEnd -
@@ -186,11 +194,11 @@ describe('ProductPreview', () => {
     );
     expect(phase()).toBe('replying');
 
-    // Rows rise, the create control runs, and the first row starts playing.
+    // Rows rise, the list is copied, the links appear, and the first row plays.
     await advance(timeline.totalMs - timeline.replyEnd + 1200);
     expect(phase()).toBe('playing');
-    expect(document.body.textContent).toContain('Playlist created.');
-    expect(document.body.textContent).toContain('Open in Spotify');
+    expect(document.body.textContent).toContain('Copied');
+    expect(document.body.textContent).toContain('Audiomack');
 
     // The sequence stops on its own: time passing changes nothing.
     await advance(5000);
@@ -203,7 +211,9 @@ describe('ProductPreview', () => {
     expect(document.body.textContent).toContain('Late Night Lagos');
     expect(document.body.textContent).toContain('3 tracks');
     expect(
-      document.body.textContent?.includes('Nothing here contacts Spotify or OpenAI'),
+      document.body.textContent?.includes(
+        'Nothing here contacts OpenAI or any music service',
+      ),
     ).toBe(true);
 
     const conversation = document.querySelector('[inert]');
@@ -211,7 +221,7 @@ describe('ProductPreview', () => {
     expect(conversation?.className).not.toContain('select-none');
   });
 
-  it('walks the real create control through creating, created, then open', async () => {
+  it('walks the list actions through copying, copied, then the open-in links', async () => {
     render(<ProductPreview />);
     arm();
     start();
@@ -222,42 +232,36 @@ describe('ProductPreview', () => {
       elapsed = target;
     };
 
+    const actions = () =>
+      document.querySelector('[data-testid="sample-list-actions"]');
+
     await advanceTo(timeline.rowsEnd + 40);
     expect(phase()).toBe('rows');
-    expect(document.body.textContent).toContain('Create in Spotify');
+    expect(actions()?.getAttribute('data-status')).toBe('idle');
+    expect(document.body.textContent).toContain('Copy list');
 
     await advanceTo(timeline.rowsEnd + 600);
-    expect(phase()).toBe('creating');
-    expect(document.body.textContent).toContain('Creating this in Spotify');
+    expect(phase()).toBe('copying');
+    expect(document.body.textContent).toContain('Copying');
 
-    await advanceTo(timeline.creatingEnd + 40);
-    expect(phase()).toBe('created');
-    expect(document.body.textContent).toContain('Playlist created.');
+    await advanceTo(timeline.copyingEnd + 40);
+    expect(phase()).toBe('copied');
+    expect(document.body.textContent).toContain('Copied');
 
-    await advanceTo(timeline.createdEnd + 40);
+    await advanceTo(timeline.copiedEnd + 40);
     expect(phase()).toBe('open');
-    expect(document.body.textContent).toContain('Open in Spotify');
+    expect(actions()?.getAttribute('data-status')).toBe('open');
+    expect(document.body.textContent).toContain('Audiomack');
+    expect(document.body.textContent).toContain('Boomplay');
 
-    // Every control in the sample is inert and hidden from assistive tech. The
-    // newest layer of the control is the open state, which renders a span: the
-    // sample can never produce a link that leaves the page.
+    // Every control in the sample is inert and hidden from assistive tech, and
+    // the actions are spans: the sample can never produce a button or a link
+    // that leaves the page or touches a service.
     const inert = document.querySelector('[inert]');
     expect(inert).not.toBeNull();
     expect(inert?.getAttribute('aria-hidden')).toBe('true');
-
-    const primaries = [
-      ...document.querySelectorAll('[data-testid="create-in-spotify-primary"]'),
-    ];
-    const newest = primaries[primaries.length - 1];
-    expect(newest.tagName).toBe('SPAN');
-    expect(
-      document
-        .querySelector('[data-testid="create-in-spotify"]')
-        ?.getAttribute('data-status'),
-    ).toBe('open');
-    expect(
-      document.querySelector('a[href^="https://open.spotify.com"]'),
-    ).toBeNull();
+    expect(actions()?.querySelectorAll('a, button').length).toBe(0);
+    expect(inert?.querySelectorAll('a[href^="http"]').length).toBe(0);
   });
 
   it('plays the first row last, with a live equalizer instead of a number', async () => {
@@ -265,13 +269,13 @@ describe('ProductPreview', () => {
     arm();
     start();
 
-    await advance(timeline.createdEnd + 60);
+    await advance(timeline.copiedEnd + 60);
     expect(phase()).toBe('open');
     expect(
       screen.queryByRole('img', { name: /now playing/i, hidden: true }),
     ).toBeNull();
 
-    await advance(timeline.totalMs - timeline.createdEnd + 100);
+    await advance(timeline.totalMs - timeline.copiedEnd + 100);
     expect(phase()).toBe('playing');
     expect(
       screen.getByRole('img', {

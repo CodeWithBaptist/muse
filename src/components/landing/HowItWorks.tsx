@@ -3,10 +3,9 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { EqualizerBars } from '@/components/motion/EqualizerBars';
-import { CreateInSpotifyButton } from '@/components/playlist/CreateInSpotifyButton';
+import { SampleListActions } from './SampleListActions';
 import { prefersReducedMotion } from '@/lib/landing-scroll';
 import { LANDING_SAMPLE, type SampleTrack } from '@/lib/landing-sample';
-import { IDLE_PREVIEW_STATE, previewCreateState } from '@/lib/landing-preview';
 import {
   STEP_BAND_ROOT_MARGIN,
   activeStepIndex,
@@ -27,7 +26,11 @@ const STEP_TICK_MS = 40;
  * script finishes, so nothing keeps ticking. Reduced motion jumps straight to
  * the finished frame.
  */
-function useStepClock(running: boolean, totalMs: number, final: boolean): number {
+function useStepClock(
+  running: boolean,
+  totalMs: number,
+  final: boolean,
+): number {
   const [elapsed, setElapsed] = React.useState(0);
   const elapsedRef = React.useRef(0);
 
@@ -87,9 +90,9 @@ export const STEP_TYPE_TOTAL_MS =
 export const STEP_THINK_LINE_MS = 900;
 export const STEP_THINK_TOTAL_MS = STEP_THINK_LINE_MS * 2;
 export const STEP_THINK_LINES = [
-  'Understanding your vibe',
-  'Finding something that fits',
-  'Found 20 tracks',
+  'Reading your request',
+  'Finding tracks',
+  'I found a few things',
 ] as const;
 
 /** Two rows rise in, then the reason line appears. */
@@ -97,21 +100,23 @@ export const STEP_ROW_STAGGER_MS = 50;
 export const STEP_ROW_RISE_MS = 320;
 export const STEP_WHY_AT_MS = 700;
 export const STEP_WHY_TOTAL_MS = STEP_WHY_AT_MS + 400;
-export const STEP_WHY_TEXT =
-  'Why this: slower and warmer, like your late night listening.';
+/** The reason line follows the first sample track, so the two never drift. */
+export const STEP_WHY_TEXT = `Why this: ${LANDING_SAMPLE.tracks[0].reason
+  .charAt(0)
+  .toLowerCase()}${LANDING_SAMPLE.tracks[0].reason.slice(1)}`;
 
-/** The create control walks its four states. */
-export const STEP_CREATE_AT_MS = 400;
-export const STEP_CREATE_MS = 900;
-export const STEP_CREATE_HOLD_MS = 1200;
-export const STEP_CREATE_TOTAL_MS =
-  STEP_CREATE_AT_MS + STEP_CREATE_MS + STEP_CREATE_HOLD_MS;
+/** The list actions walk their four states. */
+export const STEP_ACTION_AT_MS = 400;
+export const STEP_ACTION_MS = 900;
+export const STEP_ACTION_HOLD_MS = 1200;
+export const STEP_ACTION_TOTAL_MS =
+  STEP_ACTION_AT_MS + STEP_ACTION_MS + STEP_ACTION_HOLD_MS;
 
-/** Which create state the step visual is showing. */
-export function stepCreateStatus(elapsed: number) {
-  if (elapsed >= STEP_CREATE_TOTAL_MS) return 'open' as const;
-  if (elapsed >= STEP_CREATE_AT_MS + STEP_CREATE_MS) return 'success' as const;
-  if (elapsed >= STEP_CREATE_AT_MS) return 'loading' as const;
+/** Which action state the step visual is showing. */
+export function stepActionStatus(elapsed: number) {
+  if (elapsed >= STEP_ACTION_TOTAL_MS) return 'open' as const;
+  if (elapsed >= STEP_ACTION_AT_MS + STEP_ACTION_MS) return 'success' as const;
+  if (elapsed >= STEP_ACTION_AT_MS) return 'loading' as const;
   return 'idle' as const;
 }
 
@@ -128,15 +133,17 @@ export const LANDING_STEPS = [
   },
   {
     title: 'MUSE understands',
-    description: 'It reads your request and looks for real tracks on Spotify.',
+    description:
+      'It reads your request, picks real songs, and checks each one against Deezer and iTunes.',
   },
   {
-    title: 'Hear why',
-    description: 'Every pick can explain itself, in a sentence.',
+    title: 'See why',
+    description: 'Each pick comes with a one-line reason.',
   },
   {
-    title: 'Save it',
-    description: 'One click creates the playlist in your Spotify account.',
+    title: 'Take it anywhere',
+    description:
+      'Copy or share the list, then open each song on Audiomack, Boomplay, Spotify, or Apple Music.',
   },
 ] as const;
 
@@ -166,7 +173,11 @@ function StepThinkingVisual({ running, final }: VisualProps) {
   const lineIndex = stepThinkLineIndex(elapsed);
 
   return (
-    <div aria-hidden="true" data-testid="step-thinking-visual" className="flex items-center gap-3">
+    <div
+      aria-hidden="true"
+      data-testid="step-thinking-visual"
+      className="flex items-center gap-3"
+    >
       <EqualizerBars height={14} width={2} bars={3} playing={!found} />
       <span className="text-xs font-semibold text-text-secondary">
         {STEP_THINK_LINES[lineIndex]}
@@ -209,7 +220,11 @@ function StepReasonVisual({ running, final }: VisualProps) {
   const rows = LANDING_SAMPLE.tracks.slice(0, 2);
 
   return (
-    <div aria-hidden="true" data-testid="step-reason-visual" className="space-y-1">
+    <div
+      aria-hidden="true"
+      data-testid="step-reason-visual"
+      className="space-y-1"
+    >
       {rows.map((track, index) => (
         <MiniTrackRow
           key={track.id}
@@ -228,29 +243,17 @@ function StepReasonVisual({ running, final }: VisualProps) {
   );
 }
 
-/** Step 4: the real create control, walked through its states. */
-function StepCreateVisual({ running, final }: VisualProps) {
-  const elapsed = useStepClock(running, STEP_CREATE_TOTAL_MS, final);
-
-  return (
-    <CreateInSpotifyButton
-      name={LANDING_SAMPLE.playlistName}
-      trackUris={[]}
-      state={previewCreateState(LANDING_SAMPLE, {
-        ...IDLE_PREVIEW_STATE,
-        createStatus: stepCreateStatus(elapsed),
-      })}
-      inert
-      size="sm"
-    />
-  );
+/** Step 4: the list actions, walked through copy, copied, and the open-in links. */
+function StepActionsVisual({ running, final }: VisualProps) {
+  const elapsed = useStepClock(running, STEP_ACTION_TOTAL_MS, final);
+  return <SampleListActions status={stepActionStatus(elapsed)} />;
 }
 
 const STEP_VISUALS = [
   StepTypingVisual,
   StepThinkingVisual,
   StepReasonVisual,
-  StepCreateVisual,
+  StepActionsVisual,
 ] as const;
 
 /* -------------------------------------------------------------------------- */
@@ -294,8 +297,8 @@ export function HowItWorks() {
     // already hold their last frame.
     if (!scriptsRun) return;
 
-    const nodes = stepRefs.current.filter(
-      (node): node is HTMLLIElement => Boolean(node),
+    const nodes = stepRefs.current.filter((node): node is HTMLLIElement =>
+      Boolean(node),
     );
     if (nodes.length === 0) return;
 

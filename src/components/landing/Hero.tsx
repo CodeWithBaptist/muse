@@ -11,7 +11,8 @@ import {
 import { scrollToLandingSection } from '@/lib/landing-scroll';
 import { HeroWordmark } from './HeroWordmark';
 import { RecordGroovesCanvas } from './RecordGroovesCanvas';
-import { SpotifyPrimaryAction } from './SpotifyPrimaryAction';
+import { AuthNotice } from '@/components/auth/AuthNotice';
+import { StartAction } from './StartAction';
 
 /**
  * The hero.
@@ -21,8 +22,16 @@ import { SpotifyPrimaryAction } from './SpotifyPrimaryAction';
  * visible without JavaScript. The canvas measures the content block through
  * `contentRef` so it can dim the lime that would cross the text, and it scales
  * the wordmark dot through `pulseRef` from the one shared beat loop.
+ *
+ * The primary action opens the chat for everyone. `authError` is decided on
+ * the server by the page, so a failed tester sign-in is still explained right
+ * where it started.
  */
-export function Hero() {
+export interface HeroProps {
+  authError?: string;
+}
+
+export function Hero({ authError }: HeroProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const dotRef = useRef<HTMLSpanElement | null>(null);
 
@@ -45,12 +54,18 @@ export function Hero() {
         <div className="space-y-6">
           <h1 className="type-display text-[clamp(40px,7vw,80px)] text-balance">
             <span className="muse-hero-mask block overflow-hidden pt-[0.12em] -mt-[0.12em] pb-[0.16em] -mb-[0.16em]">
-              <span className="muse-hero-line block" style={heroHeadlineStyle(0)}>
+              <span
+                className="muse-hero-line block"
+                style={heroHeadlineStyle(0)}
+              >
                 Your music,
               </span>
             </span>
             <span className="muse-hero-mask block overflow-hidden pt-[0.12em] -mt-[0.12em] pb-[0.16em] -mb-[0.16em]">
-              <span className="muse-hero-line block" style={heroHeadlineStyle(1)}>
+              <span
+                className="muse-hero-line block"
+                style={heroHeadlineStyle(1)}
+              >
                 understood.
               </span>
             </span>
@@ -60,8 +75,8 @@ export function Hero() {
             className="muse-hero-fade max-w-2xl mx-auto text-text-secondary text-lg md:text-xl font-medium text-balance leading-relaxed"
             style={heroFadeStyle(HERO_SUBTEXT_START_MS)}
           >
-            Discover music, build playlists, and explore your taste through
-            conversation.
+            Tell MUSE the mood. It answers with real songs, checked against
+            Deezer and iTunes, Nigeria first.
           </p>
         </div>
 
@@ -69,7 +84,7 @@ export function Hero() {
           className="muse-hero-fade flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
           style={heroFadeStyle(HERO_ACTIONS_START_MS)}
         >
-          <SpotifyPrimaryAction actionAttribute="data-muse-hero-action" />
+          <StartAction actionAttribute="data-muse-hero-action" />
           <Button
             data-muse-hero-action
             variant="outline"
@@ -78,6 +93,10 @@ export function Hero() {
             See how it works
           </Button>
         </div>
+
+        {authError ? (
+          <AuthNotice code={authError} className="muse-hero-fade" />
+        ) : null}
       </div>
     </section>
   );

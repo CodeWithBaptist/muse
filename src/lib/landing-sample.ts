@@ -2,19 +2,24 @@
  * Sample data for the landing page.
  *
  * This is the only scripted simulation in the product: it never contacts
- * Spotify or OpenAI, no playlist is created, and the preview labels itself
- * "Sample" on screen. The demo drives the real chat components with these
+ * OpenAI, a music catalogue, or any music service, nothing is copied or
+ * shared, and the preview labels itself "Sample" on screen. The demo drives the real chat components with these
  * values, and every control inside it is inert.
  *
- * The track rows are invented placeholders with the same shape as a real track,
- * so the sample never presents a real catalogue as its own output.
+ * The track rows name real, widely released songs so the sample shows the kind
+ * of answer MUSE gives, but their ids are sample ids and no durations are
+ * shown: nothing in the sample is looked up, guessed, or invented.
  */
 
 export interface SampleTrack {
   id: string;
   name: string;
   artist: string;
-  durationMs: number;
+  /**
+   * Omitted on purpose. Durations come from a catalogue lookup and the sample
+   * never makes one, so the real TrackRow simply renders no duration.
+   */
+  durationMs?: number;
   /** The one line reason the demo shows when the row is inspected. */
   reason: string;
 }
@@ -34,43 +39,36 @@ export const SAMPLE_REPLY =
 
 /** The two scripted thinking lines, in the wording the real indicator uses. */
 export const SAMPLE_THINKING_LINES = [
-  'Understanding your vibe',
-  'Finding something that fits',
+  'Reading your request',
+  'Finding tracks',
 ] as const;
 
 export const SAMPLE_PLAYLIST_NAME = 'Late Night Lagos';
 
 /**
- * Where the demo's Open in Spotify control would point. The control is inert in
- * the demo and renders as a plain span, so this URL is never followed.
- */
-export const SAMPLE_SPOTIFY_URL = 'https://open.spotify.com/';
-
-/**
- * Three example rows. The ids are not Spotify track ids, so the real TrackRow
- * never renders a track link for them: the demo has no reachable links at all.
+ * Three example rows: real songs from three Nigerian artists that fit a late
+ * night drive. The ids are sample ids, so the real TrackRow never renders a
+ * track link for them: the demo has no reachable links at all.
  */
 export const SAMPLE_TRACKS: readonly SampleTrack[] = [
   {
-    id: 'sample-nightdrive',
-    name: 'Nightdrive',
-    artist: 'Ayo Blue',
-    durationMs: 224_000,
-    reason: 'Slower and warmer, like your late night listening.',
+    id: 'sample-free-mind',
+    name: 'Free Mind',
+    artist: 'Tems',
+    reason:
+      'Slow, airy, and warm. It sets the pace without asking for attention.',
   },
   {
-    id: 'sample-slow-motion',
-    name: 'Slow Motion',
-    artist: 'Temi Waves',
-    durationMs: 197_000,
-    reason: 'A steady mid tempo groove that keeps the mood low.',
+    id: 'sample-essence',
+    name: 'Essence',
+    artist: 'Wizkid, Tems',
+    reason: 'Soft groove and warm vocals, made for the quiet hours.',
   },
   {
-    id: 'sample-harmattan',
-    name: 'Harmattan',
-    artist: 'Kola and the Night',
-    durationMs: 243_000,
-    reason: 'Airy pads under a soft rhythm, for the end of the drive.',
+    id: 'sample-calm-down',
+    name: 'Calm Down',
+    artist: 'Rema',
+    reason: 'A steady, easy bounce that keeps the drive moving.',
   },
 ];
 
@@ -81,7 +79,6 @@ export interface LandingSample {
   reply: string;
   thinkingLines: readonly string[];
   playlistName: string;
-  spotifyUrl: string;
   tracks: readonly SampleTrack[];
 }
 
@@ -92,7 +89,6 @@ export const LANDING_SAMPLE: LandingSample = {
   reply: SAMPLE_REPLY,
   thinkingLines: SAMPLE_THINKING_LINES,
   playlistName: SAMPLE_PLAYLIST_NAME,
-  spotifyUrl: SAMPLE_SPOTIFY_URL,
   tracks: SAMPLE_TRACKS,
 };
 
@@ -102,9 +98,9 @@ export const LANDING_SAMPLE: LandingSample = {
  */
 export const ROLLING_PHRASES: readonly string[] = [
   'a late night drive',
+  'Lagos traffic',
+  'Rema, but calmer',
   'songs like Brent Faiyaz',
-  'something completely new',
   'a 2am Afrobeats mix',
-  'music to lock in',
   'slow mornings',
 ];

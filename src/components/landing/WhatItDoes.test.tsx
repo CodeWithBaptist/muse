@@ -61,7 +61,9 @@ async function advance(ms: number) {
 }
 
 function column(): HTMLElement {
-  return document.querySelector('[data-testid="rolling-column"]') as HTMLElement;
+  return document.querySelector(
+    '[data-testid="rolling-column"]',
+  ) as HTMLElement;
 }
 
 function position(): number {
@@ -119,8 +121,10 @@ describe('WhatItDoes', () => {
     render(<WhatItDoes />);
 
     expect(column().getAttribute('aria-hidden')).toBe('true');
-    // Six phrases plus the repeated first one, so the loop is seamless.
-    expect(column().children).toHaveLength(rollingPositionCount(ROLLING_PHRASES.length));
+    // Six phrases plus the repeated first one, so the loop has no visible join.
+    expect(column().children).toHaveLength(
+      rollingPositionCount(ROLLING_PHRASES.length),
+    );
     expect(column().firstElementChild?.textContent).toBe(ROLLING_PHRASES[0]);
     expect(column().lastElementChild?.textContent).toBe(ROLLING_PHRASES[0]);
 
@@ -248,7 +252,7 @@ describe('WhatItDoes', () => {
     const rows = [
       'Natural language discovery',
       'Why this',
-      'Playlists in Spotify',
+      'Open anywhere',
       'Your taste in words',
     ];
     for (const row of rows) {
@@ -260,7 +264,9 @@ describe('WhatItDoes', () => {
       ),
     ).toBeDefined();
     expect(
-      screen.getByText('A profile that describes how you listen, written for humans.'),
+      screen.getByText(
+        'A profile written from a Last.fm account or your Spotify data export, if you add one.',
+      ),
     ).toBeDefined();
 
     const list = screen.getByRole('list');
@@ -270,7 +276,9 @@ describe('WhatItDoes', () => {
     expect(items).toHaveLength(4);
     expect(items[0].style.getPropertyValue('--muse-reveal-delay')).toBe('0ms');
     expect(items[1].style.getPropertyValue('--muse-reveal-delay')).toBe('40ms');
-    expect(items[3].style.getPropertyValue('--muse-reveal-delay')).toBe('120ms');
+    expect(items[3].style.getPropertyValue('--muse-reveal-delay')).toBe(
+      '120ms',
+    );
   });
 
   it('does not claim anything that is not built', () => {

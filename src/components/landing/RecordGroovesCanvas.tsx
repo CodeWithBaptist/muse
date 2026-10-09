@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { getEffectsLevel, subscribeUiPrefs } from '@/lib/ui-prefs-store';
 import { beatEnvelope, subscribeBeat } from '@/lib/beat-clock';
 import { HERO_DOT_PULSE_SCALE, HERO_DOT_SETTLE_MS } from '@/lib/hero-entrance';
 import {
@@ -63,13 +64,16 @@ export function RecordGroovesCanvas({
     const context = canvas.getContext('2d');
     if (!context) return;
 
-    const ctx = context as unknown as import('@/lib/landing-canvas').GrooveCanvasContext;
+    const ctx =
+      context as unknown as import('@/lib/landing-canvas').GrooveCanvasContext;
     const host = canvas.parentElement ?? canvas;
     const preference =
       typeof window.matchMedia === 'function'
         ? window.matchMedia('(prefers-reduced-motion: reduce)')
         : null;
-    const prefersReduced = () => preference?.matches ?? false;
+    // Reduced motion, Lite mode (chosen or automatic), or a hidden tab all mean still.
+    const prefersReduced = () =>
+      (preference?.matches ?? false) || getEffectsLevel() !== 'full';
 
     const controller = new AbortController();
     const { signal } = controller;
@@ -94,7 +98,12 @@ export function RecordGroovesCanvas({
       const now = performance.now();
       if (force || now - rectReadAt > RECT_REFRESH_MS) {
         const box = canvas.getBoundingClientRect();
-        cachedBox = { left: box.left, top: box.top, width: box.width, height: box.height };
+        cachedBox = {
+          left: box.left,
+          top: box.top,
+          width: box.width,
+          height: box.height,
+        };
         rectReadAt = now;
       }
       return cachedBox;
@@ -170,7 +179,10 @@ export function RecordGroovesCanvas({
 
     const tick = (nowMs: number) => {
       if (!visible) return;
-      energy = easeEnergy(energy, hovered || focused || pressed ? HOVER_ENERGY_TARGET : HOVER_ENERGY_REST);
+      energy = easeEnergy(
+        energy,
+        hovered || focused || pressed ? HOVER_ENERGY_TARGET : HOVER_ENERGY_REST,
+      );
       const timeMs = nowMs - startedAt;
       readBox();
       cy = visibleCenter(height, cachedBox.top, window.innerHeight);
@@ -243,14 +255,28 @@ export function RecordGroovesCanvas({
         : null;
     intersectionObserver?.observe(canvas);
 
-    host.addEventListener('pointerover', onPointerOver, { passive: true, signal });
-    host.addEventListener('pointerout', onPointerOut, { passive: true, signal });
+    host.addEventListener('pointerover', onPointerOver, {
+      passive: true,
+      signal,
+    });
+    host.addEventListener('pointerout', onPointerOut, {
+      passive: true,
+      signal,
+    });
     host.addEventListener('focusin', onFocusIn, { signal });
     host.addEventListener('focusout', onFocusOut, { signal });
-    host.addEventListener('touchstart', onTouchStart, { passive: true, signal });
+    host.addEventListener('touchstart', onTouchStart, {
+      passive: true,
+      signal,
+    });
     host.addEventListener('touchend', onTouchEnd, { passive: true, signal });
     host.addEventListener('touchcancel', onTouchEnd, { passive: true, signal });
     preference?.addEventListener('change', onReducedMotionChange, { signal });
+    // A theme or Lite change re-reads the tokens and starts or stops the beat.
+    const unsubscribePrefs = subscribeUiPrefs(() => {
+      measure();
+      onReducedMotionChange();
+    });
 
     startedAt = performance.now();
     measure();
@@ -263,6 +289,7 @@ export function RecordGroovesCanvas({
     }
 
     return () => {
+      unsubscribePrefs();
       unsubscribe?.();
       unsubscribe = null;
       controller.abort();
@@ -276,7 +303,10 @@ export function RecordGroovesCanvas({
       ref={canvasRef}
       aria-hidden="true"
       data-testid={RECORD_GROOVES_TESTID}
-      className={cn('pointer-events-none absolute inset-0 h-full w-full', className)}
+      className={cn(
+        'pointer-events-none absolute inset-0 h-full w-full',
+        className,
+      )}
     />
   );
 }
