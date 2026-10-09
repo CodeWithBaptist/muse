@@ -338,7 +338,11 @@ export default function ChatPage() {
 
             {isThinking && !isAiNotConnected && (
               <div className="mr-auto">
-                <ThinkingIndicator stage={thinkingStage} prompt={lastPrompt} />
+                <ThinkingIndicator
+                  stage={thinkingStage}
+                  prompt={lastPrompt}
+                  language={preferences.language}
+                />
               </div>
             )}
 
