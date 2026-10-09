@@ -97,19 +97,24 @@ export function ChatMessage({ message }: { message: Message }) {
         </div>
       )}
 
-      {isAssistant && message.noResults && localTracks.length === 0 && !message.recommendations && (
-        <div
-          data-testid="chat-no-results-state"
-          className="ml-6 p-4 rounded-lg bg-surface border border-border-subtle text-xs text-text-secondary space-y-1"
-        >
-          <p className="font-semibold text-text-primary uppercase tracking-wider text-[10px]">
-            No matching tracks found
-          </p>
-          <p>
-            Spotify search did not return tracks for those exact criteria. Try naming a specific artist, era, or broader genre.
-          </p>
-        </div>
-      )}
+      {isAssistant &&
+        message.noResults &&
+        localTracks.length === 0 &&
+        (!message.recommendations || message.recommendations.length === 0) && (
+          <div
+            data-testid="chat-no-results-state"
+            className="ml-6 p-4 rounded-lg bg-surface border border-border-subtle text-xs text-text-secondary space-y-1"
+          >
+            <p className="font-semibold text-text-primary uppercase tracking-wider text-[10px]">
+              No songs to show
+            </p>
+            <p>
+              {message.dropped
+                ? `MUSE named ${message.dropped} ${message.dropped === 1 ? 'song' : 'songs'}, but no catalogue lists ${message.dropped === 1 ? 'its artist' : 'their artists'}, so none were kept. Try naming a specific artist, era, or a broader sound.`
+                : 'MUSE could not settle on songs for those exact words. Try naming a specific artist, era, or a broader sound.'}
+            </p>
+          </div>
+        )}
 
       {isAssistant && localTracks.length > 0 && (
         <div className="mt-2">

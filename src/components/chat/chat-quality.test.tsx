@@ -205,7 +205,7 @@ describe('Stage D Chat Quality', () => {
       expect(hasRevealedText('I searched across the catalog.')).toBe(true);
     });
     expect(screen.getByTestId('chat-no-results-state')).toBeDefined();
-    expect(screen.getByText('No matching tracks found')).toBeDefined();
+    expect(screen.getByText('No songs to show')).toBeDefined();
   });
 
   it('loads and switches conversation history on ChatPage', async () => {
