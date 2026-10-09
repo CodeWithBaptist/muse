@@ -11,6 +11,17 @@ import { searchLinksFor } from '@/lib/catalogue/search-links';
 import type { ListedTrack, TrackVerification } from '@/lib/catalogue/types';
 import { PlaylistActions } from './PlaylistActions';
 import { TrackLinks } from './TrackLinks';
+import dynamic from 'next/dynamic';
+import { useAuth } from '@/hooks/use-auth';
+
+/** Tester-only Spotify export, loaded only for signed-in testers so guests never download it. */
+const SpotifyListExport = dynamic(
+  () =>
+    import('@/components/playlist/SpotifyListExport').then(
+      (m) => m.SpotifyListExport,
+    ),
+  { ssr: false },
+);
 
 /**
  * The list MUSE builds: title, artist, one line on why, a region tag, and
@@ -151,6 +162,7 @@ export function RecommendationList({
   dropped = 0,
 }: RecommendationListProps) {
   const headingId = React.useId();
+  const { authenticated } = useAuth();
   if (tracks.length === 0) return null;
 
   const checked = tracks.some((track) => track.verification);
@@ -232,8 +244,11 @@ export function RecommendationList({
         ))}
       </ol>
 
-      <div className="border-t border-border-subtle px-5 py-3">
+      <div className="space-y-3 border-t border-border-subtle px-5 py-3">
         <PlaylistActions title={title || 'MUSE mix'} tracks={tracks} />
+        {authenticated ? (
+          <SpotifyListExport title={title || 'MUSE mix'} tracks={tracks} />
+        ) : null}
       </div>
 
       <p className="border-t border-border-subtle px-5 py-3 text-xs leading-relaxed text-text-muted">
