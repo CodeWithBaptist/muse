@@ -5,7 +5,6 @@ import { motion } from 'motion/react';
 import { Logo } from '@/components/ui/Logo';
 import { TrackRow } from './TrackRow';
 import { PlaylistPreview } from './PlaylistPreview';
-import { WordReveal } from './WordReveal';
 import { RecommendationList } from './RecommendationList';
 import { fadeIn, fadeInUp, transitions } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -28,7 +27,7 @@ interface Message {
 export function ChatMessage({ message }: { message: Message }) {
   const isAssistant = message.role === 'assistant';
   const [removedTrackIds, setRemovedTrackIds] = React.useState<Set<string>>(
-    () => new Set()
+    () => new Set(),
   );
 
   const localTracks = React.useMemo(() => {
@@ -53,7 +52,7 @@ export function ChatMessage({ message }: { message: Message }) {
       transition={transitions.standard}
       className={cn(
         'flex flex-col gap-4 max-w-3xl',
-        isAssistant ? 'mr-auto' : 'ml-auto text-right'
+        isAssistant ? 'mr-auto' : 'ml-auto text-right',
       )}
     >
       {isAssistant && (
@@ -76,26 +75,24 @@ export function ChatMessage({ message }: { message: Message }) {
           'p-4 text-sm leading-relaxed font-medium',
           isAssistant
             ? 'bg-transparent text-text-primary border-l border-border-strong pl-6'
-            : 'bg-accent/5 text-text-primary rounded-2xl rounded-tr-none border border-accent/10 px-6'
+            : 'bg-accent/5 text-text-primary rounded-2xl rounded-tr-none border border-accent/10 px-6',
         )}
       >
-        {isAssistant ? (
-          <WordReveal text={message.content} />
-        ) : (
-          <span>{message.content}</span>
-        )}
+        <span>{message.content}</span>
       </motion.div>
 
-      {isAssistant && message.recommendations && message.recommendations.length > 0 && (
-        <div className="mt-2">
-          <RecommendationList
-            tracks={message.recommendations}
-            title={message.playlistTitle}
-            short={message.short}
-            dropped={message.dropped}
-          />
-        </div>
-      )}
+      {isAssistant &&
+        message.recommendations &&
+        message.recommendations.length > 0 && (
+          <div className="mt-2">
+            <RecommendationList
+              tracks={message.recommendations}
+              title={message.playlistTitle}
+              short={message.short}
+              dropped={message.dropped}
+            />
+          </div>
+        )}
 
       {isAssistant &&
         message.noResults &&
@@ -124,7 +121,11 @@ export function ChatMessage({ message }: { message: Message }) {
               onRemoveTrack={handleRemoveTrack}
             />
           ) : (
-            <div role="list" aria-label="Recommended tracks" className="space-y-1">
+            <div
+              role="list"
+              aria-label="Recommended tracks"
+              className="space-y-1"
+            >
               {localTracks.map((track, i) => (
                 <TrackRow
                   key={track.id || i}

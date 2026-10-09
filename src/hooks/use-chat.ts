@@ -9,7 +9,6 @@ import { useChatPreferences } from '@/hooks/use-chat-preferences';
 import { compactTaste } from '@/lib/taste/types';
 import { getTasteSnapshot } from '@/lib/taste/store';
 import { setVibe } from '@/lib/vibe-store';
-import { celebrate } from '@/lib/celebrate-store';
 import {
   appendGuestMessage,
   clearGuestMessages,
@@ -57,7 +56,10 @@ export function historyForRequest(
       message.content.trim().length > 0,
   );
   const last = turns[turns.length - 1];
-  const trimmed = last && last.role === 'user' && last.content === content ? turns.slice(0, -1) : turns;
+  const trimmed =
+    last && last.role === 'user' && last.content === content
+      ? turns.slice(0, -1)
+      : turns;
   return trimmed.slice(-HISTORY_TURNS_FOR_CONTEXT).map((turn) => ({
     role: turn.role,
     content: turn.content.slice(0, 1000),
@@ -99,7 +101,10 @@ export function isAiNotConnectedMessage(error: unknown): boolean {
   const code = (error as { code?: unknown }).code;
   const message = (error as { message?: unknown }).message;
   if (code === 'AI_NOT_CONNECTED') return true;
-  if (typeof message === 'string' && /AI is not connected yet|OPENAI_API_KEY/i.test(message)) {
+  if (
+    typeof message === 'string' &&
+    /AI is not connected yet|OPENAI_API_KEY/i.test(message)
+  ) {
     return true;
   }
   return false;
@@ -113,7 +118,10 @@ export function classifyChatError(error: unknown): ChatErrorKind | null {
   const status = (error as { status?: unknown }).status;
   const message = String((error as { message?: unknown }).message ?? '');
 
-  if (code === 'OFFLINE' || /offline|failed to fetch|networkerror/i.test(message)) {
+  if (
+    code === 'OFFLINE' ||
+    /offline|failed to fetch|networkerror/i.test(message)
+  ) {
     return 'offline';
   }
   if (code === 'AI_RESTING' || /MUSE is resting/i.test(message)) {
@@ -122,18 +130,27 @@ export function classifyChatError(error: unknown): ChatErrorKind | null {
   if (code === 'HUMAN_CHECK_REQUIRED') {
     return 'human_check';
   }
-  if (code === 'RATE_LIMITED' || status === 429 || /too many requests|rate limit/i.test(message)) {
+  if (
+    code === 'RATE_LIMITED' ||
+    status === 429 ||
+    /too many requests|rate limit/i.test(message)
+  ) {
     return 'rate_limited';
   }
   if (
     code === 'SPOTIFY_DISCONNECTED' ||
     code === 'SPOTIFY_RECONNECT_REQUIRED' ||
     status === 401 ||
-    /spotify connection expired|reconnect your spotify|unauthorized/i.test(message)
+    /spotify connection expired|reconnect your spotify|unauthorized/i.test(
+      message,
+    )
   ) {
     return 'spotify_disconnected';
   }
-  if (code === 'SPOTIFY_ERROR' || /spotify could not be reached|spotify api/i.test(message)) {
+  if (
+    code === 'SPOTIFY_ERROR' ||
+    /spotify could not be reached|spotify api/i.test(message)
+  ) {
     return 'spotify_error';
   }
   return 'ai_error';
@@ -151,11 +168,13 @@ export function useChat(initialConversationId?: string) {
     getServerGuestMessages,
   );
   const [preferences, setPreferences] = useChatPreferences();
-  const [activeConversationId, setActiveConversationId] = React.useState<string | undefined>(
-    initialConversationId
-  );
+  const [activeConversationId, setActiveConversationId] = React.useState<
+    string | undefined
+  >(initialConversationId);
   const [localMessages, setLocalMessages] = React.useState<Message[]>([]);
-  const [streamingDraft, setStreamingDraft] = React.useState<string | null>(null);
+  const [streamingDraft, setStreamingDraft] = React.useState<string | null>(
+    null,
+  );
   const [thinkingStage, setThinkingStage] = React.useState<string | null>(null);
   const [lastPrompt, setLastPrompt] = React.useState<string>('');
   const [isThinking, setIsThinking] = React.useState(false);
@@ -205,8 +224,12 @@ export function useChat(initialConversationId?: string) {
   });
 
   const messages = React.useMemo<Message[]>(() => {
-    const rawMessages: Message[] = Array.isArray(history?.messages) ? history.messages : [];
-    const recs: PersistedRecommendation[] = Array.isArray(history?.recommendations)
+    const rawMessages: Message[] = Array.isArray(history?.messages)
+      ? history.messages
+      : [];
+    const recs: PersistedRecommendation[] = Array.isArray(
+      history?.recommendations,
+    )
       ? history.recommendations
       : [];
     const reasonByTrackId = new Map<string, string>();
@@ -248,7 +271,7 @@ export function useChat(initialConversationId?: string) {
 
       if (typeof navigator !== 'undefined' && navigator.onLine === false) {
         const offlineErr: ChatError = new Error(
-          'You appear to be offline. Check your connection and try again.'
+          'You appear to be offline. Check your connection and try again.',
         );
         offlineErr.code = 'OFFLINE';
         offlineErr.kind = 'offline';
@@ -281,7 +304,7 @@ export function useChat(initialConversationId?: string) {
         });
       } catch {
         const netErr: ChatError = new Error(
-          'You appear to be offline. Check your connection and try again.'
+          'You appear to be offline. Check your connection and try again.',
         );
         netErr.code = 'OFFLINE';
         netErr.kind = 'offline';
@@ -290,7 +313,9 @@ export function useChat(initialConversationId?: string) {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        const err: ChatError = new Error(errBody.error || 'Failed to send message');
+        const err: ChatError = new Error(
+          errBody.error || 'Failed to send message',
+        );
         err.code = errBody.code;
         err.status = res.status;
         err.kind = classifyChatError(err) ?? 'ai_error';
@@ -324,14 +349,17 @@ export function useChat(initialConversationId?: string) {
             const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
             if (parsed.type === 'status' && typeof parsed.stage === 'string') {
               setThinkingStage(parsed.stage);
-            } else if (parsed.type === 'delta' && typeof parsed.delta === 'string') {
+            } else if (
+              parsed.type === 'delta' &&
+              typeof parsed.delta === 'string'
+            ) {
               accumulatedText += parsed.delta;
               setStreamingDraft(accumulatedText);
             } else if (parsed.type === 'error') {
               const streamErr: ChatError = new Error(
                 typeof parsed.error === 'string'
                   ? parsed.error
-                  : 'Unable to process chat request right now.'
+                  : 'Unable to process chat request right now.',
               );
               streamErr.code =
                 typeof parsed.code === 'string' ? parsed.code : 'AI_ERROR';
@@ -375,15 +403,14 @@ export function useChat(initialConversationId?: string) {
           ? (data.recommendations as ListedTrack[])
           : undefined,
         playlistTitle:
-          typeof data.playlistTitle === 'string' ? data.playlistTitle : undefined,
+          typeof data.playlistTitle === 'string'
+            ? data.playlistTitle
+            : undefined,
         short: Boolean(data.short),
         dropped: typeof data.dropped === 'number' ? data.dropped : undefined,
         isPlaylistSuggestion: Boolean(data.isPlaylistSuggestion),
         noResults: Boolean(data.noResults),
       };
-      if (reply.recommendations && reply.recommendations.length > 0) {
-        celebrate();
-      }
       if (authenticated) {
         setLocalMessages((prev) => [...prev, reply]);
         void refetchConversations();
