@@ -24,6 +24,8 @@ const PREF_VALUES: Record<string, string> = {
   '10': '10 tracks',
   '15': '15 tracks',
   '20': '20 tracks',
+  '30': '30 tracks',
+  '40': '40 tracks',
   allow: 'Allow explicit tracks',
   clean: 'Prefer clean tracks',
 };
@@ -56,7 +58,7 @@ export function InsightCards({
       <motion.div variants={fadeInUp}>
         <Surface
           variant="raised"
-          className="flex h-full flex-col justify-between space-y-6 rounded-2xl p-8"
+          className="flex h-full flex-col justify-between space-y-6 rounded-2xl p-6 sm:p-8"
         >
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -90,7 +92,7 @@ export function InsightCards({
       <motion.div variants={fadeInUp}>
         <Surface
           variant="raised"
-          className="flex h-full flex-col justify-between space-y-6 rounded-2xl p-8"
+          className="flex h-full flex-col justify-between space-y-6 rounded-2xl p-6 sm:p-8"
         >
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -130,7 +132,10 @@ export function InsightCards({
       </motion.div>
 
       <motion.div variants={fadeInUp}>
-        <Surface variant="raised" className="h-full space-y-6 rounded-2xl p-8">
+        <Surface
+          variant="raised"
+          className="h-full space-y-6 rounded-2xl p-6 sm:p-8"
+        >
           <div className="flex items-center gap-3">
             <Compass size={20} className="text-accent" />
             <h2 className="type-section-label !text-text-primary">
@@ -152,7 +157,7 @@ export function InsightCards({
         <motion.div variants={fadeInUp}>
           <Surface
             variant="raised"
-            className="flex h-full flex-col justify-between space-y-6 rounded-2xl p-8"
+            className="flex h-full flex-col justify-between space-y-6 rounded-2xl p-6 sm:p-8"
           >
             <div className="space-y-4">
               <div className="flex items-center justify-between">

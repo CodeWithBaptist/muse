@@ -18,6 +18,10 @@ import {
   User
 } from 'lucide-react';
 import type { UserPreferencesData } from '@/lib/validation/api-schemas';
+import {
+  PLAYLIST_LENGTH_OPTIONS,
+  type PlaylistLengthOption,
+} from '@/lib/validation/api-schemas';
 
 export default function SettingsPage() {
   const { user, logout } = useAuth();
@@ -25,7 +29,7 @@ export default function SettingsPage() {
 
   const [draftOverrides, setDraftOverrides] = React.useState<{
     discoveryStyle?: 'balanced' | 'deep_cuts' | 'familiar';
-    playlistLength?: '10' | '15' | '20';
+    playlistLength?: PlaylistLengthOption;
     explicitContent?: 'allow' | 'clean';
     favoriteGenres?: string;
     playbackPreference?: 'muse' | 'spotify';
@@ -80,7 +84,7 @@ export default function SettingsPage() {
 
   const setDiscoveryStyle = (val: 'balanced' | 'deep_cuts' | 'familiar') =>
     setDraftOverrides((prev) => ({ ...prev, discoveryStyle: val }));
-  const setPlaylistLength = (val: '10' | '15' | '20') =>
+  const setPlaylistLength = (val: PlaylistLengthOption) =>
     setDraftOverrides((prev) => ({ ...prev, playlistLength: val }));
   const setExplicitContent = (val: 'allow' | 'clean') =>
     setDraftOverrides((prev) => ({ ...prev, explicitContent: val }));
@@ -125,7 +129,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-8 space-y-10 pb-32 max-w-3xl">
+    <div className="p-4 space-y-10 pb-32 max-w-3xl sm:p-6 lg:p-8">
       <div className="space-y-2">
         <h1 className="type-page-title">Settings</h1>
         <p className="type-caption">
@@ -143,7 +147,7 @@ export default function SettingsPage() {
           </h2>
         </div>
 
-        <Surface variant="raised" className="p-6 space-y-6 rounded-xl">
+        <Surface variant="raised" className="p-4 sm:p-6 space-y-6 rounded-xl">
           <SpotifyConnectionPanel user={user} onLogout={() => void logout()} />
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -182,7 +186,7 @@ export default function SettingsPage() {
           </h2>
         </div>
 
-        <Surface variant="raised" className="p-6 rounded-xl">
+        <Surface variant="raised" className="p-4 sm:p-6 rounded-xl">
           <form onSubmit={handleSavePreferences} className="space-y-6">
             <fieldset className="space-y-2">
               <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
@@ -237,8 +241,8 @@ export default function SettingsPage() {
                 <legend className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                   Default Playlist Length
                 </legend>
-                <div className="flex gap-2">
-                  {(['10', '15', '20'] as const).map((len) => (
+                <div className="flex flex-wrap gap-2">
+                  {PLAYLIST_LENGTH_OPTIONS.map((len) => (
                     <button
                       key={len}
                       type="button"
@@ -248,7 +252,7 @@ export default function SettingsPage() {
                         setSaveState('idle');
                       }}
                       className={cn(
-                        'flex-1 py-2 px-3 rounded-md border text-xs font-semibold transition-colors',
+                        'flex-1 min-w-[4.5rem] py-2 px-3 rounded-md border text-xs font-semibold transition-colors',
                         playlistLength === len
                           ? 'border-accent bg-accent/[0.08] text-accent'
                           : 'border-border-subtle bg-background text-text-secondary hover:text-text-primary'
@@ -374,7 +378,7 @@ export default function SettingsPage() {
                   </span>
                 )}
                 {saveState === 'error' && (
-                  <span role="alert" className="font-medium text-red-400">
+                  <span role="alert" className="font-medium text-danger">
                     Unable to save preferences right now.
                   </span>
                 )}
@@ -404,7 +408,7 @@ export default function SettingsPage() {
           </h2>
         </div>
 
-        <Surface variant="raised" className="p-6 space-y-6 rounded-xl">
+        <Surface variant="raised" className="p-4 sm:p-6 space-y-6 rounded-xl">
           <div className="space-y-3 text-xs leading-relaxed text-text-secondary">
             <p>
               Chat and recommendation requests send the text you enter to
@@ -513,7 +517,7 @@ export default function SettingsPage() {
           </div>
 
           {clearState === 'error' && (
-            <p role="alert" className="text-xs text-red-400">
+            <p role="alert" className="text-xs text-danger">
               Unable to clear conversation history right now.
             </p>
           )}

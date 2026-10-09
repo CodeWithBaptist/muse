@@ -31,7 +31,9 @@ const InputSchema = z.object({
       }),
     )
     .min(1)
-    .max(20),
+    // Matches the longest default playlist length a tester can pick, so a
+    // full-size list can be resolved and exported in one request.
+    .max(40),
 });
 
 interface SpotifySearchTrack {

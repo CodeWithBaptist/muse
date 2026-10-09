@@ -37,7 +37,7 @@ export default function DiscoverPage() {
 
   if (isLoading) {
     return (
-      <div aria-busy="true" className="p-8 space-y-12">
+      <div aria-busy="true" className="p-4 space-y-12 sm:p-6 lg:p-8">
         <h1 className="type-page-title">Discover</h1>
         <p role="status" className="sr-only">
           Loading discovery sections.
@@ -64,11 +64,11 @@ export default function DiscoverPage() {
 
   if (aiDisconnected) {
     return (
-      <div className="p-8 space-y-8">
+      <div className="p-4 space-y-8 sm:p-6 lg:p-8">
         <h1 className="type-page-title">Discover</h1>
         <Surface
           data-testid="ai-not-connected-state"
-          className="p-12 text-center space-y-4 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl"
+          className="p-6 text-center space-y-4 sm:p-12 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl"
         >
           <div className="w-10 h-10 rounded-full bg-surface border border-border-subtle flex items-center justify-center mx-auto">
             <KeyRound size={18} className="text-accent" />
@@ -96,11 +96,11 @@ export default function DiscoverPage() {
 
   if (isSpotifyDisconnected) {
     return (
-      <div className="p-8 space-y-8">
+      <div className="p-4 space-y-8 sm:p-6 lg:p-8">
         <h1 className="type-page-title">Discover</h1>
         <Surface
           data-testid="discover-spotify-disconnected"
-          className="p-12 text-center space-y-4 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl"
+          className="p-6 text-center space-y-4 sm:p-12 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl"
         >
           <div className="w-10 h-10 rounded-full bg-surface border border-border-subtle flex items-center justify-center mx-auto">
             <Link2Off size={18} className="text-accent" />
@@ -129,11 +129,11 @@ export default function DiscoverPage() {
 
   if (error) {
     return (
-      <div className="p-8 space-y-8">
+      <div className="p-4 space-y-8 sm:p-6 lg:p-8">
         <h1 className="type-page-title">Discover</h1>
         <Surface
           role="alert"
-          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-12 text-center"
+          className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-6 sm:p-12 text-center"
         >
           <h2 className="font-semibold text-text-primary">
             Discover could not load
@@ -163,9 +163,9 @@ export default function DiscoverPage() {
 
   if (sections.length === 0) {
     return (
-      <div className="p-8 space-y-8">
+      <div className="p-4 space-y-8 sm:p-6 lg:p-8">
         <h1 className="type-page-title">Discover</h1>
-        <Surface className="p-12 text-center space-y-4 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl">
+        <Surface className="p-6 text-center space-y-4 sm:p-12 border-dashed border-border-strong bg-transparent rounded-2xl max-w-2xl">
           <Compass size={28} className="text-text-muted mx-auto" />
           <p className="text-sm font-semibold text-text-primary">
             No discovery sections available yet
@@ -185,7 +185,7 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="p-8 space-y-16 pb-32">
+    <div className="p-4 space-y-16 pb-32 sm:p-6 lg:p-8">
       <h1 className="type-page-title">Discover</h1>
 
       <motion.div

@@ -134,4 +134,29 @@ describe('POST /api/playlists/resolve', () => {
     expect(reconnect.status).toBe(401);
     expect((await reconnect.json()).code).toBe('SPOTIFY_RECONNECT_REQUIRED');
   });
+
+  it('accepts a full 40-song list and rejects one song more', async () => {
+    mocks.search.mockImplementation(async () => ({
+      tracks: {
+        items: [spotifyTrack('A Real Song', 'A Real Artist', 'ok1')],
+      },
+    }));
+
+    const makeList = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        id: `t${index}`,
+        title: 'A Real Song',
+        artist: 'A Real Artist',
+      }));
+
+    const full = await POST(post({ tracks: makeList(40) }));
+    expect(full.status).toBe(200);
+    const fullBody = await full.json();
+    expect(fullBody.resolved).toHaveLength(40);
+
+    const over = await POST(post({ tracks: makeList(41) }));
+    expect(over.status).toBe(400);
+    // Each of the 40 songs resolved on its first search query.
+    expect(mocks.search).toHaveBeenCalledTimes(40);
+  });
 });

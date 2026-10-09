@@ -201,12 +201,12 @@ export function SpotifyConnectionPanel({
       )}
 
       {connectionQuery.isError && (
-        <p role="status" className="text-xs text-red-400">
+        <p role="status" className="text-xs text-danger">
           Spotify connection status could not be checked.
         </p>
       )}
       {connected && playbackStatusQuery.isError && (
-        <p role="status" className="text-xs text-red-400">
+        <p role="status" className="text-xs text-danger">
           Spotify playback availability could not be checked.
         </p>
       )}
@@ -216,7 +216,7 @@ export function SpotifyConnectionPanel({
         </p>
       )}
       {disconnectError && (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-danger">
           {disconnectError}
         </p>
       )}

@@ -14,6 +14,7 @@ import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
 import { NowPlaying } from './NowPlaying';
 import { NowPlayingStrip } from './NowPlayingStrip';
+import { BackToTop } from '@/components/ui/BackToTop';
 
 /**
  * The app shell.
@@ -35,6 +36,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const shouldReduceMotion = useReducedMotion() ?? false;
   const previousPathname = React.useRef(pathname);
+  // The scrolling page column, so the floating back to top control can watch
+  // it and send it back up. Pages that scroll their own region (chat) simply
+  // never move this one, and their own control takes over there.
+  const pageScrollRef = React.useRef<HTMLDivElement | null>(null);
 
   // Chat is open to everyone. Signed out visitors on the account-only pages
   // go to the login page, which brings them back once connected. replace()
@@ -95,6 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <VibeBackdrop />
           <AnimatePresence mode="wait">
             <motion.div
+              ref={pageScrollRef}
               key={pathname}
               initial={transition.initial}
               animate={transition.animate}
@@ -105,6 +111,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {children}
             </motion.div>
           </AnimatePresence>
+          {/* Absolute inside main, so the control floats over the page but
+              never over the top bar, the now playing strip, or the bottom
+              tabs, whatever the screen size. */}
+          <BackToTop
+            scrollerRef={pageScrollRef}
+            className="absolute bottom-5 right-4 z-30 sm:right-6"
+          />
         </main>
 
         <NowPlayingStrip />

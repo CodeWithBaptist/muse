@@ -105,7 +105,7 @@ export function LegalDocument({
   references = [],
 }: LegalDocumentProps) {
   return (
-    <main className="min-h-screen bg-background px-6 py-10 text-text-primary sm:py-16">
+    <main className="min-h-screen bg-background px-4 py-10 text-text-primary sm:px-6 sm:py-16">
       <div className="mx-auto max-w-3xl space-y-10">
         <Link
           href="/"

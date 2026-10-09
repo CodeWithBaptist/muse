@@ -91,7 +91,7 @@ function MemoryForm({
         </div>
       </div>
       {error && (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-danger">
           {error}
         </p>
       )}
@@ -222,7 +222,7 @@ function MemoryItem({
             </div>
           </div>
           {deleteError && (
-            <p role="alert" className="text-xs text-red-400">
+            <p role="alert" className="text-xs text-danger">
               {deleteError}
             </p>
           )}
@@ -328,7 +328,7 @@ export function MemoryManager() {
             Loading saved memory...
           </p>
         ) : memoryQuery.isError ? (
-          <p role="alert" className="py-4 text-xs text-red-400">
+          <p role="alert" className="py-4 text-xs text-danger">
             Unable to load saved memory right now.
           </p>
         ) : memories.length === 0 ? (
@@ -355,7 +355,7 @@ export function MemoryManager() {
         </p>
       )}
       {clearError && (
-        <p role="alert" className="text-xs text-red-400">
+        <p role="alert" className="text-xs text-danger">
           {clearError}
         </p>
       )}

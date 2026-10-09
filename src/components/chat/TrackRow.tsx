@@ -241,7 +241,7 @@ export function TrackRow({
               onClick={() => onRemove(track.id)}
               aria-label={`Remove ${track.name}`}
               title="Remove track"
-              className="rounded-full p-2 text-text-muted transition-colors hover:bg-surface hover:text-red-400"
+              className="rounded-full p-2 text-text-muted transition-colors hover:bg-surface hover:text-danger"
             >
               <X size={15} />
             </button>
