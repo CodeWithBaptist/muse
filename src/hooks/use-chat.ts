@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useChatPreferences } from '@/hooks/use-chat-preferences';
 import { compactTaste } from '@/lib/taste/types';
 import { getTasteSnapshot } from '@/lib/taste/store';
+import { setVibe } from '@/lib/vibe-store';
 import {
   appendGuestMessage,
   clearGuestMessages,
@@ -396,6 +397,7 @@ export function useChat(initialConversationId?: string) {
 
   const sendMessage = (content: string) => {
     setLastPrompt(content);
+    setVibe(content);
     if (authenticated) {
       setLocalMessages((prev) => [...prev, { role: 'user', content }]);
     } else {

@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { loginPathForReturn } from '@/lib/auth-flow';
 import { isOpenAppPath } from './shell-nav';
 import { Sidebar } from './Sidebar';
+import { VibeBackdrop } from '@/components/motion/VibeBackdrop';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
 import { NowPlaying } from './NowPlaying';
@@ -91,6 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           tabIndex={-1}
           className="relative flex min-h-0 flex-1 flex-col outline-none"
         >
+          <VibeBackdrop />
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
@@ -98,7 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               animate={transition.animate}
               exit={transition.exit}
               transition={transition.transition}
-              className="min-h-0 flex-1 overflow-y-auto"
+              className="relative z-[1] min-h-0 flex-1 overflow-y-auto"
             >
               {children}
             </motion.div>

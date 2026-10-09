@@ -102,6 +102,100 @@ html[data-effects="none"] .muse-decorative {
   transition: none !important;
 }
 
+/*
+ * Living background. Glows drift on transform alone; a new palette fades in
+ * as its own layer. Hidden under Lite and reduced motion by the rules above.
+ */
+.muse-vibe-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--vibe-opacity, 0.5);
+}
+
+html[data-theme='light'] .muse-vibe-backdrop {
+  --vibe-opacity: 0.34;
+}
+
+.muse-vibe-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.muse-vibe-layer[data-entering='true'] {
+  animation: muse-vibe-layer-in 1200ms var(--ease-standard) both;
+}
+
+.muse-vibe-blob {
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  border-radius: 50%;
+  opacity: 0.5;
+  filter: blur(8px);
+  will-change: transform;
+  animation: muse-vibe-drift var(--vibe-drift, 30s) ease-in-out infinite alternate;
+}
+
+.muse-vibe-blob-a {
+  top: -28vmax;
+  left: -18vmax;
+  background: radial-gradient(circle, var(--vibe-a) 0%, transparent 62%);
+}
+
+.muse-vibe-blob-b {
+  top: 10%;
+  right: -30vmax;
+  background: radial-gradient(circle, var(--vibe-b) 0%, transparent 62%);
+  animation-delay: -9s;
+  animation-direction: alternate-reverse;
+}
+
+.muse-vibe-blob-c {
+  bottom: -34vmax;
+  left: 12%;
+  background: radial-gradient(circle, var(--vibe-c) 0%, transparent 62%);
+  animation-delay: -17s;
+}
+
+@keyframes muse-vibe-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(5vmax, -3vmax, 0) scale(1.12);
+  }
+  100% {
+    transform: translate3d(-4vmax, 4vmax, 0) scale(0.96);
+  }
+}
+
+@keyframes muse-vibe-layer-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Empty state: the title breathes once and the chips rise in turn. */
+.muse-float {
+  animation: muse-float 6s ease-in-out infinite;
+}
+
+@keyframes muse-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
 @layer base {
   *, ::before, ::after {
     border-color: var(--color-border-subtle);

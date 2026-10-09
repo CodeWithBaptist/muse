@@ -32,6 +32,9 @@ const ENTRY_POINTS = [
   'components/profile/ProfileView.tsx',
   'components/chat/TasteHint.tsx',
   'app/(app)/profile/page.tsx',
+  'components/shell/DisplayMenu.tsx',
+  'components/motion/VibeBackdrop.tsx',
+  'lib/ui-sound.ts',
 ];
 const FORBIDDEN = [
   'lib/spotify.ts',

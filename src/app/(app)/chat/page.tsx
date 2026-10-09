@@ -11,6 +11,7 @@ import { HumanCheckCard } from '@/components/security/HumanCheckCard';
 import { ChatPreferenceControls } from '@/components/chat/ChatPreferenceControls';
 import { VibeChips } from '@/components/chat/VibeChips';
 import { TasteHint } from '@/components/chat/TasteHint';
+import { EqualizerBars } from '@/components/motion/EqualizerBars';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -293,6 +294,13 @@ export default function ChatPage() {
         {messages.length === 0 ? (
           <div className="max-w-4xl mx-auto pt-12 space-y-12 pb-24">
             <div className="space-y-4">
+              <span
+                aria-hidden="true"
+                data-testid="empty-state-bars"
+                className="muse-float muse-decorative inline-flex"
+              >
+                <EqualizerBars bars={5} height={28} width={4} durationMs={1100} />
+              </span>
               <h1 className="type-page-title !text-[clamp(32px,5vw,40px)]">
                 What are we listening to?
               </h1>
