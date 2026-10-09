@@ -25,10 +25,13 @@ describe('BottomTabs', () => {
     pathname.value = '/discover';
   });
 
-  it('renders nothing for a guest, whose only destination is the chat they are in', () => {
+  it('gives a guest the two open destinations, chat and profile, and nothing else', () => {
     auth.authenticated = false;
-    const { container } = render(<BottomTabs />);
-    expect(container.innerHTML).toBe('');
+    render(<BottomTabs />);
+    const nav = screen.getByRole('navigation', { name: 'Primary navigation' });
+    expect(
+      Array.from(nav.querySelectorAll('a')).map((a) => a.textContent),
+    ).toEqual(['Chat', 'Profile']);
   });
 
   it('renders the five destinations as 44px tabs with focus rings', () => {

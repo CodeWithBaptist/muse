@@ -23,6 +23,15 @@ const ENTRY_POINTS = [
   'components/chat/ChatPreferenceControls.tsx',
   'components/landing/StartAction.tsx',
   'app/api/human/route.ts',
+  'app/api/taste/lastfm/route.ts',
+  'app/api/taste/insights/route.ts',
+  'lib/ai/taste-insights.ts',
+  'lib/taste/read-export.ts',
+  'hooks/use-taste.ts',
+  'hooks/use-chat.ts',
+  'components/profile/ProfileView.tsx',
+  'components/chat/TasteHint.tsx',
+  'app/(app)/profile/page.tsx',
 ];
 const FORBIDDEN = [
   'lib/spotify.ts',

@@ -33,6 +33,7 @@ import { GET as getProfile } from '@/app/api/me/profile/route';
 import ChatPage from '@/app/(app)/chat/page';
 import DiscoverPage from '@/app/(app)/discover/page';
 import ProfilePage from '@/app/(app)/profile/page';
+import { clearTasteSnapshot, setTasteSnapshot } from '@/lib/taste/store';
 
 function renderWithQueryClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
@@ -191,11 +192,23 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
       expect(screen.getByText('AI is not connected yet')).toBeDefined();
     });
 
+    // The profile page spends nothing on load; the state appears once the
+    // visitor asks MUSE to write from the listening kept on the device.
+    setTasteSnapshot({
+      source: 'lastfm',
+      label: 'Last.fm: ada',
+      topArtists: [{ name: 'Asake', plays: 3 }],
+      topTracks: [],
+      recentTracks: [],
+      capturedAt: '2024-03-01T00:00:00.000Z',
+    });
     renderWithQueryClient(<ProfilePage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Write my profile' }));
     await waitFor(() => {
       expect(
         screen.getAllByText('AI is not connected yet').length
       ).toBeGreaterThanOrEqual(2);
     });
+    clearTasteSnapshot();
   });
 });

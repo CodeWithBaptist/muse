@@ -20,7 +20,7 @@ export interface ShellNavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  /** Open to everyone; the rest need an account and its Spotify data. */
+  /** Open to everyone; the rest need a tester account and its Spotify data. */
   open?: boolean;
 }
 
@@ -29,7 +29,7 @@ export const PRIMARY_NAV: readonly ShellNavItem[] = [
   { label: 'Discover', href: '/discover', icon: Compass },
   { label: 'Library', href: '/library', icon: Library },
   { label: 'Playlists', href: '/playlists', icon: Music2 },
-  { label: 'Profile', href: '/profile', icon: User },
+  { label: 'Profile', href: '/profile', icon: User, open: true },
 ];
 
 /** The destinations a visitor can see: all of them with an account, the open ones without. */

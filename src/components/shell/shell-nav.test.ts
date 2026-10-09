@@ -38,8 +38,12 @@ describe('shell navigation', () => {
     expect(isActivePath(null, '/chat')).toBe(false);
   });
 
-  it('opens only the chat to guests and keeps the rest behind an account', () => {
-    expect(navItemsFor(false).map((item) => item.href)).toEqual(['/chat']);
+  it('opens chat and profile to guests and keeps the rest behind an account', () => {
+    expect(navItemsFor(false).map((item) => item.href)).toEqual([
+      '/chat',
+      '/profile',
+    ]);
+    expect(isOpenAppPath('/profile')).toBe(true);
     expect(navItemsFor(true)).toBe(PRIMARY_NAV);
     expect(isOpenAppPath('/chat')).toBe(true);
     expect(isOpenAppPath('/chat/anything')).toBe(true);
