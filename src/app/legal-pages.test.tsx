@@ -88,4 +88,52 @@ describe('legal pages', () => {
     expect(text).toContain('muse_session');
     expect(text).toContain('30 days');
   });
+
+  it('privacy policy names the operator, the contact, the NDPA, and every browser storage key from the code', () => {
+    const keys = [
+      ['src/lib/guest-chat-store.ts', /GUEST_CHAT_STORAGE_KEY = '([^']+)'/],
+      [
+        'src/lib/chat-preferences-store.ts',
+        /CHAT_PREFERENCES_STORAGE_KEY = '([^']+)'/,
+      ],
+      ['src/lib/ui-prefs.ts', /UI_PREFS_STORAGE_KEY = '([^']+)'/],
+      ['src/lib/taste/store.ts', /TASTE_STORAGE_KEY = '([^']+)'/],
+    ] as const;
+    render(<PrivacyPage />);
+    const text = document.body.textContent ?? '';
+    for (const [file, pattern] of keys) {
+      const key = read(file).match(pattern)?.[1];
+      expect(key, `${file} storage key not found`).toBeTruthy();
+      expect(text, `privacy page is missing ${key}`).toContain(key as string);
+    }
+    expect(text).toContain('MUSE, operated by Baptist Arowomutin');
+    expect(text).toContain('barowomutin@gmail.com');
+    expect(text).toContain('Nigeria Data Protection Act 2023');
+    expect(text).toContain('Deezer');
+    expect(text).toContain('iTunes Search API');
+    expect(text).toContain('Last.fm');
+    expect(text).toContain('one-way hash');
+    expect(text).toContain('New chat');
+    expect(text).toContain('Remove from this device');
+    expect(text).toContain('muse_human');
+    expect(text).toContain('muse_tester');
+    expect(text).not.toContain('Operator name');
+  });
+
+  it('terms and attribution describe the public product without Spotify as a requirement', () => {
+    render(<TermsPage />);
+    const terms = document.body.textContent ?? '';
+    expect(terms).toContain('You do not need an account');
+    expect(terms).toContain('not open');
+    expect(terms).toContain('no paid feature will require a Spotify account');
+    expect(terms).not.toContain('You need a Spotify account');
+    document.body.innerHTML = '';
+
+    render(<SpotifyAttributionPage />);
+    const attribution = document.body.textContent ?? '';
+    expect(attribution).toContain('not needed to use MUSE');
+    expect(attribution).toContain('not affiliated with, endorsed by');
+    expect(attribution).toContain('Deezer');
+    expect(attribution).toContain('Audiomack');
+  });
 });

@@ -12,7 +12,7 @@ import { ExternalLink } from 'lucide-react';
  */
 
 /** The date all three drafts were written. Update it when the text changes. */
-export const LEGAL_DRAFT_DATE = '7 October 2026';
+export const LEGAL_DRAFT_DATE = '9 October 2026';
 
 export interface LegalSection {
   id: string;
@@ -78,6 +78,13 @@ export function LegalLink({
   if (/^https?:\/\//.test(href)) {
     return (
       <a href={href} target="_blank" rel="noreferrer" className={LINK_CLASS}>
+        {children}
+      </a>
+    );
+  }
+  if (href.startsWith('mailto:')) {
+    return (
+      <a href={href} className={LINK_CLASS}>
         {children}
       </a>
     );
