@@ -73,8 +73,8 @@ describe('Landing Page', () => {
       'Start with a feeling.',
       'Sample',
       'Replay',
-      'Playlist created.',
-      'Open in Spotify',
+      'Copied',
+      'Audiomack',
       // The window is never empty before the sequence starts.
       'Tell me the mood, sound, artist, or moment.',
       'What are we listening to?',
