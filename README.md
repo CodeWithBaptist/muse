@@ -1,6 +1,6 @@
 # MUSE
 
-MUSE is an AI music companion built on the Spotify Web API. It uses Next.js App Router, PostgreSQL, Drizzle ORM, Tailwind CSS, Motion, TanStack Query, Zod, and OpenAI.
+MUSE is an AI music companion. Tell it the mood or the moment and it suggests eight to twelve real songs, Nigeria first, each with a one-line reason, checked against Deezer and the Apple iTunes Search API, with links to open every song on Audiomack, Boomplay, Spotify, Apple Music, YouTube Music, and Deezer. No account is needed. It uses Next.js App Router, PostgreSQL, Drizzle ORM, Tailwind CSS, Motion, TanStack Query, Zod, and OpenAI. Spotify sign-in remains for allow-listed testers only.
 
 ## Technology
 
@@ -119,9 +119,26 @@ Set these environment variable names in `.env.local` for local development. Conf
 * `SPOTIFY_CLIENT_SECRET`: Spotify application client secret.
 * `SPOTIFY_REDIRECT_URI`: exact OAuth callback URI for the current environment.
 * `OPENAI_API_KEY`: OpenAI API key. When this is absent, MUSE shows an explicit unavailable state for AI features.
-* `ENCRYPTION_KEY`: 32-character key used to encrypt stored Spotify tokens.
+* `ENCRYPTION_KEY`: 32-character key used to encrypt stored Spotify tokens. It also peppers the one-way hash of visitor IP addresses in rate-limit counters.
+
+Optional, added by the rebuild (names only; every one is documented in `.env.example`):
+
+* `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`: rate-limit and budget counters in Upstash Redis; without them the Postgres `rate_limits` table is used.
+* `AI_MAX_OUTPUT_TOKENS`, `AI_DAILY_BUDGET_REQUESTS`, `AI_DAILY_BUDGET_TOKENS`: the output cap and the shared daily budget (Lagos day) behind "MUSE is resting".
+* `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`: Cloudflare Turnstile; the human check runs only when both are set.
+* `SPOTIFY_TESTER_EMAILS` or `TESTER_KEY`: who can see Spotify sign-in and Create in Spotify. Neither set means Spotify sign-in is hidden.
+* `LASTFM_API_KEY`: the optional Last.fm import on the Profile page.
+* `PAYMENTS_ENABLED`, `PAYSTACK_SECRET_KEY`: the payments scaffold (see below). Leave `PAYMENTS_ENABLED` unset or `false`.
 
 Do not place secrets in client code, browser storage, screenshots, logs, or source control.
+
+## Payments (scaffold, off)
+
+`/plus` shows the Free and Plus plans and says Plus is not open. `POST /api/billing/checkout` and `POST /api/billing/webhook` answer 503 `PAYMENTS_DISABLED` until `PAYMENTS_ENABLED=true`, and the checkout refuses with `PRICE_NOT_SET` until a Plus price exists in `src/lib/billing/plans.ts`. Paystack's hosted page would take the payment in naira; the webhook is checked with an HMAC SHA-512 of the raw body. No Plus benefit uses Spotify data. The registrations, keys, legal text, and code TODOs needed before the flag flips are in `docs/PAYMENTS.md`.
+
+## Legal pages
+
+`/privacy`, `/terms`, and `/spotify-attribution` describe the no-account product: browser storage keys, what goes to OpenAI and the catalogues, hashed-IP counters, every cookie, the optional Last.fm and export features, NDPA 2023 rights, and a deletion path for visitors and testers. They are drafts for a lawyer; governing law, jurisdiction, and the database provider are marked placeholders, and each page lists what to check before publishing. The operator and contact are in `src/lib/legal.ts`.
 
 ## Spotify application setup
 

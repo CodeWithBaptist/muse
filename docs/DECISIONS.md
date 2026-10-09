@@ -4,6 +4,28 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-09: The landing and the legal pages describe the product that ships, and counters never hold an IP
+
+**Decision**
+The landing no longer says MUSE searches Spotify or creates playlists in a Spotify account; its demo copies a list and shows the open-in chips through an inert `SampleListActions` instead of walking a Create in Spotify control, and the landing quality test fails on the old claims. Privacy, Terms, and the attribution page were rewritten from the code paths of the no-account product: every browser storage key, every cookie with its lifetime, what goes to OpenAI and what never does, Deezer and the Apple iTunes Search API, the optional Last.fm import and the browser-only export upload, the deletion path, NDPA 2023 rights and the NDPC, cross-border processing, and a testers-only section for Spotify. The attribution page keeps its route, says Spotify is not needed, and names every other service with a no-endorsement line. Rate-limit counter keys now hold a peppered SHA-256 hash of the IP rather than the address. Operator and contact live in `src/lib/legal.ts`; governing law, jurisdiction, and the database provider remain marked placeholders.
+
+**Why**
+The brief asked that the landing stop claiming Spotify features the public cannot use and that the legal pages cover what is actually stored and sent. Writing the pages from the code (and testing that the storage keys and scopes on the page match the source) keeps them honest as the code changes. Hashing the IP was the cheapest way to make the privacy statement about counters true in the strongest form. Legal choices that are the owner's or a lawyer's (law, courts, the children rule, NDPC registration, API attribution requirements) are flagged, not guessed.
+
+**Alternatives considered**
+
+- Deleting the attribution page: Spotify still appears for testers and in an open-in link, so the page stays and now covers the other services too.
+- Embedding Deezer, Apple, and Spotify logos now: the owner will supply logo files; names in text are enough until the brand terms are checked.
+- Leaving raw IPs in counters: simpler, but then the policy would have to say the server stores addresses.
+
+**Impact**
+
+- `src/lib/legal.ts` is the single place for the operator identity.
+- `getClientIdentifier` output changed shape (`ip:<hash>`); `clientIp()` is the only raw-address reader and Turnstile uses it.
+- Before publishing: fill the placeholders, add a payments section when Plus opens, and have the pages reviewed by a lawyer.
+
+---
+
 ## 2026-10-09: Payments are a Paystack scaffold in naira behind one flag that stays off
 
 **Decision**
