@@ -45,7 +45,6 @@ function runBootstrap(
   const root = document.documentElement;
   root.removeAttribute('data-theme');
   root.removeAttribute('data-effects');
-  // eslint-disable-next-line no-new-func
   new Function(UI_PREFS_BOOTSTRAP_SCRIPT)();
   return {
     theme: root.getAttribute('data-theme'),
