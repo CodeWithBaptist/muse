@@ -1,5 +1,6 @@
 'use client';
 
+import { useTrackDetails } from '@/components/chat/TrackDetails';
 import * as React from 'react';
 import { useChat, type ChatErrorKind } from '@/hooks/use-chat';
 import { ChatMessage } from '@/components/chat/ChatMessage';
@@ -175,6 +176,7 @@ function DistinctChatErrorBanner({
 }
 
 export default function ChatPage() {
+  const { close: closeTrackDetails } = useTrackDetails();
   const {
     messages,
     isGuest,
@@ -244,7 +246,10 @@ export default function ChatPage() {
           {(messages.length > 0 || activeConversationId) && (
             <button
               type="button"
-              onClick={startNewChat}
+              onClick={() => {
+                closeTrackDetails();
+                startNewChat();
+              }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-accent hover:bg-surface transition-colors"
             >
               <MessageSquarePlus size={14} />

@@ -63,7 +63,7 @@ export function LandingMark({
   return (
     <span
       role="img"
-      aria-label="muse"
+      aria-label="MUSE"
       className={cn('muse-wordmark inline-flex items-end', className)}
       style={
         {

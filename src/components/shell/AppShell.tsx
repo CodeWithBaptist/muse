@@ -12,6 +12,7 @@ import { Sidebar } from './Sidebar';
 import { VibeBackdrop } from '@/components/motion/VibeBackdrop';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
+import { TrackDetailsPanel } from '@/components/chat/TrackDetails';
 import { NowPlaying } from './NowPlaying';
 import { NowPlayingStrip } from './NowPlayingStrip';
 import { BackToTop } from '@/components/ui/BackToTop';
@@ -172,11 +173,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           />
         </main>
 
-        <NowPlayingStrip />
+        {authenticated ? <NowPlayingStrip /> : null}
         <BottomTabs />
       </div>
 
-      <NowPlaying />
+      {authenticated ? <NowPlaying /> : <TrackDetailsPanel />}
     </div>
   );
 }

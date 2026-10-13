@@ -149,17 +149,17 @@ export function PlansView({ status, returned }: PlansViewProps) {
       <div className="space-y-3">
         <h1 className="type-page-title">MUSE Plus</h1>
         <p className="max-w-2xl text-lg font-medium text-text-secondary">
-          Free stays free. Plus is more room for the same MUSE, paid in naira
-          through Paystack. Nothing in Plus needs a Spotify account.
+          MUSE currently offers the Free plan. Plus benefits below are planned,
+          not live. Spotify sign-in, export, and playback are tester-only
+          features, not Plus benefits.
         </p>
       </div>
 
       {returned ? (
         <Surface variant="raised" className="p-5" role="status">
           <p className="text-sm text-text-primary">
-            Thanks. Paystack is confirming the payment. Plus switches on only
-            after MUSE verifies it on the server; this page does not claim it
-            yet.
+            A checkout return does not activate Plus. Paid entitlements are not
+            implemented.
           </p>
         </Surface>
       ) : null}
@@ -191,7 +191,8 @@ export function PlansView({ status, returned }: PlansViewProps) {
               data-testid="plus-closed"
             >
               Plus is not open yet. Nothing is charged, and no card is asked
-              for. Everything on the Free plan works now.
+              for. Public chat works without an account. The Profile page
+              currently requires tester sign-in.
             </p>
           </>
         )}

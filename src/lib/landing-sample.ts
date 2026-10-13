@@ -35,7 +35,7 @@ export const SAMPLE_HINT = 'Tell me the mood, sound, artist, or moment.';
 
 /** The reply body. Short, so the word by word reveal stays quick. */
 export const SAMPLE_REPLY =
-  'Got you. I kept it mellow, rhythmic, and a little atmospheric.';
+  'No wahala. Tems to ease in, Wizkid for the groove, then Rema.';
 
 /** The two scripted thinking lines, in the wording the real indicator uses. */
 export const SAMPLE_THINKING_LINES = [

@@ -29,19 +29,17 @@ const read = (relative: string) =>
 
 describe('legal pages', () => {
   for (const { name, Page, source } of PAGES) {
-    it(`${name}: is labelled as a draft, explains itself, and links home`, () => {
+    it(`${name}: keeps review notes off the page and links home`, () => {
       render(<Page />);
       expect(screen.getByRole('heading', { level: 1, name })).toBeDefined();
-      expect(screen.getByText('Draft for review')).toBeDefined();
-      expect(screen.getByRole('note').textContent).toContain(
-        'has not been reviewed by a lawyer',
-      );
+      expect(screen.queryByText('Draft for review')).toBeNull();
+      expect(screen.queryByRole('note')).toBeNull();
       expect(
         screen.getAllByRole('link', { name: 'Back to MUSE' }).length,
       ).toBeGreaterThan(0);
       expect(
-        screen.getByRole('heading', { name: 'Before this is published' }),
-      ).toBeDefined();
+        screen.queryByRole('heading', { name: 'Before this is published' }),
+      ).toBeNull();
     });
 
     it(`${name}: contains no unfilled prompts beyond the marked placeholders`, () => {

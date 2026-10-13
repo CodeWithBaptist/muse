@@ -63,7 +63,7 @@ export function SiteFooter() {
             </Link>
           </nav>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 type-caption text-text-muted">
-            <span>&copy; 2026 MUSE. Built for music.</span>
+            <span>&copy; 2026 MUSE.</span>
             <a
               href={LANDING_TOP_FRAGMENT}
               onClick={landingTopClickHandler()}

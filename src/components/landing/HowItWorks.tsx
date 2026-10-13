@@ -368,7 +368,7 @@ export function HowItWorks() {
             id="how-it-works-heading"
             className="type-display text-[clamp(28px,5vw,48px)] text-balance"
           >
-            Four steps. No filters.
+            From your request to a song list
           </h2>
         </div>
 

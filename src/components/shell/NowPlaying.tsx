@@ -23,7 +23,7 @@ function availabilityMessage(
 ) {
   if (availability === "checking") return "Checking Spotify playback access.";
   if (availability === "disconnected") {
-    return "Connect Spotify to use playback in MUSE.";
+    return "Link Spotify for testing to use playback in MUSE.";
   }
   if (availability === "reconnect-required") {
     return "Reconnect Spotify to enable playback in MUSE.";

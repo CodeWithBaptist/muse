@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'motion/react';
 import { useState } from 'react';
+import { TrackDetailsProvider } from '@/components/chat/TrackDetails';
 import { AuthProvider } from '@/hooks/use-auth';
 import { NowPlayingProvider } from '@/hooks/use-now-playing';
 
@@ -22,7 +23,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <MotionConfig reducedMotion="user">
         <AuthProvider>
-          <NowPlayingProvider>{children}</NowPlayingProvider>
+          <TrackDetailsProvider>
+            <NowPlayingProvider>{children}</NowPlayingProvider>
+          </TrackDetailsProvider>
         </AuthProvider>
       </MotionConfig>
     </QueryClientProvider>

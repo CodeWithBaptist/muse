@@ -159,7 +159,7 @@ export function WhatItDoes() {
             id="what-it-does-heading"
             className="type-display text-[clamp(28px,5vw,48px)] text-balance"
           >
-            Ask for anything. It listens.
+            Find songs by mood, artist, or moment
           </h2>
         </div>
 

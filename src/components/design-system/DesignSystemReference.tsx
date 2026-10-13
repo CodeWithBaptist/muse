@@ -403,7 +403,7 @@ function ButtonsSection() {
           <Row key={size}>
             <span className="type-meta w-8">{size}</span>
             <Button size={size} variant="primary">
-              Connect Spotify
+              Link Spotify for testing
             </Button>
             <Button size={size} variant="secondary">
               Save

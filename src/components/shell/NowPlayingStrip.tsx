@@ -44,7 +44,8 @@ export function shortPlaybackNotice({
     return 'Reconnect Spotify for playback.';
   if (availability === 'unavailable')
     return 'Playback unavailable. Open in Spotify.';
-  if (availability === 'disconnected') return 'Connect Spotify to play here.';
+  if (availability === 'disconnected')
+    return 'Link Spotify for testing to play here.';
   return null;
 }
 

@@ -92,7 +92,7 @@ describe('shortPlaybackNotice', () => {
       'Open Spotify on an active device to play from MUSE.',
     );
     expect(shortPlaybackNotice({ ...base, availability: 'disconnected' })).toBe(
-      'Connect Spotify to play here.',
+      'Link Spotify for testing to play here.',
     );
     expect(
       shortPlaybackNotice({ ...base, availability: 'premium-required' }),

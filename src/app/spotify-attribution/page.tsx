@@ -34,15 +34,15 @@ export default function SpotifyAttributionPage() {
           body: (
             <>
               <LegalParagraph>
-                Songs in MUSE are suggested by an AI model and checked against
-                the Deezer catalogue and the Apple iTunes Search API. Spotify is
-                not the source of those suggestions and is not needed to use
-                MUSE. Spotify appears in exactly three places:
+                Public song lists in MUSE are suggested by an AI model and
+                checked against the Deezer catalogue and the Apple iTunes Search
+                API. Spotify is not the source of those suggestions and is not
+                needed to use MUSE. Spotify appears in these features:
               </LegalParagraph>
               <LegalList
                 items={[
                   'An "Open in Spotify" search link under each song, next to the same link for Audiomack, Boomplay, Apple Music, YouTube Music, and Deezer. It opens a search on Spotify\'s own site; MUSE does not know whether Spotify has the song.',
-                  'Tester sign-in with Spotify and "Create in Spotify", offered only to testers the operator has allow-listed or who hold a tester key, so that playlist creation can be tested through the Spotify Web API.',
+                  'Tester sign-in with Spotify and "Create in Spotify", offered only to testers the operator has allow-listed or who hold a tester key, for playlist export, listening-based recommendations, library access, and remote playback through the Spotify Web API.',
                   'The optional Spotify data export upload on the Profile page, which reads the file Spotify gives you inside your browser and never contacts Spotify at all.',
                 ]}
               />
@@ -50,8 +50,9 @@ export default function SpotifyAttributionPage() {
                 For testers, every track, playlist, and piece of artwork shown
                 on the Discover, Library, and Playlists pages is provided by
                 Spotify through the Spotify Web API, links back to Spotify, and
-                stays in the tester&apos;s own Spotify account. Audio never
-                plays inside MUSE.
+                may be referenced in MUSE records. Approved testers can control
+                playback on an active Spotify device; eligible Premium access
+                may be required. MUSE does not stream audio.
               </LegalParagraph>
             </>
           ),
@@ -76,14 +77,14 @@ export default function SpotifyAttributionPage() {
           body: (
             <>
               <LegalParagraph>
-                MUSE follows Spotify&apos;s Design and Branding Guidelines for
-                anything that carries the Spotify name. In practice:
+                Spotify&apos;s Design and Branding Guidelines govern use of its
+                name and content. In MUSE:
               </LegalParagraph>
               <LegalList
                 items={[
-                  'The Spotify name appears only where the action really goes to Spotify: the open-in link, tester sign-in, and Create in Spotify.',
-                  'The public landing page and chat make no claim that MUSE searches Spotify, creates playlists in Spotify, or is powered by Spotify.',
-                  'Spotify logos are used unmodified, in the colours and clear space the guidelines allow, or not at all. At the time of this draft MUSE shows the Spotify name as text and no Spotify logo.',
+                  'The Spotify name identifies public open-in links, local data export imports, tester-only integrations, and their documentation.',
+                  'The public landing page and guest chat make no claim that MUSE searches Spotify, creates playlists in Spotify, or is powered by Spotify.',
+                  'Spotify logos are used unmodified, in the colours and clear space the guidelines allow, or not at all. Currently MUSE shows the Spotify name as text and no Spotify logo.',
                   "Spotify content shown to testers is attributed to Spotify and is never presented as MUSE's own catalogue.",
                 ]}
               />
@@ -138,13 +139,7 @@ export default function SpotifyAttributionPage() {
           ),
         },
       ]}
-      reviewNotes={[
-        'Check the open-in link, tester sign-in, and Create in Spotify against the current Spotify Design and Branding Guidelines before launch; if logos are added, use the official files unmodified.',
-        'Check the Deezer API terms for the attribution they require and whether the chat line is enough; add the Deezer logo if they require it.',
-        'Check the Apple iTunes Search API terms for required attribution wording and linking.',
-        'Confirm with the Last.fm API terms that the "Last.fm" name is enough or whether a logo is required.',
-        'Verify every external link opens the intended page.',
-      ]}
+
       references={[
         {
           label: 'Spotify Design and Branding Guidelines',

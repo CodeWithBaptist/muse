@@ -209,7 +209,7 @@ export function NowPlayingProvider({
             : availability === "premium-required"
               ? "An eligible Spotify Premium subscription is required for playback."
               : availability === "disconnected"
-                ? "Connect Spotify to play from MUSE."
+                ? "Link Spotify for testing to play from MUSE."
                 : "Playback is unavailable here. Open this track in Spotify.",
         );
         return;

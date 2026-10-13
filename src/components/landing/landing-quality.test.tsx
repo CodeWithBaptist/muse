@@ -162,7 +162,7 @@ describe('landing quality checklist', () => {
 
     // The shared Logo and the brand files are not touched by the landing work.
     const logo = read('src/components/ui/Logo.tsx');
-    expect(logo).toContain('aria-label="muse"');
+    expect(logo).toContain('aria-label="MUSE"');
     // Since the light theme shipped the default follows the page tokens, and
     // the pinned dark colours stay available for surfaces that never change.
     expect(logo).toContain("theme = 'auto'");
@@ -521,7 +521,7 @@ describe('landing quality checklist', () => {
     const sample = read('src/lib/landing-sample.ts');
     expect(sample).toContain('Give me something for a late night drive');
     expect(sample).toContain(
-      'Got you. I kept it mellow, rhythmic, and a little atmospheric.',
+      'No wahala. Tems to ease in, Wizkid for the groove, then Rema.',
     );
     expect(sample).toContain('Late Night Lagos');
     expect(sample).toContain('What are we listening to?');
@@ -567,7 +567,7 @@ describe('landing quality checklist', () => {
       'MUSE Intelligence',
       'Designed for the',
       'looks for real tracks on Spotify',
-      'creates the playlist in your Spotify account',
+      'exports a playlist for approved testers',
       'Playlists in Spotify',
       'Create in Spotify',
     ]) {

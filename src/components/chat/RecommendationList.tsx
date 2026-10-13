@@ -11,6 +11,7 @@ import { searchLinksFor } from '@/lib/catalogue/search-links';
 import type { ListedTrack, TrackVerification } from '@/lib/catalogue/types';
 import { PlaylistActions } from './PlaylistActions';
 import { TrackLinks } from './TrackLinks';
+import { useTrackDetails } from './TrackDetails';
 import { TrackArt } from './TrackArt';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/hooks/use-auth';
@@ -159,9 +160,10 @@ export interface RecommendationListProps {
 interface RecommendationRowProps {
   track: ListedTrack;
   index: number;
+  onSelect: () => void;
 }
 
-function RecommendationRow({ track, index }: RecommendationRowProps) {
+function RecommendationRow({ track, index, onSelect }: RecommendationRowProps) {
   return (
     <motion.li
       data-testid="recommendation-row"
@@ -178,16 +180,28 @@ function RecommendationRow({ track, index }: RecommendationRowProps) {
         <span className="w-6 shrink-0 pt-0.5 text-right text-xs tabular-nums text-text-muted">
           {index + 1}
         </span>
-        <TrackArt
-          title={track.title}
-          artworkUrl={track.verification?.artworkUrl}
-          className="mt-0.5"
-        />
+        <button
+          type="button"
+          onClick={onSelect}
+          aria-label={`View artwork and details for ${track.title}`}
+          className="self-start rounded-sm focus-ring"
+        >
+          <TrackArt
+            title={track.title}
+            artworkUrl={track.verification?.artworkUrl}
+            className="mt-0.5"
+          />
+        </button>
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span className="text-sm font-semibold text-text-primary">
+            <button
+              type="button"
+              onClick={onSelect}
+              aria-label={`Show details for ${track.title} by ${track.artist}`}
+              className="text-left text-sm font-semibold text-text-primary focus-ring"
+            >
               {track.title}
-            </span>
+            </button>
             <span className="text-xs font-medium text-text-secondary">
               {track.artist}
             </span>
@@ -218,6 +232,7 @@ export function RecommendationList({
   dropped = 0,
 }: RecommendationListProps) {
   const headingId = React.useId();
+  const { select } = useTrackDetails();
   const { authenticated } = useAuth();
   if (tracks.length === 0) return null;
 
@@ -258,7 +273,14 @@ export function RecommendationList({
         className="divide-y divide-border-subtle"
       >
         {tracks.map((track, index) => (
-          <RecommendationRow key={track.id} track={track} index={index} />
+          <RecommendationRow
+            key={track.id}
+            track={track}
+            index={index}
+            onSelect={() =>
+              select({ track, tracks, title: title || 'MUSE mix' })
+            }
+          />
         ))}
       </ol>
 
