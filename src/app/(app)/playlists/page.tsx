@@ -188,7 +188,7 @@ export default function PlaylistsPage() {
         </div>
         <Link
           href="/chat"
-          className="inline-flex h-9 items-center justify-center rounded-md bg-accent-primary px-4 text-xs font-semibold text-accent-contrast transition-colors hover:bg-accent-primary/90 focus-ring"
+          className="inline-flex h-9 items-center justify-center rounded-md border border-accent-boundary bg-accent-primary px-4 text-xs font-semibold text-accent-contrast transition-colors hover:bg-accent-primary/90 focus-ring"
         >
           <PlusSquare size={15} className="mr-2" aria-hidden="true" />
           New Playlist in Chat
@@ -357,7 +357,7 @@ export default function PlaylistsPage() {
                             href={playlist.spotifyUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-accent-primary text-accent-contrast text-xs font-semibold hover:bg-accent-primary/90 transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-accent-boundary bg-accent-primary text-accent-contrast text-xs font-semibold hover:bg-accent-primary/90 transition-colors"
                           >
                             <span>Open in Spotify</span>
                             <ExternalLink size={13} />

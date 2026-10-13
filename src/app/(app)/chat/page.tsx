@@ -1,5 +1,7 @@
 'use client';
 
+import { visitorMessage } from '@/lib/visitor-copy';
+import { useTrackDetails } from '@/components/chat/TrackDetails';
 import * as React from 'react';
 import { useChat, type ChatErrorKind } from '@/hooks/use-chat';
 import { ChatMessage } from '@/components/chat/ChatMessage';
@@ -13,7 +15,6 @@ import {
   RefreshCw,
   Smartphone,
   KeyRound,
-  Terminal,
   Trash2,
   WifiOff,
   Moon,
@@ -37,20 +38,8 @@ function AiNotConnectedBanner() {
       <KeyRound className="text-accent shrink-0 mt-0.5" size={20} />
       <div className="space-y-2">
         <h2 className="text-sm font-bold text-text-primary tracking-wide">
-          AI is not connected yet
+          MUSE can&apos;t answer right now. Try again later.
         </h2>
-        <p className="text-sm text-text-secondary leading-relaxed">
-          MUSE needs an OpenAI API key to respond in chat and curate
-          recommendations. Add{' '}
-          <code className="text-xs font-mono text-text-primary bg-background/60 px-1.5 py-0.5 rounded">
-            OPENAI_API_KEY
-          </code>{' '}
-          to the environment and restart.
-        </p>
-        <div className="flex items-center gap-2 pt-1 text-[10px] text-text-muted font-mono uppercase tracking-wider">
-          <Terminal size={12} />
-          <span>Set OPENAI_API_KEY in .env.local or Vercel</span>
-        </div>
       </div>
     </Surface>
   );
@@ -175,6 +164,7 @@ function DistinctChatErrorBanner({
 }
 
 export default function ChatPage() {
+  const { close: closeTrackDetails } = useTrackDetails();
   const {
     messages,
     isGuest,
@@ -244,7 +234,10 @@ export default function ChatPage() {
           {(messages.length > 0 || activeConversationId) && (
             <button
               type="button"
-              onClick={startNewChat}
+              onClick={() => {
+                closeTrackDetails();
+                startNewChat();
+              }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-accent hover:bg-surface transition-colors"
             >
               <MessageSquarePlus size={14} />
@@ -307,6 +300,7 @@ export default function ChatPage() {
       <div className="relative min-h-0 flex-1">
         <div
           ref={scrollRef}
+          data-chat-messages
           role="log"
           aria-label="Conversation messages"
           aria-live="polite"
@@ -340,7 +334,7 @@ export default function ChatPage() {
                 errorKind !== 'human_check' && (
                   <DistinctChatErrorBanner
                     kind={errorKind as BannerErrorKind}
-                    message={error.message}
+                    message={visitorMessage(error.message)}
                     onRetry={retryLastMessage}
                   />
                 )}
@@ -376,7 +370,7 @@ export default function ChatPage() {
                 errorKind !== 'human_check' && (
                   <DistinctChatErrorBanner
                     kind={errorKind as BannerErrorKind}
-                    message={error.message}
+                    message={visitorMessage(error.message)}
                     onRetry={retryLastMessage}
                   />
                 )}
@@ -403,7 +397,7 @@ export default function ChatPage() {
             disabled={isThinking}
             placeholder={
               isAiNotConnected
-                ? 'AI is not connected yet. Set OPENAI_API_KEY to start chatting.'
+                ? "MUSE can't answer right now. Try again later."
                 : undefined
             }
           />

@@ -15,6 +15,7 @@ import {
   useInteractions,
   useRole,
 } from '@floating-ui/react';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { cn } from '@/lib/utils';
 import { useEffectsLevel, useUiPrefs } from '@/hooks/use-ui-prefs';
 import {
@@ -58,7 +59,7 @@ function Segmented<T extends string>({
 }: SegmentedProps<T>) {
   const hintId = React.useId();
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="flex flex-wrap items-center justify-between gap-4">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-text-primary">{label}</p>
         {hint ? (
@@ -72,7 +73,7 @@ function Segmented<T extends string>({
         aria-label={label}
         aria-describedby={hint ? hintId : undefined}
         data-testid={testId}
-        className="inline-flex h-9 shrink-0 items-stretch rounded-md border border-border-subtle bg-background p-0.5"
+        className="inline-flex h-11 shrink-0 items-stretch rounded-md border border-border-subtle bg-background p-0.5"
       >
         {options.map((option) => {
           const active = option === value;
@@ -125,8 +126,6 @@ function useSmallScreen() {
 }
 
 export function DisplayMenu({ className }: { className?: string }) {
-  const [prefs, setPrefs] = useUiPrefs();
-  const level = useEffectsLevel();
   const [open, setOpen] = React.useState(false);
   const panelId = React.useId();
   const smallScreen = useSmallScreen();
@@ -162,6 +161,7 @@ export function DisplayMenu({ className }: { className?: string }) {
   });
 
   const dismiss = useDismiss(context, {
+    enabled: !smallScreen,
     escapeKey: true,
     outsidePress: true,
   });
@@ -187,15 +187,6 @@ export function DisplayMenu({ className }: { className?: string }) {
     window.requestAnimationFrame(() => triggerRef.current?.focus());
   }, []);
 
-  const liteHint =
-    prefs.lite === 'auto'
-      ? level === 'lite'
-        ? 'On for now: this connection or phone asked for less.'
-        : 'Turns on by itself on slow data.'
-      : prefs.lite === 'on'
-        ? 'Still screens, less to load.'
-        : 'Everything moves, even on slow data.';
-
   return (
     <div className={cn('relative', className)}>
       <button
@@ -217,18 +208,22 @@ export function DisplayMenu({ className }: { className?: string }) {
         <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
       </button>
 
-      {open ? (
+      {open && smallScreen ? (
+        <BottomSheet
+          id={context.floatingId}
+          open
+          onClose={close}
+          title="Display settings"
+          testId="display-menu"
+        >
+          <DisplayOptions />
+        </BottomSheet>
+      ) : null}
+      {open && !smallScreen ? (
         <FloatingPortal>
-          {smallScreen ? (
-            <div
-              aria-hidden="true"
-              onClick={close}
-              className="fixed inset-0 z-[90] bg-background/70"
-            />
-          ) : null}
           <FloatingFocusManager
             context={context}
-            modal={smallScreen}
+            modal={false}
             initialFocus={closeButtonRef}
             returnFocus
           >
@@ -237,23 +232,12 @@ export function DisplayMenu({ className }: { className?: string }) {
               id={panelId}
               role="dialog"
               aria-label="Display settings"
-              aria-modal={smallScreen || undefined}
               data-testid="display-menu"
               className={cn(
                 'z-[100] space-y-5 overflow-y-auto overscroll-contain border border-border-strong bg-surface p-4 shadow-xl outline-none',
-                smallScreen
-                  ? 'fixed inset-x-4 bottom-0 mx-auto w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] rounded-t-xl rounded-b-none'
-                  : 'w-80 max-w-[calc(100vw-2rem)] rounded-lg',
+                'w-80 max-w-[calc(100vw-2rem)] rounded-lg',
               )}
-              style={
-                smallScreen
-                  ? {
-                      maxHeight: 'min(70dvh, calc(100dvh - 2rem))',
-                      paddingBottom:
-                        'max(1rem, env(safe-area-inset-bottom, 0px))',
-                    }
-                  : floatingStyles
-              }
+              style={floatingStyles}
               {...getFloatingProps()}
             >
               <div className="flex items-center justify-between">
@@ -265,38 +249,58 @@ export function DisplayMenu({ className }: { className?: string }) {
                   type="button"
                   onClick={close}
                   aria-label="Close display settings"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md text-text-secondary hover:bg-background hover:text-text-primary focus-ring"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-md text-text-secondary hover:bg-background hover:text-text-primary focus-ring"
                 >
                   <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
-              <Segmented
-                label="Theme"
-                hint="Dark is the default."
-                testId="display-theme"
-                value={prefs.theme}
-                options={UI_THEMES}
-                labels={THEME_LABELS}
-                onChange={(theme) => setPrefs({ theme })}
-              />
-              <Segmented
-                label="Lite mode"
-                hint={liteHint}
-                testId="display-lite"
-                value={prefs.lite}
-                options={LITE_MODES}
-                labels={LITE_LABELS}
-                onChange={(lite) => setPrefs({ lite })}
-              />
-              {level === 'none' ? (
-                <p className="text-xs text-text-muted">
-                  Your system asks for reduced motion, so nothing decorative
-                  moves whatever is chosen here.
-                </p>
-              ) : null}
+              <DisplayOptions />
             </div>
           </FloatingFocusManager>
         </FloatingPortal>
+      ) : null}
+    </div>
+  );
+}
+
+export function DisplayOptions() {
+  const [prefs, setPrefs] = useUiPrefs();
+  const level = useEffectsLevel();
+  const liteHint =
+    prefs.lite === 'auto'
+      ? level === 'lite'
+        ? 'On for now: this connection or phone asked for less.'
+        : 'Turns on by itself on slow data.'
+      : prefs.lite === 'on'
+        ? 'Still screens, less to load.'
+        : 'Everything moves, even on slow data.';
+
+  return (
+    <div className="space-y-5">
+      {' '}
+      <Segmented
+        label="Theme"
+        hint="Dark is the default."
+        testId="display-theme"
+        value={prefs.theme}
+        options={UI_THEMES}
+        labels={THEME_LABELS}
+        onChange={(theme) => setPrefs({ theme })}
+      />
+      <Segmented
+        label="Lite mode"
+        hint={liteHint}
+        testId="display-lite"
+        value={prefs.lite}
+        options={LITE_MODES}
+        labels={LITE_LABELS}
+        onChange={(lite) => setPrefs({ lite })}
+      />
+      {level === 'none' ? (
+        <p className="text-xs text-text-muted">
+          Your system asks for reduced motion, so nothing decorative moves
+          whatever is chosen here.
+        </p>
       ) : null}
     </div>
   );

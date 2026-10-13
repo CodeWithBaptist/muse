@@ -1,5 +1,6 @@
 'use client';
 
+import { visitorMessage } from '@/lib/visitor-copy';
 import * as React from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { KeyRound, Link2Off, RefreshCw } from 'lucide-react';
@@ -208,15 +209,8 @@ export function ProfileView({ lastfmEnabled }: ProfileViewProps) {
             <KeyRound size={18} className="text-accent" />
           </div>
           <h2 className="text-lg font-bold text-text-primary">
-            AI is not connected yet
+            Profiles are unavailable right now. Try again later.
           </h2>
-          <p className="mx-auto max-w-md text-sm leading-relaxed text-text-secondary">
-            Set{' '}
-            <code className="font-mono text-xs text-text-primary">
-              OPENAI_API_KEY
-            </code>{' '}
-            in the environment to let MUSE write profiles.
-          </p>
         </Surface>
       ) : null}
 
@@ -269,7 +263,12 @@ export function ProfileView({ lastfmEnabled }: ProfileViewProps) {
                 : 'Unable to write your profile'}
           </p>
           {kind === 'other' ? (
-            <p className="text-xs text-text-muted">{write.error?.message}</p>
+            <p className="text-xs text-text-muted">
+              {visitorMessage(
+                write.error?.message,
+                'Profiles are unavailable right now. Try again later.',
+              )}
+            </p>
           ) : null}
           {lastSource ? (
             <div className="pt-2">

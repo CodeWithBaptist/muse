@@ -1,8 +1,9 @@
+import { CHAT_UNAVAILABLE } from '@/lib/visitor-copy';
 import OpenAI from 'openai';
 import { recordAiTokens } from './budget';
 
 export const AI_NOT_CONNECTED_CODE = 'AI_NOT_CONNECTED' as const;
-export const AI_NOT_CONNECTED_MESSAGE = 'AI is not connected yet';
+export const AI_NOT_CONNECTED_MESSAGE = CHAT_UNAVAILABLE;
 
 const PLACEHOLDER_AI_KEYS = new Set([
   'add-later',
@@ -40,10 +41,16 @@ export function isAINotConnectedError(error: unknown): boolean {
     const maybeCode = (error as { code?: unknown }).code;
     const maybeName = (error as { name?: unknown }).name;
     const maybeMessage = (error as { message?: unknown }).message;
-    if (maybeCode === AI_NOT_CONNECTED_CODE || maybeName === 'AINotConnectedError') {
+    if (
+      maybeCode === AI_NOT_CONNECTED_CODE ||
+      maybeName === 'AINotConnectedError'
+    ) {
       return true;
     }
-    if (typeof maybeMessage === 'string' && /AI is not connected yet|OPENAI_API_KEY/i.test(maybeMessage)) {
+    if (
+      typeof maybeMessage === 'string' &&
+      /AI is not connected yet|OPENAI_API_KEY/i.test(maybeMessage)
+    ) {
       return true;
     }
   }
@@ -54,8 +61,14 @@ export function sanitizePromptInput(input: string, maxLength = 1000): string {
   return input
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ')
     .replace(/<\|im_start\|>|<\|im_end\|>|<\|endoftext\|>/gi, '')
-    .replace(/<\/?(system|user_message|spotify_context|user_preferences|listener_taste|developer|assistant)>/gi, '')
-    .replace(/\b(ignore\s+(all\s+)?(previous|prior|above)\s+instructions)\b/gi, '[filtered]')
+    .replace(
+      /<\/?(system|user_message|spotify_context|user_preferences|listener_taste|developer|assistant)>/gi,
+      '',
+    )
+    .replace(
+      /\b(ignore\s+(all\s+)?(previous|prior|above)\s+instructions)\b/gi,
+      '[filtered]',
+    )
     .trim()
     .slice(0, maxLength);
 }
@@ -68,7 +81,9 @@ export function sanitizePromptInput(input: string, maxLength = 1000): string {
 export const DEFAULT_MAX_OUTPUT_TOKENS = 1200;
 export const HARD_MAX_OUTPUT_TOKENS = 4096;
 
-export function getOutputTokenCap(env: Record<string, string | undefined> = process.env): number {
+export function getOutputTokenCap(
+  env: Record<string, string | undefined> = process.env,
+): number {
   const raw = Number.parseInt(env.AI_MAX_OUTPUT_TOKENS ?? '', 10);
   if (!Number.isFinite(raw) || raw <= 0) return DEFAULT_MAX_OUTPUT_TOKENS;
   return Math.min(raw, HARD_MAX_OUTPUT_TOKENS);
@@ -116,8 +131,8 @@ interface ZodLikeSchema<T> {
 function isZodSchema<T>(schema: unknown): schema is ZodLikeSchema<T> {
   return Boolean(
     schema &&
-      typeof schema === 'object' &&
-      typeof (schema as ZodLikeSchema<T>).parse === 'function'
+    typeof schema === 'object' &&
+    typeof (schema as ZodLikeSchema<T>).parse === 'function',
   );
 }
 
@@ -133,7 +148,10 @@ function noteUsage(usage: UsageLike): void {
   }
 }
 
-export async function chatCompletion(messages: Message[], options: CompletionOptions = {}) {
+export async function chatCompletion(
+  messages: Message[],
+  options: CompletionOptions = {},
+) {
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
     model: AI_MODEL,
@@ -149,7 +167,7 @@ export async function chatCompletion(messages: Message[], options: CompletionOpt
 
 export async function* chatCompletionStream(
   messages: Message[],
-  options: CompletionOptions = {}
+  options: CompletionOptions = {},
 ): AsyncGenerator<string, void, unknown> {
   const openai = getOpenAI();
   const stream = await openai.chat.completions.create({
@@ -182,7 +200,7 @@ export async function* chatCompletionStream(
 export async function jsonCompletionText(
   prompt: string,
   systemPrompt = 'You are a helpful music assistant.',
-  options: CompletionOptions = {}
+  options: CompletionOptions = {},
 ): Promise<string> {
   const openai = getOpenAI();
   const response = await openai.chat.completions.create({
@@ -192,7 +210,9 @@ export async function jsonCompletionText(
       { role: 'user', content: prompt },
     ],
     response_format: { type: 'json_object' },
-    ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+    ...(options.temperature !== undefined
+      ? { temperature: options.temperature }
+      : {}),
     max_completion_tokens: resolveMaxOutputTokens(options.maxOutputTokens),
   });
 
@@ -206,7 +226,7 @@ export async function structuredCompletion<T>(
   prompt: string,
   schema: unknown,
   systemPrompt = 'You are a helpful music assistant.',
-  options: CompletionOptions = {}
+  options: CompletionOptions = {},
 ): Promise<T> {
   const content = await jsonCompletionText(prompt, systemPrompt, options);
   const parsed: unknown = JSON.parse(content);

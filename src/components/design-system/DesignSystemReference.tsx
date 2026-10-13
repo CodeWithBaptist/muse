@@ -93,7 +93,7 @@ const TEXT_TOKENS: Array<{
   {
     token: 'accentPrimary',
     use: 'ui',
-    role: 'Cobalt primary action fill',
+    role: 'Lime primary action fill',
   },
   {
     token: 'accentContrast',
@@ -115,7 +115,7 @@ function ColorSection() {
     <Section
       id="color"
       title="Color"
-      lede="A near-black stage, warm off-white text, and a compact palette of cobalt actions and azure highlights. Ratios are computed from the tokens, not typed in."
+      lede="A near-black stage, warm off-white text, and a compact palette of lime actions and green highlights. Ratios are computed from the tokens, not typed in."
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-sm">
@@ -403,7 +403,7 @@ function ButtonsSection() {
           <Row key={size}>
             <span className="type-meta w-8">{size}</span>
             <Button size={size} variant="primary">
-              Connect Spotify
+              Link Spotify for testing
             </Button>
             <Button size={size} variant="secondary">
               Save

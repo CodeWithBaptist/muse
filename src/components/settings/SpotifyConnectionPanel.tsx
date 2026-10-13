@@ -129,7 +129,7 @@ export function SpotifyConnectionPanel({
           <p className="text-xs text-text-secondary">
             {connected && user
               ? `${user.displayName} (${user.email})`
-              : 'Connect Spotify to use MUSE music features.'}
+              : 'Link Spotify for testing to use MUSE music features.'}
           </p>
           <p className="text-[11px] leading-relaxed text-text-muted">
             Disconnecting removes MUSE&apos;s saved tokens, Spotify-based
@@ -151,7 +151,7 @@ export function SpotifyConnectionPanel({
             }}
           >
             <RefreshCw size={13} className="mr-1.5" />
-            {connected ? 'Reconnect Spotify' : 'Connect Spotify'}
+            {connected ? 'Reconnect Spotify' : 'Link Spotify for testing'}
           </Button>
           {(connected || connectionQuery.isError) && !confirmDisconnect && (
             <Button

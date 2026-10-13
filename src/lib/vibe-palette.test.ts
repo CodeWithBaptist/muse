@@ -19,7 +19,7 @@ describe('paletteForVibe', () => {
     }
   });
 
-  it('falls back to the brand token and gives each mood a blue CSS token', () => {
+  it('falls back to the brand token and gives each mood a lime CSS token', () => {
     expect(paletteForVibe('')).toBe(DEFAULT_VIBE_PALETTE);
     expect(paletteForVibe(null)).toBe(DEFAULT_VIBE_PALETTE);
     expect(DEFAULT_VIBE_PALETTE.tint).toBe('var(--color-vibe-muse)');

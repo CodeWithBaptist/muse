@@ -1,19 +1,18 @@
-import type { Metadata } from 'next';
+import { publicPageMetadata } from '@/lib/site-metadata';
 import {
   LEGAL_DRAFT_DATE,
   LegalDocument,
   LegalLink,
   LegalList,
   LegalParagraph,
-  Placeholder,
 } from '@/components/legal/LegalDocument';
 import { LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR } from '@/lib/legal';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy | MUSE',
-  description:
-    'What MUSE keeps in your browser, what it sends to the AI provider and the music catalogues, what the server stores, and how to remove all of it.',
-};
+export const metadata = publicPageMetadata(
+  '/privacy',
+  'Privacy Policy | MUSE',
+  'What MUSE keeps in your browser, what it sends to the AI provider and the music catalogues, what the server stores, and how to remove all of it.',
+);
 
 /**
  * Every statement below is tied to a code path:
@@ -57,20 +56,21 @@ export default function PrivacyPage() {
               <LegalParagraph>
                 The chat works for everyone with no sign-in. In that mode MUSE
                 keeps these things in your browser&apos;s local storage, on your
-                device only, and never uploads them as a record:
+                device. Relevant conversation and taste data is sent with
+                requests as described below:
               </LegalParagraph>
               <LegalList
                 items={[
                   'The last 40 messages of your conversation (key muse.chat.local.v1).',
                   'Your chat settings: the Nigeria or Global scope and the English, Pidgin, or mix language choice (key muse.chat.prefs.v1).',
-                  'Your display settings: dark or light, Lite mode, and whether sounds are on (key muse.ui.prefs.v1).',
-                  'Your taste snapshot, if you add one on the Profile page (key muse.taste.v1). See the optional features below.',
+                  'Your display settings: dark or light and Lite mode (key muse.ui.prefs.v1).',
+                  'Your taste snapshot, if you add one on the tester-only Profile page (key muse.taste.v1). See the optional features below.',
                 ]}
               />
               <LegalParagraph>
                 The server keeps no account, no conversation, and no profile for
-                a visitor without an account. It keeps only the short-lived
-                counters described under &quot;What the server stores&quot;.
+                a visitor without an account. Counters and operational logs are
+                described under &quot;What the server stores&quot;.
               </LegalParagraph>
             </>
           ),
@@ -81,33 +81,42 @@ export default function PrivacyPage() {
           body: (
             <>
               <LegalParagraph>
-                MUSE uses the OpenAI API (the gpt-4o-mini model at the time of
-                this draft) to read your request, choose songs, and write the
-                one-line reasons and the words about your taste. Depending on
-                the feature, a request contains:
+                MUSE uses the OpenAI API (the gpt-4o-mini model by default) to
+                read your request, choose songs, and write the one-line reasons
+                and the words about your taste. Depending on the feature, a
+                request contains:
               </LegalParagraph>
               <LegalList
                 items={[
-                  'Chat: your message (up to 500 characters), up to ten earlier messages in the same conversation, your scope and language choice, and, when you have added a taste snapshot, the names of up to ten artists and ten songs from it with the name of its source (Last.fm or a Spotify export).',
-                  'Your taste in words: the same ten artists and ten songs from the snapshot, with any date range and play count the source provided.',
-                  'For testers who sign in with Spotify: the Chat, Discover, and Profile requests also include the names of up to ten top artists and tracks read from Spotify, and the Memory notes written in Settings.',
+                  'Chat: your message (up to 500 characters), up to ten earlier messages in the same conversation, your scope and language choice, and, when you have added a taste snapshot, the names of up to ten artists, ten top songs, and ten recent tracks from it with the name of its source (Last.fm or a Spotify export).',
+                  'Your taste in words: the same ten artists, ten top songs, and ten recent tracks from the snapshot, with any date range and play count the source provided.',
+                  'For testers who sign in with Spotify: Discover requests include up to ten top artists and ten top tracks from Spotify. Profile insights also include up to ten recently played tracks and artist genres. Signed-in Chat, Discover, and Profile can include up to twelve explicit Memory notes from Settings. Chat uses the supplied taste snapshot rather than fetching Spotify listening history.',
                 ]}
               />
               <LegalParagraph>
-                MUSE does not send your email address, IP address, Last.fm
-                username, Spotify user ID, or any token to OpenAI. OpenAI
-                processes API requests under its own API terms and data usage
-                policy (linked below); under those terms API data is not used to
-                train its models. MUSE caps the model&apos;s output and the
-                shared daily budget; when the budget is reached MUSE says it is
-                resting instead of answering.
+                MUSE does not add your email address, IP address, Last.fm
+                username, Spotify user ID, or tokens to AI prompts as identity
+                fields. Anything you include in messages or Memory notes may be
+                sent as content. OpenAI processes API requests under its own API
+                terms and data usage policy (linked below); under those terms
+                API data is not used to train its models. MUSE caps the
+                model&apos;s output and the shared daily budget. Output defaults
+                to 1,200 tokens with a configurable maximum of 4,096. Daily
+                budgets default to 1,500 request reservations and 2,000,000
+                reported tokens, resetting at midnight in Lagos. A zero budget
+                setting disables that cap. Tokens are counted after completion,
+                so this is not a hard spending ceiling. Rate and budget guards
+                allow requests if their counter stores are unavailable. When an
+                available guard finds the budget exhausted, MUSE says it is
+                resting.
               </LegalParagraph>
               <LegalParagraph>
-                The model proposes songs; it does not confirm them. MUSE checks
-                every suggestion against public music catalogues (next section)
-                and labels what it could not confirm as unverified. AI output
-                can still be wrong, which the{' '}
-                <LegalLink href="/terms">Terms of Service</LegalLink> explain.
+                The model proposes songs; it does not confirm them. For public
+                playlist requests, MUSE checks the proposed tracks against
+                public music catalogues (next section) and labels what it could
+                not confirm as unverified. AI output can still be wrong, which
+                the <LegalLink href="/terms">Terms of Service</LegalLink>{' '}
+                explain.
               </LegalParagraph>
             </>
           ),
@@ -129,15 +138,18 @@ export default function PrivacyPage() {
                 Cover art is loaded by your browser directly from Deezer&apos;s
                 or Apple&apos;s image servers, which therefore see your IP
                 address and browser details in the same way as any image on the
-                web. Lite mode and the unverified state show no artwork.
+                web. Artwork is shown when a catalogue supplies an image,
+                including in Lite mode.
               </LegalParagraph>
               <LegalParagraph>
-                &quot;Open in&quot; links take you to a search for the song on
-                Audiomack, Boomplay, Spotify, Apple Music, YouTube Music, or
-                Deezer. Nothing is sent to those services until you tap a link;
-                after that their own privacy policies apply. The Share action
-                uses your device&apos;s share sheet or opens WhatsApp with the
-                list as text; MUSE does not see where you send it.
+                &quot;Open in&quot; links take you to a matching catalogue page
+                when available, or a search for the song on Audiomack, Boomplay,
+                Spotify, Apple Music, YouTube Music, or Deezer. Link navigation
+                happens when you tap; catalogue and artwork requests happen as
+                described above; after that their own privacy policies apply.
+                The Share action uses your device&apos;s share sheet or opens
+                WhatsApp with the list as text; MUSE does not see where you send
+                it.
               </LegalParagraph>
             </>
           ),
@@ -168,8 +180,9 @@ export default function PrivacyPage() {
                     : the file you get from Spotify&apos;s &quot;Download your
                     data&quot; is read inside your browser. The raw file is
                     never uploaded and the server never receives it. Your
-                    browser keeps only the summary: up to 50 artist names and 50
-                    song names, the date range, and the play count.
+                    browser keeps only the summary: up to 20 artist names, 20
+                    top songs, and 20 recent tracks, the date range, and the
+                    play count.
                   </>,
                 ]}
               />
@@ -177,7 +190,8 @@ export default function PrivacyPage() {
                 Both are things you choose to add. &quot;Remove from this
                 device&quot; on the Profile page deletes the snapshot at once.
                 When you ask for &quot;Your taste in words&quot;, the ten
-                artists and ten songs described above go to the AI provider.
+                artists, ten top songs, and ten recent tracks described above go
+                to the AI provider.
               </LegalParagraph>
             </>
           ),
@@ -190,9 +204,9 @@ export default function PrivacyPage() {
               <LegalParagraph>For every visitor:</LegalParagraph>
               <LegalList
                 items={[
-                  'Rate-limit counters, keyed by a one-way hash of your IP address (never the address itself) and reset after each window, which is one minute for most requests and one hour at most. They live in a managed Redis store or in the MUSE database.',
+                  'Rate-limit counters use a one-way hash of the proxy-reported IP address for guests, or a user ID for signed-in requests. The hash uses a server-side secret as a pepper when configured. Missing IPs share an anonymous bucket. Counters live in Upstash Redis or Postgres; limits and windows vary by route.',
                   'A shared daily usage total for the whole service, with no per-visitor detail.',
-                  'Ordinary server logs kept by the hosting provider for a limited time, which can include IP addresses and request paths but never message text, keys, or tokens.',
+                  'Operational logs include errors and warnings. Some routes log error objects without a central redaction layer, so the code cannot guarantee that logs exclude personal data or secrets. Hosting access logs and retention depend on deployment settings.',
                 ]}
               />
               <LegalParagraph>
@@ -238,19 +252,23 @@ export default function PrivacyPage() {
                   <>
                     <code className="text-text-primary">
                       spotify_auth_state
-                    </code>{' '}
-                    and{' '}
+                    </code>
+                    ,{' '}
+                    <code className="text-text-primary">spotify_auth_next</code>
+                    , and{' '}
                     <code className="text-text-primary">
                       spotify_code_verifier
                     </code>
-                    : protect the sign-in handshake with Spotify for testers and
-                    expire after ten minutes.
+                    : protect the sign-in handshake and retain a validated
+                    return path for testers, and expire after ten minutes.
                   </>,
                 ]}
               />
               <LegalParagraph>
-                MUSE sets no analytics, advertising, or third-party cookies and
-                loads no tracking scripts.
+                MUSE has no analytics or advertising integration. When enabled,
+                Cloudflare Turnstile loads a third-party verification script.
+                MUSE-controlled cookies are HttpOnly, SameSite=Lax, and Secure
+                in production.
               </LegalParagraph>
             </>
           ),
@@ -331,7 +349,7 @@ export default function PrivacyPage() {
             <LegalList
               items={[
                 'Browser storage stays on your device until you clear it, start a new chat, or remove the taste snapshot.',
-                'Rate-limit counters expire with their window, at most one hour after the last request. The shared daily total resets every day (West Africa Time).',
+                'Counter windows stop counting old usage after their reset time. Redis keys expire, but Postgres rows are not automatically deleted; an expired row is reused when its key is next requested. The shared AI budget uses a Lagos calendar day.',
                 'The Turnstile pass lasts two hours; the tester pass and a tester session last 30 days; the Spotify handshake cookies last ten minutes.',
                 'Catalogue lookups are cached on the server by song name for a short time and contain no personal data.',
                 'Tester account data is kept until the tester deletes it. Disconnecting Spotify deletes tokens, conversations, recommendations, taste profile, and playlist records right away; the account, preferences, and Memory notes stay until the account is deleted.',
@@ -350,7 +368,7 @@ export default function PrivacyPage() {
                   '"New chat" in the chat header deletes the stored conversation from your browser.',
                   '"Remove from this device" on the Profile page deletes the taste snapshot.',
                   "Clearing this site's data in your browser settings removes everything else, including your display and chat settings.",
-                  'There is nothing to delete on the server for you: the counters hold no address and expire on their own.',
+                  'Guests have no saved server conversation to delete. Hashed counter keys and operational logs may remain as described above.',
                 ]}
               />
               <LegalParagraph>
@@ -360,7 +378,7 @@ export default function PrivacyPage() {
                 items={[
                   'Export their data as a JSON file. Tokens are never included.',
                   'Disconnect Spotify, which deletes the data listed under retention.',
-                  'Delete the account, which removes everything MUSE stores about them.',
+                  'Delete the account and its related database records. This does not remove independent counter rows, hosting logs, or browser storage.',
                   'Add, edit, delete, or clear Memory notes.',
                 ]}
               />
@@ -372,7 +390,7 @@ export default function PrivacyPage() {
                 <LegalLink href={`mailto:${LEGAL_CONTACT_EMAIL}`}>
                   {LEGAL_CONTACT_EMAIL}
                 </LegalLink>{' '}
-                and it will be handled within 30 days.
+                to request help with your data.
               </LegalParagraph>
             </>
           ),
@@ -389,12 +407,11 @@ export default function PrivacyPage() {
                   'Last.fm, which receives the username you type, only when you use that feature.',
                   'Cloudflare, which runs the Turnstile check when the operator has turned it on.',
                   <>
-                    Vercel, which hosts MUSE in its US East region, and{' '}
-                    <Placeholder>database provider</Placeholder>, which hosts
-                    the MUSE database in the same region. The rate-limit store
-                    is Upstash Redis when it is configured.
+                    Vercel, which hosts MUSE, and Neon, which hosts the MUSE
+                    database. The rate-limit store is Upstash Redis when it is
+                    configured.
                   </>,
-                  'Audiomack, Boomplay, Spotify, Apple Music, YouTube Music, Deezer, and WhatsApp receive data only when you tap a link or share to them.',
+                  'Open-in destinations and WhatsApp receive navigation or shared-list data when used. Catalogue and image providers also receive the requests described above.',
                   'Spotify AB, for testers who sign in, under its own privacy policy.',
                 ]}
               />
@@ -412,13 +429,14 @@ export default function PrivacyPage() {
           title: 'Where data is processed',
           body: (
             <LegalParagraph>
-              MUSE is operated from Nigeria and hosted in the United States, and
-              the AI provider processes requests there. Where the Nigeria Data
-              Protection Act 2023 applies, MUSE relies on your consent to the
-              optional features, on the necessity of the processing to provide
-              the service you asked for, and on its legitimate interest in
-              keeping the service secure for the counters. The transfers rest on
-              the processors&apos; contractual data protection commitments.
+              MUSE is operated from Nigeria. Hosting and database processing
+              locations still need to be confirmed; third-party providers may
+              process data outside Nigeria. Where the Nigeria Data Protection
+              Act 2023 applies, MUSE relies on your consent to the optional
+              features, on the necessity of the processing to provide the
+              service you asked for, and on its legitimate interest in keeping
+              the service secure for the counters. The transfers rest on the
+              processors&apos; contractual data protection commitments.
             </LegalParagraph>
           ),
         },
@@ -427,12 +445,12 @@ export default function PrivacyPage() {
           title: 'Security',
           body: (
             <LegalParagraph>
-              API keys live only on the server, visitor IP addresses are stored
-              only as one-way hashes, Spotify tokens are encrypted at rest,
-              cookies cannot be read by scripts, requests are rate limited, and
-              every request that touches tester data checks the session first.
-              No system is perfectly secure; if you believe your data has been
-              exposed, write to{' '}
+              API keys live only on the server, rate-limit keys store hashes
+              rather than raw visitor IP addresses, Spotify tokens are encrypted
+              at rest, cookies cannot be read by scripts, requests are rate
+              limited, and every request that touches tester data checks the
+              session first. No system is perfectly secure; if you believe your
+              data has been exposed, write to{' '}
               <LegalLink href={`mailto:${LEGAL_CONTACT_EMAIL}`}>
                 {LEGAL_CONTACT_EMAIL}
               </LegalLink>
@@ -464,8 +482,9 @@ export default function PrivacyPage() {
               copy of your personal data, withdraw consent, object to
               processing, and complain to the Nigeria Data Protection Commission
               or your own data protection authority. For a visitor without an
-              account, MUSE holds nothing it could return, so the controls above
-              are the whole answer; for anything else, write to{' '}
+              account, conversation and taste storage is in the browser, but
+              counters and operational logs may exist. For requests beyond the
+              browser controls, write to{' '}
               <LegalLink href={`mailto:${LEGAL_CONTACT_EMAIL}`}>
                 {LEGAL_CONTACT_EMAIL}
               </LegalLink>
@@ -490,15 +509,7 @@ export default function PrivacyPage() {
           ),
         },
       ]}
-      reviewNotes={[
-        'Fill in the database provider and confirm the hosting region.',
-        'Confirm the lawful bases and the cross-border transfer wording against the NDPA 2023 and the NDPC General Application and Implementation Directive, and check whether MUSE must register with the NDPC as a data controller of major importance.',
-        'Confirm the children wording (the NDPA treats anyone under 18 as a child and requires verifiable parental consent).',
-        'Check the OpenAI API data usage wording against the current policy before publishing.',
-        'Re-check the tester permissions list whenever src/lib/spotify.ts changes its scopes, and the storage keys whenever a store changes.',
-        'Add a payments section (Paystack as processor, what is stored, refunds) before PAYMENTS_ENABLED is turned on.',
-        'Verify every external link opens the intended page.',
-      ]}
+
       references={[
         {
           label: 'Nigeria Data Protection Commission',

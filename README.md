@@ -44,6 +44,9 @@ Required:
 
 Optional:
 
+* `NEXT_PUBLIC_SITE_URL`: public canonical origin for share metadata and sitemap URLs. Defaults to `https://muse-six-pink.vercel.app`; redeploy after changing it.
+* `SHOW_DESIGN_SYSTEM`: leave unset or `false` in production. Only the exact value `true` enables the internal design reference. It remains noindex.
+
 * `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`: rate-limit and budget counters in Redis; without them the Postgres `rate_limits` table is used.
 * `AI_MAX_OUTPUT_TOKENS`, `AI_DAILY_BUDGET_REQUESTS`, `AI_DAILY_BUDGET_TOKENS`: output cap and the shared daily budget (Lagos day) behind "MUSE is resting".
 * `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`: Cloudflare Turnstile; the human check runs only when both are set.

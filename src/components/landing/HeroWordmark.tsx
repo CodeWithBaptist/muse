@@ -19,8 +19,7 @@ import {
  * The hero wordmark.
  *
  * This is a separate component from the shared Logo on purpose: the hero has to
- * animate the m, the u, the s, the e, and the dot independently, and the shared
- * Logo may not change. The path data lives in src/lib/landing-wordmark.ts, a
+ * animate M, U, S, E, and the dot independently. The path data lives in src/lib/landing-wordmark.ts, a
  * verbatim copy of src/assets/brand/muse-wordmark.svg, so the shapes stay
  * identical to the brand mark. Each piece gets its own tightly cropped viewBox
  * so a transform on a piece is measured in CSS pixels, the same on every screen
@@ -82,7 +81,7 @@ export function HeroWordmark({ pulseRef, className }: HeroWordmarkProps) {
   return (
     <span
       role="img"
-      aria-label="muse"
+      aria-label="MUSE"
       className={cn('muse-wordmark inline-flex items-end', className)}
     >
       {letters.map((piece, index) => (

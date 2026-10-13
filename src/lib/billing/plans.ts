@@ -37,13 +37,13 @@ export const PLANS: Record<PlanId, Plan> = {
   free: {
     id: 'free',
     name: 'Free',
-    tagline: 'Everything MUSE does today, no account, no card.',
+    tagline: 'Music recommendations without an account or card.',
     priceNgnMonthly: 0,
     features: [
-      'Playlists of 8 to 12 real songs, checked against Deezer and iTunes',
+      'Song lists checked against Deezer and iTunes, aiming for 8 to 12 picks',
       'Nigeria first, with the Global switch and English, Pidgin, or mix',
       'Open-in links, copy, CSV, and share',
-      'Your taste in words from Last.fm or a Spotify data export, on your device',
+      'Tester Profile: import Last.fm or a Spotify export and request AI taste insights',
     ],
     limits: {
       songsPerList: 12,
@@ -55,14 +55,14 @@ export const PLANS: Record<PlanId, Plan> = {
   plus: {
     id: 'plus',
     name: 'Plus',
-    tagline: 'Longer lists, more room, and MUSE keeps working when it is busy.',
+    tagline: 'Planned benefits, not available yet.',
     // TODO(owner): set the monthly price in naira before PAYMENTS_ENABLED=true.
     priceNgnMonthly: null,
     features: [
-      'Lists of up to 20 songs',
-      'Four times the hourly room for requests',
-      'Unlimited "Your taste in words" rewrites',
-      'Served while MUSE is resting for everyone else',
+      'Planned: lists of up to 20 songs',
+      'Planned: higher request limits',
+      'Planned: more taste insight requests',
+      'Planned: access beyond the shared Free budget',
     ],
     limits: {
       songsPerList: 20,

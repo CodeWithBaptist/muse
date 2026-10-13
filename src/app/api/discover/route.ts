@@ -1,8 +1,8 @@
+import { DISCOVER_UNAVAILABLE } from '@/lib/visitor-copy';
 import { getSession } from '@/lib/session';
 import { orchestrateDiscover } from '@/lib/ai/discover-engine';
 import {
   AI_NOT_CONNECTED_CODE,
-  AI_NOT_CONNECTED_MESSAGE,
   isAIConfigured,
   isAINotConnectedError,
 } from '@/lib/ai/provider';
@@ -35,11 +35,11 @@ export async function GET(request?: Request) {
   if (!isAIConfigured()) {
     return NextResponse.json(
       {
-        error: AI_NOT_CONNECTED_MESSAGE,
+        error: DISCOVER_UNAVAILABLE,
         code: AI_NOT_CONNECTED_CODE,
         aiConnected: false,
       },
-      { status: 503 }
+      { status: 503 },
     );
   }
 
@@ -59,23 +59,20 @@ export async function GET(request?: Request) {
     if (isAINotConnectedError(error)) {
       return NextResponse.json(
         {
-          error: AI_NOT_CONNECTED_MESSAGE,
+          error: DISCOVER_UNAVAILABLE,
           code: AI_NOT_CONNECTED_CODE,
           aiConnected: false,
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
     if (isSpotifyReconnectError(error)) {
       return NextResponse.json(
         { error: SPOTIFY_RECONNECT_MESSAGE, code: SPOTIFY_RECONNECT_CODE },
-        { status: 401 }
+        { status: 401 },
       );
     }
-    console.error('Discover API Error:', error);
-    return NextResponse.json(
-      { error: 'Unable to load discovery recommendations right now.' },
-      { status: 500 }
-    );
+    console.error('Discover request failed.');
+    return NextResponse.json({ error: DISCOVER_UNAVAILABLE }, { status: 500 });
   }
 }

@@ -67,7 +67,7 @@ export async function GET(request?: Request) {
       return redirectTo(loginPathForError('auth_not_configured', next));
     }
     return NextResponse.json(
-      { error: 'Spotify login is not configured yet.' },
+      { error: 'Spotify sign-in is unavailable right now. Try again later.' },
       { status: 503 },
     );
   }

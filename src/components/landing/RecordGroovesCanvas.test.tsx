@@ -224,7 +224,7 @@ describe('RecordGroovesCanvas', () => {
         <div ref={contentRef} data-testid="hero-content">
           <span ref={pulseRef} data-testid="dot" />
           <button type="button" {...{ [HERO_ACTION_ATTRIBUTE]: '' }}>
-            Connect Spotify
+            Link Spotify for testing
           </button>
         </div>
       </section>

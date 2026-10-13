@@ -244,7 +244,7 @@ describe('ClosingBandCanvas', () => {
       <section>
         <ClosingBandCanvas />
         <button type="button" {...{ [CLOSING_ACTION_ATTRIBUTE]: '' }}>
-          Connect Spotify
+          Link Spotify for testing
         </button>
       </section>
     );

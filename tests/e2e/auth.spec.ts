@@ -14,7 +14,7 @@ test('the landing page starts Spotify OAuth without exposing a credential', asyn
   );
 
   await page.goto('/');
-  await page.getByRole('button', { name: 'Connect Spotify' }).click();
+  await page.getByRole('button', { name: 'Link Spotify for testing' }).click();
 
   await expect(page).toHaveURL(/accounts\.spotify\.com\/authorize/);
   await expect(
@@ -31,6 +31,6 @@ test('a signed-out visitor is redirected away from a protected screen', async ({
 
   await expect(page).toHaveURL(/\/$/);
   await expect(
-    page.getByRole('button', { name: 'Connect Spotify' }),
+    page.getByRole('button', { name: 'Link Spotify for testing' }),
   ).toBeVisible();
 });

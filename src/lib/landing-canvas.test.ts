@@ -457,7 +457,7 @@ describe('hero drawing', () => {
     );
     expect(inks.length).toBeGreaterThan(0);
     expect(LANDING_FALLBACK_PALETTE.ink).toBe('#F2F1ED');
-    expect(LANDING_FALLBACK_PALETTE.accent).toBe('#5B9BFF');
+    expect(LANDING_FALLBACK_PALETTE.accent).toBe('#A8E85C');
   });
 });
 
@@ -671,7 +671,7 @@ describe('closing band drawing', () => {
 
 describe('palette', () => {
   it('converts a hex to rgba', () => {
-    expect(hexToRgba('#5B9BFF', 0.5)).toBe('rgba(91, 155, 255, 0.5)');
+    expect(hexToRgba('#A8E85C', 0.5)).toBe('rgba(168, 232, 92, 0.5)');
     expect(hexToRgba('#fff', 1)).toBe('rgba(255, 255, 255, 1)');
     expect(hexToRgba('nonsense', 0.25)).toBe('rgba(242, 241, 237, 0.25)');
   });
@@ -679,9 +679,9 @@ describe('palette', () => {
   it('reads the design tokens', () => {
     const palette = readLandingPalette({
       getPropertyValue: (property: string) =>
-        property === '--color-text-primary' ? '#F2F1ED' : '#5B9BFF',
+        property === '--color-text-primary' ? '#F2F1ED' : '#A8E85C',
     });
-    expect(palette).toEqual({ ink: '#F2F1ED', accent: '#5B9BFF' });
+    expect(palette).toEqual({ ink: '#F2F1ED', accent: '#A8E85C' });
   });
 
   it('falls back to the token values when the variables are missing', () => {

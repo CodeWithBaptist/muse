@@ -38,9 +38,9 @@ describe('landing wordmark data', () => {
     }
   });
 
-  it('leaves the shared Logo and the brand files alone', () => {
+  it('keeps MUSE naming and theme support consistent', () => {
     const logo = read('src/components/ui/Logo.tsx');
-    expect(logo).toContain('aria-label="muse"');
+    expect(logo).toContain('aria-label="MUSE"');
     // Since the light theme shipped the default follows the page tokens, and
     // the pinned dark colours stay available for surfaces that never change.
     expect(logo).toContain("theme = 'auto'");

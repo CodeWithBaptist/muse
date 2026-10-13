@@ -5,7 +5,7 @@
  * redirect URI, the token exchange needs the client secret, and storing the
  * tokens needs the encryption key. Reading all of them in one place keeps the
  * landing page, the auth routes, and any later settings screen in agreement
- * about whether "Connect Spotify" can actually work.
+ * about whether "Link Spotify for testing" can actually work.
  *
  * Values are read at call time, never at module load, so a server that is
  * started with the variables set reports them correctly even if this module

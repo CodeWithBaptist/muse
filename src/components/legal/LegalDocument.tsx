@@ -2,17 +2,10 @@ import * as React from 'react';
 import Link from 'next/link';
 import { ExternalLink } from 'lucide-react';
 
-/**
- * Layout for the legal pages.
- *
- * Every page using it is a draft written from how the code behaves today. The
- * "Draft for review" label, the notice under the title, and the review list at
- * the end stay until a human has reviewed and approved the text; nothing here
- * pretends to be in force.
- */
+/** Layout for public legal pages. Editorial review notes live in docs/legal-todo.md. */
 
-/** The date all three drafts were written. Update it when the text changes. */
-export const LEGAL_DRAFT_DATE = '9 October 2026';
+/** The date all three legal pages were last updated. */
+export const LEGAL_DRAFT_DATE = '13 October 2026';
 
 export interface LegalSection {
   id: string;
@@ -29,11 +22,9 @@ export interface LegalDocumentProps {
   title: string;
   /** One plain-language paragraph about what the page covers. */
   summary: string;
-  /** Human readable date of the draft, for example "7 October 2026". */
+  /** Human readable date of the latest legal update. */
   draftDate: string;
   sections: LegalSection[];
-  /** What a reviewer must confirm or fill in before this text is published. */
-  reviewNotes: string[];
   references?: LegalReference[];
 }
 
@@ -101,7 +92,6 @@ export function LegalDocument({
   summary,
   draftDate,
   sections,
-  reviewNotes,
   references = [],
 }: LegalDocumentProps) {
   return (
@@ -115,21 +105,11 @@ export function LegalDocument({
         </Link>
 
         <header className="space-y-4">
-          <p className="type-section-label text-accent">Draft for review</p>
           <h1 className="type-page-title">{title}</h1>
           <p className="max-w-2xl text-sm leading-relaxed text-text-secondary">
             {summary}
           </p>
-          <p className="text-xs text-text-muted">Draft dated {draftDate}</p>
-          <div
-            role="note"
-            className="rounded-md border border-border-strong bg-surface px-4 py-3 text-sm leading-relaxed text-text-secondary"
-          >
-            This draft was written from how MUSE works today, by reading the
-            code that handles sign-in, storage, and the AI requests. It has not
-            been reviewed by a lawyer and is not yet in force. Values in square
-            brackets still have to be filled in.
-          </div>
+          <p className="text-xs text-text-muted">Last updated: {draftDate}</p>
         </header>
 
         <nav
@@ -174,16 +154,6 @@ export function LegalDocument({
             </section>
           ))}
         </div>
-
-        <section
-          aria-labelledby="review-heading"
-          className="space-y-3 rounded-md border border-border bg-surface p-5"
-        >
-          <h2 id="review-heading" className="type-section-label">
-            Before this is published
-          </h2>
-          <LegalList items={reviewNotes} />
-        </section>
 
         {references.length > 0 ? (
           <section aria-labelledby="references-heading" className="space-y-3">

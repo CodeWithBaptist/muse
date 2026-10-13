@@ -62,8 +62,8 @@ describe('Landing Page', () => {
       'See how it works',
       'See it work',
       'Say the vibe. Get the playlist.',
-      'Four steps. No filters.',
-      'Ask for anything. It listens.',
+      'From your request to a song list',
+      'Find songs by mood, artist, or moment',
       'Try asking for',
       'a late night drive',
       'slow mornings',
@@ -172,7 +172,7 @@ describe('Landing Page', () => {
       screen.getByRole('heading', { name: 'Start with a feeling.' }),
     ).toBeDefined();
     expect(
-      screen.getByRole('heading', { name: 'Ask for anything. It listens.' }),
+      screen.getByRole('heading', { name: 'Find songs by mood, artist, or moment' }),
     ).toBeDefined();
   });
 });

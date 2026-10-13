@@ -1,7 +1,7 @@
 /**
  * The tint the page takes on for a vibe. Pure: a prompt in, one colour out.
  * Keywords are matched in order so a named Lagos moment wins over a generic
- * word inside it. Every tint is a CSS token from the cobalt and azure palette.
+ * word inside it. Every tint is a CSS token from the lime and green palette.
  */
 
 import { vibeTintVariables } from './design-tokens';

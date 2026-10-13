@@ -63,7 +63,7 @@ describe('SiteFooter', () => {
     expect(mark.getAttribute('href')).toBe(LANDING_TOP_FRAGMENT);
     // The real wordmark, not a word of text, and the accent dot with it.
     expect(
-      mark.querySelector('[role="img"][aria-label="muse"]'),
+      mark.querySelector('[role="img"][aria-label="MUSE"]'),
     ).not.toBeNull();
     expect(mark.querySelector('[data-piece="dot"]')).not.toBeNull();
     expect(

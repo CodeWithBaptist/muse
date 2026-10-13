@@ -1,15 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/use-auth";
-import { getSpotifyTrackUri } from "@/lib/spotify-playback";
+import { useTrackDetails } from '@/components/chat/TrackDetails';
+import * as React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/use-auth';
+import { getSpotifyTrackUri } from '@/lib/spotify-playback';
 import {
   PlaybackControlInputSchema,
   PlaybackStartResponseSchema,
   PlaybackStatusResponseSchema,
   UserPreferencesResponseSchema,
-} from "@/lib/validation/api-schemas";
+} from '@/lib/validation/api-schemas';
 
 export interface InspectedTrack {
   id: string;
@@ -23,23 +24,26 @@ export interface InspectedTrack {
 }
 
 export type PlaybackAvailability =
-  | "checking"
-  | "ready"
-  | "premium-required"
-  | "reconnect-required"
-  | "disconnected"
-  | "unavailable";
-export type PlaybackMode = "spotify" | null;
-export type PlaybackAction = "spotify" | null;
-export type PlaybackPreference = "muse" | "spotify";
+  | 'checking'
+  | 'ready'
+  | 'premium-required'
+  | 'reconnect-required'
+  | 'disconnected'
+  | 'unavailable';
+export type PlaybackMode = 'spotify' | null;
+export type PlaybackAction = 'spotify' | null;
+export type PlaybackPreference = 'muse' | 'spotify';
 
 type PlaybackErrorCode =
-  | "PREMIUM_REQUIRED"
-  | "SPOTIFY_RECONNECT_REQUIRED"
-  | "SPOTIFY_DISCONNECTED"
-  | "NO_ACTIVE_DEVICE";
+  | 'PREMIUM_REQUIRED'
+  | 'SPOTIFY_RECONNECT_REQUIRED'
+  | 'SPOTIFY_DISCONNECTED'
+  | 'NO_ACTIVE_DEVICE';
 
 interface NowPlayingContextValue {
+  detailsOpen: boolean;
+  openDetails: () => void;
+  closeDetails: () => void;
   selectedTrack: InspectedTrack | null;
   activeTrack: InspectedTrack | null;
   availability: PlaybackAvailability;
@@ -58,10 +62,13 @@ interface NowPlayingContextValue {
 }
 
 const NowPlayingContext = React.createContext<NowPlayingContextValue>({
+  detailsOpen: false,
+  openDetails: () => {},
+  closeDetails: () => {},
   selectedTrack: null,
   activeTrack: null,
-  availability: "checking",
-  playbackPreference: "muse",
+  availability: 'checking',
+  playbackPreference: 'muse',
   isPlaying: false,
   isBuffering: false,
   playbackMode: null,
@@ -76,16 +83,16 @@ const NowPlayingContext = React.createContext<NowPlayingContextValue>({
 });
 
 function getApiCode(payload: unknown): PlaybackErrorCode | null {
-  if (typeof payload !== "object" || payload === null || !("code" in payload)) {
+  if (typeof payload !== 'object' || payload === null || !('code' in payload)) {
     return null;
   }
   const code = payload.code;
-  return typeof code === "string" &&
+  return typeof code === 'string' &&
     [
-      "PREMIUM_REQUIRED",
-      "SPOTIFY_RECONNECT_REQUIRED",
-      "SPOTIFY_DISCONNECTED",
-      "NO_ACTIVE_DEVICE",
+      'PREMIUM_REQUIRED',
+      'SPOTIFY_RECONNECT_REQUIRED',
+      'SPOTIFY_DISCONNECTED',
+      'NO_ACTIVE_DEVICE',
     ].includes(code)
     ? (code as PlaybackErrorCode)
     : null;
@@ -97,11 +104,18 @@ export function NowPlayingProvider({
   children: React.ReactNode;
 }) {
   const { authenticated, isLoading: authLoading } = useAuth();
+  const { close: closeListedDetails } = useTrackDetails();
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const openDetails = React.useCallback(() => {
+    closeListedDetails();
+    setDetailsOpen(true);
+  }, [closeListedDetails]);
+  const closeDetails = React.useCallback(() => setDetailsOpen(false), []);
   const playbackStatusQuery = useQuery({
-    queryKey: ["spotify-playback-status"],
+    queryKey: ['spotify-playback-status'],
     queryFn: async () => {
-      const response = await fetch("/api/playback/status", {
-        cache: "no-store",
+      const response = await fetch('/api/playback/status', {
+        cache: 'no-store',
       });
       const payload: unknown = await response.json().catch(() => null);
       return PlaybackStatusResponseSchema.parse(payload);
@@ -111,11 +125,11 @@ export function NowPlayingProvider({
     staleTime: 60_000,
   });
   const userPreferencesQuery = useQuery({
-    queryKey: ["user-preferences"],
+    queryKey: ['user-preferences'],
     queryFn: async () => {
-      const response = await fetch("/api/preferences", { cache: "no-store" });
+      const response = await fetch('/api/preferences', { cache: 'no-store' });
       const payload: unknown = await response.json().catch(() => null);
-      if (!response.ok) throw new Error("Unable to load playback preference");
+      if (!response.ok) throw new Error('Unable to load playback preference');
       return UserPreferencesResponseSchema.parse(payload);
     },
     enabled: authenticated && !authLoading,
@@ -138,23 +152,28 @@ export function NowPlayingProvider({
   );
 
   const playbackPreference =
-    userPreferencesQuery.data?.playbackPreference ?? "muse";
+    userPreferencesQuery.data?.playbackPreference ?? 'muse';
   const baseAvailability: PlaybackAvailability = authLoading
-    ? "checking"
+    ? 'checking'
     : !authenticated
-      ? "disconnected"
+      ? 'disconnected'
       : playbackStatusQuery.isLoading
-        ? "checking"
-        : (playbackStatusQuery.data?.availability ?? "unavailable");
+        ? 'checking'
+        : (playbackStatusQuery.data?.availability ?? 'unavailable');
   const availability = playbackOverride ?? baseAvailability;
 
-  const selectTrack = React.useCallback((track: InspectedTrack) => {
-    setSelectedTrack(track);
-    setPlaybackNotice(null);
-  }, []);
+  const selectTrack = React.useCallback(
+    (track: InspectedTrack) => {
+      setSelectedTrack(track);
+      openDetails();
+      setPlaybackNotice(null);
+    },
+    [openDetails],
+  );
 
   const clearTrack = React.useCallback(() => {
     setSelectedTrack(null);
+    setDetailsOpen(false);
     setPlaybackNotice(null);
   }, []);
 
@@ -162,36 +181,36 @@ export function NowPlayingProvider({
     (track: InspectedTrack): PlaybackAction => {
       const currentTrackIsActive =
         activeTrack?.id === track.id && playbackMode !== null;
-      if (playbackPreference === "spotify" && !currentTrackIsActive) {
+      if (playbackPreference === 'spotify' && !currentTrackIsActive) {
         return null;
       }
-      return availability === "ready" ? "spotify" : null;
+      return availability === 'ready' ? 'spotify' : null;
     },
     [activeTrack?.id, availability, playbackMode, playbackPreference],
   );
 
   const handlePlaybackError = React.useCallback(
     (code: PlaybackErrorCode | null) => {
-      if (code === "PREMIUM_REQUIRED") {
-        setPlaybackOverride("premium-required");
+      if (code === 'PREMIUM_REQUIRED') {
+        setPlaybackOverride('premium-required');
         setPlaybackNotice(
-          "An eligible Spotify Premium subscription is required for playback.",
+          'An eligible Spotify Premium subscription is required for playback.',
         );
       } else if (
-        code === "SPOTIFY_RECONNECT_REQUIRED" ||
-        code === "SPOTIFY_DISCONNECTED"
+        code === 'SPOTIFY_RECONNECT_REQUIRED' ||
+        code === 'SPOTIFY_DISCONNECTED'
       ) {
         setPlaybackOverride(
-          code === "SPOTIFY_DISCONNECTED"
-            ? "disconnected"
-            : "reconnect-required",
+          code === 'SPOTIFY_DISCONNECTED'
+            ? 'disconnected'
+            : 'reconnect-required',
         );
-        setPlaybackNotice("Reconnect Spotify to enable playback in MUSE.");
-      } else if (code === "NO_ACTIVE_DEVICE") {
-        setPlaybackNotice("Open Spotify on an active device, then try again.");
+        setPlaybackNotice('Reconnect Spotify to enable playback in MUSE.');
+      } else if (code === 'NO_ACTIVE_DEVICE') {
+        setPlaybackNotice('Open Spotify on an active device, then try again.');
       } else {
         setPlaybackNotice(
-          "Playback is unavailable here. Open this track in Spotify.",
+          'Playback is unavailable here. Open this track in Spotify.',
         );
       }
     },
@@ -202,15 +221,15 @@ export function NowPlayingProvider({
     async (track: InspectedTrack) => {
       selectTrack(track);
       const action = getPlaybackAction(track);
-      if (action !== "spotify") {
+      if (action !== 'spotify') {
         setPlaybackNotice(
-          availability === "reconnect-required"
-            ? "Reconnect Spotify to enable playback in MUSE."
-            : availability === "premium-required"
-              ? "An eligible Spotify Premium subscription is required for playback."
-              : availability === "disconnected"
-                ? "Connect Spotify to play from MUSE."
-                : "Playback is unavailable here. Open this track in Spotify.",
+          availability === 'reconnect-required'
+            ? 'Reconnect Spotify to enable playback in MUSE.'
+            : availability === 'premium-required'
+              ? 'An eligible Spotify Premium subscription is required for playback.'
+              : availability === 'disconnected'
+                ? 'Link Spotify for testing to play from MUSE.'
+                : 'Playback is unavailable here. Open this track in Spotify.',
         );
         return;
       }
@@ -218,7 +237,7 @@ export function NowPlayingProvider({
       const trackUri = getSpotifyTrackUri(track);
       if (!trackUri) {
         setPlaybackNotice(
-          "This track cannot be played from MUSE. Open it in Spotify.",
+          'This track cannot be played from MUSE. Open it in Spotify.',
         );
         return;
       }
@@ -227,9 +246,9 @@ export function NowPlayingProvider({
       setIsBuffering(true);
       setPlaybackNotice(null);
       try {
-        const response = await fetch("/api/playback/play", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/playback/play', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ trackUri }),
         });
         const payload: unknown = await response.json().catch(() => null);
@@ -242,12 +261,12 @@ export function NowPlayingProvider({
         }
 
         setActiveTrack(track);
-        setPlaybackMode("spotify");
+        setPlaybackMode('spotify');
         setIsPlaying(true);
-        setPlaybackNotice("Playing on your active Spotify device.");
+        setPlaybackNotice('Playing on your active Spotify device.');
       } catch {
         setPlaybackNotice(
-          "Playback is unavailable right now. Open this track in Spotify.",
+          'Playback is unavailable right now. Open this track in Spotify.',
         );
       } finally {
         setIsBuffering(false);
@@ -257,22 +276,22 @@ export function NowPlayingProvider({
   );
 
   const togglePlayback = React.useCallback(async () => {
-    if (!activeTrack || playbackMode !== "spotify") {
+    if (!activeTrack || playbackMode !== 'spotify') {
       const track = selectedTrack ?? activeTrack;
       if (track) await playTrack(track);
       return;
     }
 
-    const action = isPlaying ? "pause" : "resume";
+    const action = isPlaying ? 'pause' : 'resume';
     const parsedAction = PlaybackControlInputSchema.safeParse({ action });
     if (!parsedAction.success) return;
 
     setIsBuffering(true);
     setPlaybackNotice(null);
     try {
-      const response = await fetch("/api/playback/control", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/playback/control', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(parsedAction.data),
       });
       const payload: unknown = await response.json().catch(() => null);
@@ -284,14 +303,14 @@ export function NowPlayingProvider({
         return;
       }
 
-      setIsPlaying(action === "resume");
+      setIsPlaying(action === 'resume');
       setPlaybackNotice(
-        action === "resume"
-          ? "Playing on your active Spotify device."
-          : "Paused on Spotify. Resume here or in Spotify.",
+        action === 'resume'
+          ? 'Playing on your active Spotify device.'
+          : 'Paused on Spotify. Resume here or in Spotify.',
       );
     } catch {
-      setPlaybackNotice("Spotify playback is unavailable right now.");
+      setPlaybackNotice('Spotify playback is unavailable right now.');
     } finally {
       setIsBuffering(false);
     }
@@ -315,6 +334,9 @@ export function NowPlayingProvider({
 
   const value = React.useMemo(
     () => ({
+      detailsOpen,
+      openDetails,
+      closeDetails,
       selectedTrack,
       activeTrack,
       availability,
@@ -332,6 +354,9 @@ export function NowPlayingProvider({
       isTrackBuffering,
     }),
     [
+      detailsOpen,
+      openDetails,
+      closeDetails,
       selectedTrack,
       activeTrack,
       availability,
@@ -366,12 +391,12 @@ export function formatTrackDuration(durationMs?: number): string | null {
   const totalSeconds = Math.floor(durationMs / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
 export function getSpotifyTrackUrl(trackId?: string): string | null {
   if (!trackId) return null;
-  const cleanId = trackId.replace(/^spotify:track:/, "").trim();
+  const cleanId = trackId.replace(/^spotify:track:/, '').trim();
   if (!/^[A-Za-z0-9]{22}$/.test(cleanId)) return null;
   return `https://open.spotify.com/track/${encodeURIComponent(cleanId)}`;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { visitorMessage } from '@/lib/visitor-copy';
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 
@@ -40,7 +41,8 @@ const AuthContext = React.createContext<{
 async function readErrorMessage(response: Response): Promise<string> {
   try {
     const body = (await response.json()) as { error?: unknown };
-    if (typeof body.error === 'string' && body.error.trim()) return body.error;
+    if (typeof body.error === 'string' && body.error.trim())
+      return visitorMessage(body.error, LOGOUT_FAILED_MESSAGE);
   } catch {
     // Not JSON; fall through to the generic message.
   }

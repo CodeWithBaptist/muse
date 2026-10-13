@@ -16,11 +16,12 @@ export const colors = {
   textSecondary: '#A1A1A8',
   textMuted: '#85858C',
   textFaint: '#6B6B73',
-  accent: '#5B9BFF',
-  accentPrimary: '#2F5BEA',
-  accentContrast: '#FFFFFF',
-  accentDark: '#5B9BFF',
-  accentLight: '#174CB4',
+  accent: '#A8E85C',
+  accentPrimary: '#A8E85C',
+  accentBoundary: '#A8E85C',
+  accentContrast: '#0B0B0C',
+  accentDark: '#A8E85C',
+  accentLight: '#375B0D',
   danger: '#E8705F',
 } as const;
 
@@ -29,7 +30,7 @@ export type ColorToken = keyof typeof colors;
 /**
  * The light theme, applied under html[data-theme="light"]. Same roles; every
  * text token clears WCAG AA on the page and on the surface (faint is for
- * large text only, as in the dark theme), and the azure link color deepens so
+ * large text only, as in the dark theme), and the green link color deepens so
  * it still reads as text on paper.
  */
 export const lightColors: Record<ColorToken, string> = {
@@ -41,29 +42,30 @@ export const lightColors: Record<ColorToken, string> = {
   textSecondary: '#4A4A50',
   textMuted: '#5F5F66',
   textFaint: '#80808A',
-  accent: '#174CB4',
-  accentPrimary: '#2F5BEA',
-  accentContrast: '#FFFFFF',
-  accentDark: '#5B9BFF',
-  accentLight: '#174CB4',
+  accent: '#375B0D',
+  accentPrimary: '#A8E85C',
+  accentBoundary: '#375B0D',
+  accentContrast: '#0B0B0C',
+  accentDark: '#A8E85C',
+  accentLight: '#375B0D',
   danger: '#B93A28',
 };
 
 /** CSS custom property name for each color token. */
 export const vibeTints = {
-  muse: '#5B9BFF',
-  carnival: '#3B6FEA',
-  heartbreak: '#5182EE',
-  owambe: '#4B78EB',
-  traffic: '#4771E2',
-  nightDrive: '#2F5BEA',
-  study: '#3F75EA',
-  devotion: '#638CFF',
-  sunday: '#4B7AF0',
-  grind: '#335FD8',
-  piano: '#426CDF',
-  classics: '#4D78DF',
-  calm: '#5B9BFF',
+  muse: '#A8E85C',
+  carnival: '#9DDB50',
+  heartbreak: '#B0DD82',
+  owambe: '#A0D65E',
+  traffic: '#91C94B',
+  nightDrive: '#A8E85C',
+  study: '#96CE55',
+  devotion: '#B4E67B',
+  sunday: '#ADDA75',
+  grind: '#85BD40',
+  piano: '#98D04C',
+  classics: '#9CCB65',
+  calm: '#A8E85C',
 } as const;
 
 export const vibeTintVariables: Record<keyof typeof vibeTints, string> = {
@@ -93,6 +95,7 @@ export const colorVariables: Record<ColorToken, string> = {
   textFaint: '--color-text-faint',
   accent: '--color-accent',
   accentPrimary: '--color-accent-primary',
+  accentBoundary: '--color-accent-boundary',
   accentContrast: '--color-accent-contrast',
   accentDark: '--color-accent-dark',
   accentLight: '--color-accent-light',

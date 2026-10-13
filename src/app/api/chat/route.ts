@@ -216,7 +216,7 @@ export async function POST(request: Request) {
         logChatError('Open chat stream error', error);
         return encodeSseEvent({
           type: 'error',
-          error: 'Unable to process chat request right now.',
+          error: AI_NOT_CONNECTED_MESSAGE,
           code: 'AI_ERROR',
         });
       });
@@ -235,7 +235,7 @@ export async function POST(request: Request) {
         return openPlaylistFailure();
       }
       return NextResponse.json(
-        { error: 'Unable to process chat request right now.', code: 'AI_ERROR' },
+        { error: AI_NOT_CONNECTED_MESSAGE, code: 'AI_ERROR' },
         { status: 500 }
       );
     }
@@ -413,7 +413,7 @@ export async function POST(request: Request) {
               controller.enqueue(
                 encodeSseEvent({
                   type: 'error',
-                  error: 'Unable to process chat request right now.',
+                  error: AI_NOT_CONNECTED_MESSAGE,
                   code: 'AI_ERROR',
                 })
               );
@@ -508,7 +508,7 @@ export async function POST(request: Request) {
     }
     logChatError('Chat API Error', error);
     return NextResponse.json(
-      { error: 'Unable to process chat request right now.' },
+      { error: AI_NOT_CONNECTED_MESSAGE },
       { status: 500 }
     );
   }

@@ -92,7 +92,7 @@ describe('SiteHeader', () => {
   it('carries the mark with the accent dot on the left', () => {
     render(<SiteHeader />);
 
-    expect(screen.getByRole('img', { name: 'muse' })).toBeDefined();
+    expect(screen.getByRole('img', { name: 'MUSE' })).toBeDefined();
     expect(
       document.querySelector('[data-testid="landing-mark-dot"]'),
     ).not.toBeNull();

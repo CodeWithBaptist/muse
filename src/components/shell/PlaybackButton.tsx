@@ -33,7 +33,7 @@ export function PlaybackButton({
       title={label}
       disabled={disabled || busy}
       className={cn(
-        'inline-flex items-center justify-center rounded-full bg-accent-primary text-accent-contrast transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+        'inline-flex items-center justify-center rounded-full border border-accent-boundary bg-accent-primary text-accent-contrast transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background',
         className,
       )}
     >

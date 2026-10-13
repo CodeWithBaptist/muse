@@ -14,8 +14,8 @@ export type BillingErrorCode =
 export const BILLING_MESSAGES: Record<BillingErrorCode, string> = {
   PAYMENTS_DISABLED: 'Plus is not open yet. Nothing is charged.',
   PAYMENTS_NOT_CONFIGURED:
-    'Payments are switched on but the Paystack keys are missing.',
-  PRICE_NOT_SET: 'The Plus price has not been set, so checkout cannot start.',
+    'Payments are unavailable right now. Try again later.',
+  PRICE_NOT_SET: 'Plus checkout is unavailable right now. Try again later.',
   PAYSTACK_UNAVAILABLE:
     'Paystack did not answer. Nothing was charged. Try again in a moment.',
   INVALID_SIGNATURE: 'The webhook signature did not match.',

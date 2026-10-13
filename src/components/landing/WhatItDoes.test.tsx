@@ -111,7 +111,9 @@ describe('WhatItDoes', () => {
 
     expect(screen.getByText('What it does')).toBeDefined();
     expect(
-      screen.getByRole('heading', { name: 'Ask for anything. It listens.' }),
+      screen.getByRole('heading', {
+        name: 'Find songs by mood, artist, or moment',
+      }),
     ).toBeDefined();
     expect(screen.getByText('Try asking for')).toBeDefined();
     expect(document.getElementById('what-it-does')).not.toBeNull();

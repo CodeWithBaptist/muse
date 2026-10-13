@@ -336,7 +336,7 @@ describe('Stage B Security Hardening', () => {
       const body = await res.json();
       expect(JSON.stringify(body)).not.toContain('SENSITIVE_DB_ERROR');
       expect(body).toEqual({
-        error: 'Unable to process chat request right now.',
+        error: "MUSE can't answer right now. Try again later.",
       });
       const loggedDetails = JSON.stringify(errorLog.mock.calls);
       expect(loggedDetails).not.toContain('SENSITIVE_DB_ERROR');

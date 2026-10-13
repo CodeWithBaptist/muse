@@ -122,7 +122,7 @@ describe('HowItWorks', () => {
     render(<HowItWorks />);
 
     expect(
-      screen.getByRole('heading', { name: 'Four steps. No filters.' }),
+      screen.getByRole('heading', { name: 'From your request to a song list' }),
     ).toBeDefined();
     expect(screen.getByText('How it works')).toBeDefined();
     expect(stepNodes()).toHaveLength(4);

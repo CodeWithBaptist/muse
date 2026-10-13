@@ -76,9 +76,12 @@ describe('DisplayMenu', () => {
       name: 'Display settings',
     });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(dialog.className).toContain('fixed inset-x-4 bottom-0');
-    expect(dialog.className).toContain('max-w-[calc(100vw-2rem)]');
-    expect(dialog.style.maxHeight).toContain('70dvh');
+    expect(trigger).toHaveAttribute('aria-controls', dialog.id);
+    expect(dialog).toHaveClass('muse-sheet');
+    expect(dialog.querySelector('.muse-sheet-panel')).toBeInTheDocument();
+    expect(dialog.querySelector('.muse-sheet-content')).toHaveClass(
+      'overflow-y-auto',
+    );
     expect(screen.getByRole('group', { name: 'Theme' })).toBeInTheDocument();
     expect(
       screen.getByRole('group', { name: 'Lite mode' }),

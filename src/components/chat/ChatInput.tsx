@@ -60,7 +60,7 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
           disabled={disabled}
           maxLength={CHAT_MESSAGE_MAX_LENGTH}
           className={cn(
-            'w-full resize-none overflow-hidden rounded-xl border border-border-subtle bg-surface py-4 pl-6 pr-14 text-sm text-text-primary placeholder:text-text-muted',
+            'w-full resize-none overflow-hidden rounded-xl border border-border-subtle bg-surface py-4 pl-6 pr-16 text-base text-text-primary placeholder:text-text-muted',
             'transition-colors focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/20',
             'disabled:opacity-50',
           )}
@@ -71,9 +71,9 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
           aria-label="Send message"
           disabled={!value.trim() || disabled}
           className={cn(
-            'absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed',
+            'absolute bottom-2 right-2 flex h-11 w-11 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed',
             value.trim() && !disabled
-              ? 'bg-accent-primary text-accent-contrast'
+              ? 'border border-accent-boundary bg-accent-primary text-accent-contrast'
               : 'border border-border-strong bg-surface text-text-muted',
           )}
         >

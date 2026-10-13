@@ -27,9 +27,7 @@ describe('PlansView', () => {
     );
     expect(screen.queryByRole('textbox')).toBeNull();
     expect(screen.queryByRole('button', { name: /paystack/i })).toBeNull();
-    expect(document.body.textContent?.toLowerCase()).toContain(
-      'spotify account',
-    );
+    expect(document.body.textContent?.toLowerCase()).toContain('tester-only');
   });
 
   it('keeps the form closed with the flag on until a price exists, and never claims Plus on return', () => {
@@ -41,7 +39,7 @@ describe('PlansView', () => {
     );
     expect(screen.getByTestId('plus-closed')).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(
-      'does not claim it yet',
+      'Paid entitlements are not implemented',
     );
   });
 });

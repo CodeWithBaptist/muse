@@ -2,6 +2,86 @@
 
 Meaningful architectural and product decisions, newest first. Each entry records the decision, why it was made, the alternatives considered, the impact, and the date. Add an entry before making a change that would be expensive to reverse.
 
+
+## 2026-10-13: Authorized Stage 2 uses lime fills with explicit light-theme boundaries
+
+**Decision**
+Use the existing dark lime `#A8E85C` for light primary fills too. Preserve near-black `#0B0B0C` labels and olive `#375B0D` light text. Introduce a mirrored `accentBoundary` token and apply a one-pixel border to shared and standalone primary controls. The dark boundary remains lime; the light boundary is olive.
+
+**Why**
+The proposed olive `#4D6B00` fails 4.5:1 at an existing 80%-opacity text state. The retained shade passes. Bright lime is only 1.35:1 against cream and 1.46:1 against white, so a visible olive perimeter supplies the 3:1 component boundary requirement. Tests update the old fill-edge assertions to the actual border role, without lowering thresholds or dropping label, hover, focus or tint assertions.
+
+**Alternatives considered**
+Retaining the darkened green primary fill would miss the requested bright lime treatment. Bright lime without a border would lose the control edge on paper. Replacing typography or regenerating wordmark geometry is unnecessary and prohibited.
+
+**Impact**
+No dependencies or service settings change. Existing icons, manifest and metadata already meet the lime requirements; running the existing generator produces identical assets. The session cannot create `accent-lime`, so this stage uses a separate commit on the fixed branch and the same draft PR, transparently retaining its earlier work. No merge is authorized. Browser and physical-phone validation remain limited by missing Chromium and test hardware.
+
+---
+
+
+## 2026-10-13: Mobile-layout Stage 1 reuses navigation and shares modal sheets
+
+**Decision**
+Keep the existing navigation source and 768px sidebar switch. Below 1280px, track inspection uses the shared `BottomSheet`; the desktop content is reused rather than maintained as a separate mobile detail view. Display menus switch from Floating UI collision-aware popovers to that same sheet below 640px. The phone account sheet uses the existing auth logout function and display preferences. Guests have no account-only settings or logout.
+
+The page column reserves `--muse-bottom-space`, the sum of safe-area-aware tab space and measured mini-player height. Scroll containers inherit the same scroll-padding value. Touch chat focus below 1280px hides the tabs and player, with dynamic and visual viewport sizing and latest-message positioning. The native modal dialog provides top-layer isolation; explicit focus cycling, body locking, return focus, Close, Escape, backdrop and handle swipe dismissal are shared. Motion uses existing transform/opacity tokens and is instant in Lite or reduced mode.
+
+**Why**
+The navigation already worked; rebuilding it would introduce avoidable divergence. Logout was available inside Settings, but not directly from the phone header. The former tester rail was hidden below 1280px without a matching sheet, while guest details used a separate dialog. A shared sheet fixes those gaps without a third column on tablets.
+
+**Alternatives considered**
+
+- Independent sheets for each feature: rejected because focus and touch behavior would diverge.
+- Viewport shrink alone as keyboard detection: rejected because it misses focus intent and mistakes browser chrome changes for keyboards.
+- New modal dependency: unnecessary with native dialog and the installed React and Floating UI tools.
+- Separate `mobile-layout` branch and PR: unavailable in this fixed-branch session. Use a distinct commit on `arena/f36706d9-muse` and keep the existing draft PR unmerged. Its diff still contains earlier work.
+
+**Impact**
+No new dependency, environment setting or color change. Visitor-facing setup instructions are replaced by plain availability messages; legacy missing-AI classification and response codes remain intact. Privacy retains its hashing disclosure without naming a configuration variable. Its claim inventory stays synchronized. Native browser layout, axe and real phone keyboards are not verified because Chromium is unavailable here. See `docs/mobile-layout-checks.md` for results and browser-only review steps. The new request's accent Stage 2 is not authorized and has not started.
+
+---
+
+## 2026-10-13: Stage 2 adds local share cards, explicit crawl scope and owner-supplied legal values
+
+**Decision**
+Public pages get explicit canonical, Open Graph and Twitter metadata from `NEXT_PUBLIC_SITE_URL`, falling back to the owner-supplied Vercel production origin. `robots.ts` and `sitemap.ts` use a single list of five public routes. The app route group defaults to noindex, with chat explicitly opting into indexing. Login and the design reference remain noindex; Plus remains excluded while its entitlements are not live. The production design page calls `notFound()` unless `SHOW_DESIGN_SYSTEM` is exactly `true`.
+
+Share images use Next ImageResponse at 1200x630, the current Logo outlines copied into image code, the token colors and a committed local Fredoka weight 500 font instance derived from the existing UI font package. Wordmark paths are tested against Logo; no font is used to draw them. No dependency is added and no font download occurs at build time. The existing apple touch icon already supplies the required 180px icon.
+
+**Why**
+Explicit URLs prevent preview hosts from becoming canonical production URLs. Local images and font assets make build and image rendering independent of third-party font servers. A noindex app default protects tester pages without rewriting their client components. The exact override value makes an accidental production design-page exposure less likely. Noindex and robots directives are indexing hints, not access control.
+
+**Alternatives considered**
+
+- Remote font requests: rejected because share rendering must work without network access.
+- Font-rendered brand letters: rejected because the card must match the existing SVG wordmark.
+- Invented hosting regions: rejected. Vercel comes from the deployment context; regions remain unconfirmed.
+- A second stage branch: unavailable in this fixed-branch session. Stage 2 is a separate commit on the existing head, and PR #12 is updated rather than falsely presented as an independent Stage 2 PR.
+
+**Impact**
+The owner should set public variable `NEXT_PUBLIC_SITE_URL=https://muse-six-pink.vercel.app` in Vercel and leave `SHOW_DESIGN_SYSTEM` unset or `false` in production. Rebuild after changing the public origin. The Privacy provider is Neon as supplied by the owner; existing README and docs contain no Neon hostname pattern, so this was not independently verified and no connection secret was read. Terms use the owner-supplied Nigerian law and Lagos courts. All legal pages display Last updated: 13 October 2026. Remaining hosting-region editorial blanks are removed from the page and preserved as operational questions in the legal notes. The complete rendered Privacy claim inventory is in `docs/stage-share-privacy-inventory.md`. Stage 3 remains deferred.
+
+---
+
+## 2026-10-13: Stage 1 restores lime with separate accessible light-theme colors
+
+**Decision**
+Use the owner's `#A8E85C` brand accent and `#0B0B0C` on-accent text on dark surfaces. Light-theme accents use `#375B0D`, and primary fills use `#5A9315` with the same near-black label. CSS and TypeScript tokens stay mirrored. Vibe tint tokens move to lime and green. The existing icon generator now synchronizes static brand SVG fills and manifest colors from the TypeScript tokens, and generates maskable PNGs alongside favicon sizes and ICO. No icon path, corner radius, landing animation logic, neutral, theme setting or Lite behavior changes.
+
+**Why**
+Undarkened lime fails the light-surface control contrast requirement. The light shades retain the lime hue and saturation while reducing lightness. The text shade accounts for existing 80% opacity labels and tinted badges, rather than stopping at the 4.5:1 threshold for plain links. The primary shade meets 3:1 against the light background even at 90% hover, and exceeds 4.5:1 for near-black labels. Existing assertions remain intact; additional state and generated-asset tests extend coverage.
+
+**Alternatives considered**
+
+- Lime on white everywhere: fails text and control contrast.
+- White labels on the lime accent: fails text contrast.
+- Removing the existing light control contrast assertion: rejected; a color change must not weaken accessibility tests.
+- New icon or palette dependencies: unnecessary; the existing Sharp and icon tools suffice.
+
+**Impact**
+No environment variables or Vercel settings change. Run `node scripts/generate-icons.js` after changing brand tokens. The session remains on `arena/f36706d9-muse` by owner confirmation. Earlier guest, legal and copy work is preserved in its own commit, so the branch PR includes that work before the Stage 1 brand commit. Stage 2 and Stage 3 remain deferred. Chromium could not be downloaded in this environment because the browser CDN is outside the available network; the responsive Playwright checks must run where the existing Playwright browser can be installed.
+
 ---
 
 ## 2026-10-09: The interface is quiet: no celebration effects, no sounds, one flat vibe tint, plain loading lines
@@ -207,7 +287,7 @@ New files: `src/lib/chat-preferences.ts`, `src/lib/chat-preferences-store.ts`, `
 ## 2026-10-08: Chat needs no account; guests get a model-built, region-tagged list and keep their chat on the device
 
 **Decision**
-`/chat` is open to everyone and every landing "Connect Spotify" action is now "Start", a plain link into it. Without a session, `POST /api/chat` answers from the turns the browser sends (at most ten, validated) and writes nothing to the database. Discovery requests go to a new open engine (`src/lib/ai/playlist-engine.ts`) that asks the model for a strict JSON playlist of eight to twelve real songs, each with a title, an artist, one sentence on why, and a region tag of Nigeria, Africa, or Global, parsed defensively (aliases, fences, duplicates, lists cut off by the token cap) and never padded; an answer with no usable song is retried once, then reported honestly. Other messages get a streamed reply whose prompt states that MUSE has no listening data for this visitor. On the client, a guest's conversation lives in `localStorage` behind a small external store read through `useSyncExternalStore`; the account-only pages (Discover, Library, Playlists, Profile, Settings) keep their sign-in redirect and disappear from a guest's navigation. The signed-in path, with its Spotify-backed engine and saved conversations, is unchanged for now.
+`/chat` is open to everyone and every landing "Link Spotify for testing" action is now "Start", a plain link into it. Without a session, `POST /api/chat` answers from the turns the browser sends (at most ten, validated) and writes nothing to the database. Discovery requests go to a new open engine (`src/lib/ai/playlist-engine.ts`) that asks the model for a strict JSON playlist of eight to twelve real songs, each with a title, an artist, one sentence on why, and a region tag of Nigeria, Africa, or Global, parsed defensively (aliases, fences, duplicates, lists cut off by the token cap) and never padded; an answer with no usable song is retried once, then reported honestly. Other messages get a streamed reply whose prompt states that MUSE has no listening data for this visitor. On the client, a guest's conversation lives in `localStorage` behind a small external store read through `useSyncExternalStore`; the account-only pages (Discover, Library, Playlists, Profile, Settings) keep their sign-in redirect and disappear from a guest's navigation. The signed-in path, with its Spotify-backed engine and saved conversations, is unchanged for now.
 
 **Why**
 The owner's brief: the product must work for a visitor in Lagos with no Spotify account and no sign-up, and the server must return a strict, safely parsed list rather than prose. The owner also chose, at the start of this rebuild, that anonymous visitors leave only counters on the server, so the browser is the only honest place for their history. A separate engine, rather than a rewrite of the Spotify one, keeps the tester path working while verification (Task 4) and links (Task 5) are built on the new list; the two converge once the open list can be verified.
@@ -283,7 +363,7 @@ The product owner chose both patterns on 2026-10-08. Tabs are reachable with one
 
 ---
 
-## 2026-10-07: The landing decides "Connect Spotify" availability on the server
+## 2026-10-07: The landing decides "Link Spotify for testing" availability on the server
 
 **Decision**
 The landing page reads the Spotify sign-in configuration on the server for every request (`isSpotifyLoginConfigured()` in `src/lib/spotify-config.ts`, which needs `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, `SPOTIFY_REDIRECT_URI`, and a usable `ENCRYPTION_KEY`) and passes the result to the header, hero, and closing band. When sign-in cannot complete, the primary action renders disabled with a visible explanation. The auth start route redirects browser navigations back to `/?error=auth_not_configured` and keeps the JSON 503 for programmatic callers, and the landing now explains every `?error=` code the auth routes redirect with.
