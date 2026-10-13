@@ -62,6 +62,7 @@ export default function PrivacyPage() {
               <LegalList
                 items={[
                   'The last 40 messages of your conversation (key muse.chat.local.v1).',
+                  'The playlists MUSE built for you, up to 20 of the most recent, with the songs on each (key muse.saved.lists.v1). They appear under "Saved on this device" in Chat, where each one can be copied, downloaded as CSV, shared, or deleted, and all of them can be cleared at once.',
                   'Your chat settings: the Nigeria or Global scope and the English, Pidgin, or mix language choice (key muse.chat.prefs.v1).',
                   'Your display settings: dark or light and Lite mode (key muse.ui.prefs.v1).',
                   'Your taste snapshot, if you add one on the tester-only Profile page (key muse.taste.v1). See the optional features below.',
@@ -366,6 +367,7 @@ export default function PrivacyPage() {
               <LegalList
                 items={[
                   '"New chat" in the chat header deletes the stored conversation from your browser.',
+                  '"Delete" on a saved playlist in Chat removes that list, and "Clear all" removes every saved playlist (key muse.saved.lists.v1).',
                   '"Remove from this device" on the Profile page deletes the taste snapshot.',
                   "Clearing this site's data in your browser settings removes everything else, including your display and chat settings.",
                   'Guests have no saved server conversation to delete. Hashed counter keys and operational logs may remain as described above.',

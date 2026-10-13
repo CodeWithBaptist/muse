@@ -10,6 +10,9 @@ import { isActivePath, navItemsFor, SETTINGS_NAV } from './shell-nav';
  * Phone navigation uses up to six tabs. Each tab is at least 44px tall, the
  * bar pads itself for the home indicator, and the active tab is told apart by
  * colour, weight, and a small accent mark so it never relies on colour alone.
+ *
+ * A visitor without a Spotify connection gets Chat and Profile only, so the
+ * two tabs share the width and nothing hidden is advertised.
  */
 export function BottomTabs() {
   const pathname = usePathname();

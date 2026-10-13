@@ -6,7 +6,6 @@ import {
   handshakeCookieOptions,
   isAuthErrorCode,
   loginPathForError,
-  loginPathForReturn,
   redirectTo,
   safeNextPath,
 } from './auth-flow';
@@ -73,11 +72,14 @@ describe('login paths', () => {
     );
   });
 
-  it('remembers where a signed out visitor was heading', () => {
-    expect(loginPathForReturn('/settings')).toBe('/login?next=%2Fsettings');
-    expect(loginPathForReturn('/chat')).toBe('/login');
-    expect(loginPathForReturn('/')).toBe('/login?next=%2F');
-    expect(loginPathForReturn(null)).toBe('/login');
+  it('keeps the guest home path out of the login flow', () => {
+    // Guests are no longer sent to the login page; the shell sends them to
+    // GUEST_HOME_PATH instead, and only a real sign-in failure uses these
+    // paths. A hidden app page is therefore never a login return path.
+    expect(loginPathForError('testers_only', '/chat')).toBe(
+      '/login?error=testers_only',
+    );
+    expect(safeNextPath('/settings')).toBe('/settings');
   });
 });
 

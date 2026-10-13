@@ -19,12 +19,10 @@ vi.mock('@/hooks/use-auth', () => ({
 }));
 beforeEach(() => {
   auth.authenticated = true;
-  auth.logout
-    .mockReset()
-    .mockResolvedValue({
-      ok: false,
-      message: 'Unable to log out right now. Please try again.',
-    });
+  auth.logout.mockReset().mockResolvedValue({
+    ok: false,
+    message: 'Unable to log out right now. Please try again.',
+  });
 });
 function setup() {
   render(<AccountSheet />);
@@ -32,16 +30,16 @@ function setup() {
   return within(screen.getByRole('dialog', { name: 'Account' }));
 }
 describe('phone account', () => {
-  it('offers guest identity and display preferences, but no tester settings, Spotify status or logout', () => {
+  it('draws nothing at all for a visitor without a Spotify connection', () => {
     auth.authenticated = false;
-    const sheet = setup();
-    expect(sheet.getByText('Guest')).toBeInTheDocument();
-    expect(sheet.getByText('Chat stays on this device')).toBeInTheDocument();
-    expect(sheet.getByRole('group', { name: 'Theme' })).toBeInTheDocument();
-    expect(sheet.getByRole('group', { name: 'Lite mode' })).toBeInTheDocument();
-    expect(sheet.queryByText('Spotify connected')).toBeNull();
-    expect(sheet.queryByRole('link', { name: 'Settings' })).toBeNull();
-    expect(sheet.queryByRole('button', { name: 'Log out' })).toBeNull();
+    render(<AccountSheet />);
+    // No chip, so no sheet, no guest identity, no settings, no log out, and
+    // nothing to press that would do nothing.
+    expect(screen.queryByRole('button', { name: 'Account' })).toBeNull();
+    expect(screen.queryByRole('dialog', { name: 'Account' })).toBeNull();
+    expect(screen.queryByText('Guest')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
   });
   it('shows the tester, wraps their name, opens Settings and reports failed logout', async () => {
     const sheet = setup();

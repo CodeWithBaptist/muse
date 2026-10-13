@@ -113,7 +113,7 @@ describe('AppShell', () => {
     expect(main.getAttribute('tabindex')).toBe('-1');
   });
 
-  it('shows an accessible loading state while the session is unknown on an account page', () => {
+  it('shows an accessible loading state while the session is unknown on a hidden page', () => {
     auth.isLoading = true;
     auth.authenticated = false;
     navigation.pathname = '/library';
@@ -124,12 +124,34 @@ describe('AppShell', () => {
     expect(screen.queryByRole('main')).toBeNull();
   });
 
-  it('sends signed out visitors to the login page and remembers where they were', () => {
+  it('sends a visitor without a Spotify connection from a hidden page to Chat', () => {
     auth.authenticated = false;
     navigation.pathname = '/settings';
     renderShell();
-    expect(navigation.replace).toHaveBeenCalledWith('/login?next=%2Fsettings');
+    expect(navigation.replace).toHaveBeenCalledWith('/chat');
     expect(navigation.push).not.toHaveBeenCalled();
+  });
+
+  it('never paints a hidden page for a visitor without a Spotify connection', () => {
+    auth.authenticated = false;
+    auth.isLoading = false;
+    navigation.pathname = '/library';
+    renderShell(<p>Library body</p>);
+    // The page body and its error states are not rendered at all: the shell
+    // shows the loading state while the redirect is in flight, so a guest
+    // sees Chat rather than a failure.
+    expect(screen.queryByText('Library body')).toBeNull();
+    expect(screen.getByRole('status')).toBeDefined();
+    expect(navigation.replace).toHaveBeenCalledWith('/chat');
+  });
+
+  it('opens Profile to a visitor without a Spotify connection', () => {
+    auth.authenticated = false;
+    auth.isLoading = false;
+    navigation.pathname = '/profile';
+    renderShell(<p>Profile body</p>);
+    expect(screen.getByText('Profile body')).toBeDefined();
+    expect(navigation.replace).not.toHaveBeenCalled();
   });
 
   it('lets guests use the chat without a redirect and without waiting for the session', () => {

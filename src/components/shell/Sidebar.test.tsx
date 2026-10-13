@@ -65,18 +65,30 @@ describe('Sidebar', () => {
     expect(aside.className).toContain('md:flex');
   });
 
-  it('shows guests only the chat, says where their chat lives, and offers no account controls', () => {
+  it('gives a visitor Chat and Profile only, with no account chip, sign in, or log out', () => {
     auth.authenticated = false;
     render(<Sidebar />);
     expect(
       screen.getByRole('link', { name: 'Chat' }).getAttribute('href'),
     ).toBe('/chat');
+    expect(
+      screen.getByRole('link', { name: 'Profile' }).getAttribute('href'),
+    ).toBe('/profile');
     for (const item of PRIMARY_NAV.filter((entry) => !entry.open)) {
       expect(screen.queryByRole('link', { name: item.label })).toBeNull();
     }
-    expect(screen.getByText('Guest')).toBeDefined();
-    expect(screen.getByText('Chat stays on this device')).toBeDefined();
+    // No account surface of any kind, and no empty stand-in heading either.
+    expect(screen.queryByText('Guest')).toBeNull();
+    expect(screen.queryByText('Chat stays on this device')).toBeNull();
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Log out' })).toBeNull();
+    expect(
+      screen.queryByRole('navigation', { name: 'Account navigation' }),
+    ).toBeNull();
+    expect(screen.queryByText(/Sign in|Create account|Log in/)).toBeNull();
+    // Display settings stay, so a guest keeps theme and Lite mode.
+    expect(
+      screen.getByRole('button', { name: 'Display settings' }),
+    ).toBeDefined();
   });
 });

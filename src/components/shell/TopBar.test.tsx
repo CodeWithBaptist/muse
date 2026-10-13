@@ -22,11 +22,16 @@ describe('TopBar', () => {
     auth.authenticated = true;
   });
 
-  it('keeps the wordmark but drops the Settings control for guests', () => {
+  it('keeps the wordmark and Display but drops the account chip and Settings for guests', () => {
     auth.authenticated = false;
     render(<TopBar />);
     expect(screen.getByRole('link', { name: 'MUSE home' })).toBeDefined();
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Account' })).toBeNull();
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    expect(
+      screen.getByRole('button', { name: 'Display settings' }),
+    ).toBeDefined();
   });
 
   it('offers the wordmark home link and a 44px Settings control', () => {

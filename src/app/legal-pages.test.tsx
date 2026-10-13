@@ -130,6 +130,7 @@ describe('legal pages', () => {
         /CHAT_PREFERENCES_STORAGE_KEY = '([^']+)'/,
       ],
       ['src/lib/ui-prefs.ts', /UI_PREFS_STORAGE_KEY = '([^']+)'/],
+      ['src/lib/guest-saved-store.ts', /SAVED_LIST_STORAGE_KEY = '([^']+)'/],
       ['src/lib/taste/store.ts', /TASTE_STORAGE_KEY = '([^']+)'/],
     ] as const;
     render(<PrivacyPage />);

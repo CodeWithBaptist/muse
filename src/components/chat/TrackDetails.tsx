@@ -61,6 +61,10 @@ function Details({ selection }: { selection: Selection }) {
           ? `Verified on ${track.verification.source === 'itunes' ? 'Apple Music' : 'Deezer'}`
           : 'Unverified'}
       </p>
+      {/* All six open-in links, in the order people here reach for them,
+          shown to everyone. A guest has no Spotify connection, so these links
+          are the whole of "listen to this" and no playback text appears in
+          this panel; playback lives in the tester-only Now Playing surface. */}
       <nav aria-label="Open in" className="flex flex-wrap gap-3">
         {openLinksFor(track, [
           'audiomack',
@@ -75,6 +79,9 @@ function Details({ selection }: { selection: Selection }) {
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
+            data-open-in={link.service}
+            data-direct={link.direct ? 'true' : undefined}
+            aria-label={`${link.direct ? 'Open' : 'Search for'} ${track.title} by ${track.artist} on ${link.label}`}
             className="text-sm underline focus-ring"
           >
             {link.label}

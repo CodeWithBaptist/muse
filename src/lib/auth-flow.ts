@@ -85,13 +85,6 @@ export function loginPathForError(
   return `${LOGIN_PATH}?${params.toString()}`;
 }
 
-/** Where the shell sends signed out visitors, remembering where they were. */
-export function loginPathForReturn(pathname: string | null): string {
-  const safeNext = safeNextPath(pathname);
-  if (!safeNext || safeNext === DEFAULT_AFTER_LOGIN) return LOGIN_PATH;
-  return `${LOGIN_PATH}?${new URLSearchParams({ next: safeNext }).toString()}`;
-}
-
 /**
  * A 303 with a relative Location. The browser resolves it against the origin
  * it is actually using, so the redirect survives proxies and a dev server

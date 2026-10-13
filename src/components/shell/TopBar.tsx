@@ -37,7 +37,10 @@ export function TopBar() {
       </div>
       <div className="flex items-center gap-1">
         <DisplayMenu />
-        <AccountSheet />
+        {/* Account, Settings, and Log out are for a tester with a Spotify
+            connection. A guest sees none of them: there is no account to
+            open, and no chip standing in for one. */}
+        {authenticated ? <AccountSheet /> : null}
         {authenticated ? (
           <Link
             href={SETTINGS_NAV.href}

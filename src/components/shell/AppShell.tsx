@@ -6,8 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { EqualizerBars } from '@/components/motion/EqualizerBars';
 import { pageTransition, pageTransitionReduced } from '@/lib/motion';
 import { useAuth } from '@/hooks/use-auth';
-import { loginPathForReturn } from '@/lib/auth-flow';
-import { isOpenAppPath } from './shell-nav';
+import { GUEST_HOME_PATH, isOpenAppPath } from './shell-nav';
 import { Sidebar } from './Sidebar';
 import { VibeBackdrop } from '@/components/motion/VibeBackdrop';
 import { TopBar } from './TopBar';
@@ -73,16 +72,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => observer.disconnect();
   }, [authenticated, isLoading, selectedTrack, activeTrack]);
 
-  // Chat is open to everyone. Signed out visitors on the account-only pages
-  // go to the login page, which brings them back once connected. replace()
-  // keeps the protected page out of the history so Back does not bounce them
-  // into the redirect again.
+  // Chat and Profile are open to everyone. A visitor without a Spotify
+  // connection on any other page is sent to Chat: the hidden pages are not
+  // part of the public product, and landing on one is a typing accident or a
+  // stale link, not an error worth showing. replace() keeps the hidden route
+  // out of the history so Back does not bounce them into it again.
   const openPath = isOpenAppPath(pathname);
+  const redirecting = !isLoading && !authenticated && !openPath;
   React.useEffect(() => {
-    if (!isLoading && !authenticated && !openPath) {
-      router.replace(loginPathForReturn(pathname));
-    }
-  }, [authenticated, isLoading, openPath, pathname, router]);
+    if (redirecting) router.replace(GUEST_HOME_PATH);
+  }, [redirecting, router]);
 
   React.useEffect(() => {
     if (previousPathname.current === pathname) return;
@@ -96,7 +95,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Open pages paint straight away; the session only changes what the
   // sidebar offers, and waiting for it would cost a round trip on every visit.
-  if (isLoading && !openPath) {
+  // While the session is unknown, and while a hidden page waits for the
+  // redirect, the page body is not rendered at all, so a guest never sees the
+  // hidden page or one of its error states.
+  if ((isLoading && !openPath) || redirecting) {
     return (
       <div className="muse-shell flex items-center justify-center bg-background">
         <div role="status" aria-live="polite" aria-busy="true">
