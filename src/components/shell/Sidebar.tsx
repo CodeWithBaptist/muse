@@ -91,36 +91,38 @@ export function Sidebar() {
       <div className="mt-auto space-y-3 border-t border-border-subtle p-3">
         <div className="flex items-center gap-3 px-3 pt-2">
           <DisplayMenu className="-ml-2" />
-          {authenticated && user?.avatarUrl ? (
-            <img
-              src={user.avatarUrl}
-              alt=""
-              className="h-8 w-8 rounded-full border border-border-strong"
-            />
-          ) : (
-            <div
-              aria-hidden="true"
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface"
-            >
-              <User className="h-4 w-4 text-text-muted" />
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-semibold text-text-primary">
-              {authenticated
-                ? (user?.displayName ?? 'Spotify account')
-                : 'Guest'}
-            </div>
-            <div className="text-xs leading-relaxed break-words">
-              {authenticated
-                ? 'Spotify connected'
-                : 'Chat stays on this device'}
-            </div>
-          </div>
+          {/* The account chip belongs to testers only. A guest has no account
+              to show and no sign-in to offer, so nothing is drawn here. */}
+          {authenticated ? (
+            <>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt=""
+                  className="h-8 w-8 rounded-full border border-border-strong"
+                />
+              ) : (
+                <div
+                  aria-hidden="true"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-border-strong bg-surface"
+                >
+                  <User className="h-4 w-4 text-text-muted" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs font-semibold text-text-primary">
+                  {user?.displayName ?? 'Spotify account'}
+                </div>
+                <div className="text-xs leading-relaxed break-words">
+                  Spotify connected
+                </div>
+              </div>
+            </>
+          ) : null}
         </div>
 
-        <nav aria-label="Account navigation" className="space-y-1">
-          {authenticated ? (
+        {authenticated ? (
+          <nav aria-label="Account navigation" className="space-y-1">
             <Link
               href={SETTINGS_NAV.href}
               aria-current={
@@ -136,37 +138,33 @@ export function Sidebar() {
               <SETTINGS_NAV.icon className="h-4 w-4" aria-hidden="true" />
               <span>{SETTINGS_NAV.label}</span>
             </Link>
-          ) : null}
-          {authenticated ? (
-            <>
-              <button
-                type="button"
-                onClick={() => void handleLogout()}
-                disabled={logoutState.pending}
-                aria-busy={logoutState.pending || undefined}
-                aria-describedby={
-                  logoutState.error ? 'sidebar-logout-error' : undefined
-                }
-                className={cn(
-                  NAV_LINK,
-                  'w-full text-text-secondary hover:bg-surface hover:text-text-primary disabled:opacity-60',
-                )}
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              disabled={logoutState.pending}
+              aria-busy={logoutState.pending || undefined}
+              aria-describedby={
+                logoutState.error ? 'sidebar-logout-error' : undefined
+              }
+              className={cn(
+                NAV_LINK,
+                'w-full text-text-secondary hover:bg-surface hover:text-text-primary disabled:opacity-60',
+              )}
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+              <span>{logoutState.pending ? 'Logging out' : 'Log out'}</span>
+            </button>
+            {logoutState.error ? (
+              <p
+                id="sidebar-logout-error"
+                role="alert"
+                className="px-3 py-1 text-xs leading-relaxed text-danger"
               >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                <span>{logoutState.pending ? 'Logging out' : 'Log out'}</span>
-              </button>
-              {logoutState.error ? (
-                <p
-                  id="sidebar-logout-error"
-                  role="alert"
-                  className="px-3 py-1 text-xs leading-relaxed text-danger"
-                >
-                  {logoutState.error}
-                </p>
-              ) : null}
-            </>
-          ) : null}
-        </nav>
+                {logoutState.error}
+              </p>
+            ) : null}
+          </nav>
+        ) : null}
       </div>
     </aside>
   );

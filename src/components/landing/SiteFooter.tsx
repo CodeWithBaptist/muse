@@ -7,6 +7,7 @@ import {
   landingTopClickHandler,
 } from '@/lib/landing-scroll';
 import { LandingMark } from './LandingMark';
+import { SendFeedbackLink } from '@/components/support/SendFeedbackLink';
 
 /**
  * The landing footer: a hairline, the mark, and the three real pages that
@@ -61,6 +62,7 @@ export function SiteFooter() {
             >
               Spotify attribution
             </Link>
+            <SendFeedbackLink className="min-h-0" />
           </nav>
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 type-caption text-text-muted">
             <span>&copy; 2026 MUSE.</span>

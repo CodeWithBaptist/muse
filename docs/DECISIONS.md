@@ -3,6 +3,25 @@
 Meaningful architectural and product decisions, newest first. Each entry records the decision, why it was made, the alternatives considered, the impact, and the date. Add an entry before making a change that would be expensive to reverse.
 
 
+## 2026-10-13: Guest-only public launch hides tester pages and keeps guest lists on the device
+
+**Decision**
+Navigation has three tiers. A visitor without a Spotify connection sees Chat and Profile in the sidebar and bottom tabs. A tester with a connection keeps all five destinations plus Settings. The shell sends a visitor off any other app route to `/chat` with `router.replace`, and renders no page body until that redirect has happened, so a hidden page and its error states never paint for a guest.
+
+Guest lists are kept on the device as they arrive, under `muse.saved.lists.v1` (newest 20). That key joins the storage keys list in the Privacy Policy and the owner inventory. The chat header carries a "Saved on this device" panel: per list Copy, Text, CSV, Share, all six open-in links (hidden behind the same small More toggle the track rows use), Delete, and one Clear all. Account surfaces are gone for a guest: no sidebar identity chip, no phone account chip, no account sheet, no Settings link, no Log out. Send feedback is a plain mailto to the contact already on the Privacy page, in the landing footer and the chat header.
+
+**Why**
+The three hidden pages read listening data from Spotify, so for a visitor they can only show "Spotify connection required", which is an account advertisement for a product that has no accounts. Hiding them and stripping every account surface removes that dead end without adding anything. The guest who previously lost a generated list when the conversation moved on now keeps it, with the same actions a generated list already had, plus deletion, so a guest is never without a way to get their list out or remove it.
+
+**Alternatives considered**
+Keeping the pages visible with an explanatory empty state: rejected, that is what makes a guest look for a sign-in. A server redirect in each hidden route layout: rejected for this stage, because it would turn four static routes dynamic and put a database read on each request, while every page in the app already requires JavaScript for its own content. A saved-lists page of its own: rejected, the request is that the list is reachable from Chat. Renaming or reusing an existing storage key: rejected, a new key keeps the privacy statement exact. `loginPathForReturn` became unused when the guest redirect stopped pointing at `/login`; it was removed with its test and the login return path stays available for real sign-in failures.
+
+**Impact**
+No dependency, environment variable, database, or API change. The guest chat flow gains one localStorage write per generated list; nothing leaves the browser. Privacy gains one storage key, one deletion line, and nothing else, and the owner inventory in `docs/stage-share-privacy-inventory.md` stays synchronized by test. Testers keep every page and control; the account sheet is unchanged for them, and it now draws nothing at all for a guest instead of a guest identity. Chromium is still unavailable in this environment, so the browser matrix, including the new `tests/e2e/guest-launch.spec.ts`, is prepared and not executed; jsdom tests and server-rendered HTML checks cover what can be checked here. See `docs/guest-launch-checks.md`.
+
+---
+
+
 ## 2026-10-13: Authorized Stage 2 uses lime fills with explicit light-theme boundaries
 
 **Decision**

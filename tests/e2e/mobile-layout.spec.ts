@@ -51,35 +51,48 @@ for (const theme of ['dark', 'light'] as const) {
             name: 'Account',
             exact: true,
           });
-          await trigger.click();
-          const sheet = page.getByRole('dialog', {
-            name: 'Account',
-            exact: true,
-          });
-          await expect(sheet).toBeVisible();
-          await expect(sheet).toHaveAttribute('aria-modal', 'true');
-          await expect(
-            sheet.getByText(
-              authenticated ? 'Spotify connected' : 'Chat stays on this device',
-            ),
-          ).toBeVisible();
-          await expect(
-            sheet.getByRole('button', { name: 'Log out', exact: true }),
-          ).toHaveCount(authenticated ? 1 : 0);
-          const panel = await sheet.locator('.muse-sheet-panel').boundingBox();
-          expect(panel!.height).toBeLessThanOrEqual(900 * 0.85 + 1);
-          expect(panel!.x).toBeGreaterThanOrEqual(16);
-          expect(panel!.x + panel!.width).toBeLessThanOrEqual(width - 16);
-          expect(
-            (await new AxeBuilder({ page }).include('.muse-sheet').analyze())
-              .violations,
-          ).toEqual([]);
-          await page.keyboard.press('Escape');
-          await expect(sheet).toBeHidden();
-          await expect(trigger).toBeFocused();
+          if (!authenticated) {
+            // A visitor without a Spotify connection has no account surface
+            // at all: no chip to press, so nothing dead to press.
+            await expect(trigger).toHaveCount(0);
+            await expect(
+              page.getByRole('button', { name: 'Log out', exact: true }),
+            ).toHaveCount(0);
+            await expect(
+              page.getByText('Chat stays on this device'),
+            ).toHaveCount(0);
+          } else {
+            await trigger.click();
+            const sheet = page.getByRole('dialog', {
+              name: 'Account',
+              exact: true,
+            });
+            await expect(sheet).toBeVisible();
+            await expect(sheet).toHaveAttribute('aria-modal', 'true');
+            await expect(sheet.getByText('Spotify connected')).toBeVisible();
+            await expect(
+              sheet.getByRole('button', { name: 'Log out', exact: true }),
+            ).toHaveCount(1);
+            const panel = await sheet
+              .locator('.muse-sheet-panel')
+              .boundingBox();
+            expect(panel!.height).toBeLessThanOrEqual(900 * 0.85 + 1);
+            expect(panel!.x).toBeGreaterThanOrEqual(16);
+            expect(panel!.x + panel!.width).toBeLessThanOrEqual(width - 16);
+            expect(
+              (await new AxeBuilder({ page }).include('.muse-sheet').analyze())
+                .violations,
+            ).toEqual([]);
+            await page.keyboard.press('Escape');
+            await expect(sheet).toBeHidden();
+            await expect(trigger).toBeFocused();
+          }
         } else {
           await expect(tabs).toBeHidden();
           await expect(sidebar).toBeVisible();
+          await expect(sidebar.getByRole('link')).toHaveCount(
+            authenticated ? 6 : 2,
+          );
           await page.getByRole('button', { name: 'Display settings' }).click();
           const popover = page.getByRole('dialog', {
             name: 'Display settings',

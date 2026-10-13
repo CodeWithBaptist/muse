@@ -32,15 +32,32 @@ export const PRIMARY_NAV: readonly ShellNavItem[] = [
   { label: 'Profile', href: '/profile', icon: User, open: true },
 ];
 
-/** The destinations a visitor can see: all of them with an account, the open ones without. */
-export function navItemsFor(authenticated: boolean): readonly ShellNavItem[] {
-  return authenticated ? PRIMARY_NAV : PRIMARY_NAV.filter((item) => item.open);
-}
+/** Where a visitor without a Spotify connection is sent from a hidden page. */
+export const GUEST_HOME_PATH = '/chat';
 
 /** Open routes that are not in the navigation. */
 export const OPEN_PATHS: readonly string[] = ['/plus'];
 
-/** True for routes that work without an account, so the shell never redirects them. */
+/**
+ * The destinations a visitor sees: everything for a connected tester (the
+ * only accounts MUSE has), Chat and Profile for everyone else. Discover,
+ * Library, and Playlists need a Spotify connection to mean anything, so a
+ * guest never sees them.
+ */
+export function navItemsFor(authenticated: boolean): readonly ShellNavItem[] {
+  return authenticated ? PRIMARY_NAV : PRIMARY_NAV.filter((item) => item.open);
+}
+
+/** The three destinations a visitor without a Spotify connection never sees. */
+export const GUEST_HIDDEN_LABELS = PRIMARY_NAV.filter((item) => !item.open).map(
+  (item) => item.label,
+);
+
+/**
+ * True for routes that work without a Spotify connection. The shell sends a
+ * visitor off anything else to GUEST_HOME_PATH, so no hidden page ever paints
+ * for them and no error state is reachable.
+ */
 export function isOpenAppPath(pathname: string | null): boolean {
   if (!pathname) return false;
   if (pathname === '/') return true;

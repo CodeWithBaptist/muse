@@ -16,6 +16,7 @@ import {
   getServerGuestMessages,
   subscribeGuestMessages,
 } from '@/lib/guest-chat-store';
+import { saveGuestList } from '@/lib/guest-saved-store';
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -416,6 +417,15 @@ export function useChat(initialConversationId?: string) {
         void refetchConversations();
       } else {
         appendGuestMessage(reply);
+        // A guest has no Playlists page, so the list is kept on the device as
+        // it arrives. It shows up under "Saved on this device" in the chat
+        // header, where it can be copied, downloaded, shared, or deleted.
+        if (reply.recommendations && reply.recommendations.length > 0) {
+          saveGuestList({
+            title: reply.playlistTitle,
+            tracks: reply.recommendations,
+          });
+        }
       }
       setIsThinking(false);
     },
@@ -477,6 +487,8 @@ export function useChat(initialConversationId?: string) {
   return {
     messages,
     isGuest,
+    /** True only once the session has answered and there is no account. */
+    isAuthenticated: authenticated,
     preferences,
     setPreferences,
     sendMessage,

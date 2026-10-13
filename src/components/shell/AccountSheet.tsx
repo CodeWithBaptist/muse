@@ -8,6 +8,13 @@ import { useAuth } from '@/hooks/use-auth';
 import { DisplayOptions } from './DisplayMenu';
 import { SETTINGS_NAV } from './shell-nav';
 
+/**
+ * The phone account sheet, for testers with a Spotify connection only.
+ *
+ * A visitor without an account has nothing to open here: no sign-in, no
+ * settings, no log out. Display settings stay reachable next to it in the
+ * header, so the guest loses no control when the chip is not drawn.
+ */
 export function AccountSheet() {
   const { authenticated, user, logout } = useAuth();
   const [open, setOpen] = React.useState(false);
@@ -26,6 +33,7 @@ export function AccountSheet() {
       setPending(false);
     }
   }
+  if (!authenticated) return null;
   return (
     <>
       <button
@@ -39,7 +47,7 @@ export function AccountSheet() {
         }}
         className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong focus-ring"
       >
-        {authenticated && user?.avatarUrl ? (
+        {user?.avatarUrl ? (
           // The existing profile image is loaded from the same source as the sidebar.
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -55,40 +63,34 @@ export function AccountSheet() {
         <div className="space-y-6">
           <div className="space-y-1 break-words">
             <p className="font-semibold">
-              {authenticated ? user?.displayName || 'Spotify account' : 'Guest'}
+              {user?.displayName || 'Spotify account'}
             </p>
-            <p className="text-sm text-text-secondary">
-              {authenticated
-                ? 'Spotify connected'
-                : 'Chat stays on this device'}
-            </p>
+            <p className="text-sm text-text-secondary">Spotify connected</p>
           </div>
           <DisplayOptions />
-          {authenticated ? (
-            <div className="space-y-2">
-              <Link
-                href={SETTINGS_NAV.href}
-                onClick={close}
-                className="flex min-h-11 items-center rounded-md px-3 focus-ring"
-              >
-                Settings
-              </Link>
-              <button
-                type="button"
-                disabled={pending}
-                aria-busy={pending || undefined}
-                onClick={() => void leave()}
-                className="flex min-h-11 w-full items-center rounded-md px-3 focus-ring"
-              >
-                {pending ? 'Logging out' : 'Log out'}
-              </button>
-              {error ? (
-                <p role="alert" className="text-sm text-danger">
-                  {error}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
+          <div className="space-y-2">
+            <Link
+              href={SETTINGS_NAV.href}
+              onClick={close}
+              className="flex min-h-11 items-center rounded-md px-3 focus-ring"
+            >
+              Settings
+            </Link>
+            <button
+              type="button"
+              disabled={pending}
+              aria-busy={pending || undefined}
+              onClick={() => void leave()}
+              className="flex min-h-11 w-full items-center rounded-md px-3 focus-ring"
+            >
+              {pending ? 'Logging out' : 'Log out'}
+            </button>
+            {error ? (
+              <p role="alert" className="text-sm text-danger">
+                {error}
+              </p>
+            ) : null}
+          </div>
         </div>
       </BottomSheet>
     </>

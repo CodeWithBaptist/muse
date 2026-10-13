@@ -2,6 +2,8 @@
 
 Tell MUSE the mood or the moment and it suggests eight to twelve real songs, Nigeria first, each with a one-line reason. Every pick is checked against Deezer and the Apple iTunes Search API and links out to Audiomack, Boomplay, Spotify, Apple Music, YouTube Music, and Deezer. No account is needed. Spotify sign-in exists for allow-listed testers only.
 
+The public product is Chat and Profile. Discover, Library, and Playlists read listening data from Spotify, so they are hidden from a visitor without a connection and a direct visit to one goes to `/chat`. A visitor's chat and the lists MUSE builds are kept in the browser (see `muse.chat.local.v1` and `muse.saved.lists.v1` below) and can be copied, downloaded, shared, or deleted from "Saved on this device" in the Chat header.
+
 Stack: Next.js 16 (App Router), PostgreSQL with Drizzle ORM, Tailwind CSS 4, Motion, TanStack Query, Zod, OpenAI (`src/lib/ai/provider.ts`). Tests: Vitest, Testing Library, Playwright, axe-core.
 
 ## Run it locally
@@ -56,6 +58,20 @@ Optional:
 
 Never put secrets in client code, browser storage, logs, screenshots, or source control.
 
+## Browser storage keys
+
+Nothing about a visitor is stored on the server. These keys stay in the browser, and the Privacy Policy and `docs/stage-share-privacy-inventory.md` name each one:
+
+| Key | What it holds |
+| --- | --- |
+| `muse.chat.local.v1` | The last 40 messages of the conversation, for a visitor without an account (`src/lib/guest-chat-store.ts`). |
+| `muse.saved.lists.v1` | Up to 20 lists MUSE generated, with their songs (`src/lib/guest-saved-store.ts`). |
+| `muse.chat.prefs.v1` | The Nigeria or Global scope and the language choice. |
+| `muse.ui.prefs.v1` | Theme and Lite mode. |
+| `muse.taste.v1` | The taste snapshot from Profile. |
+
+`src/app/legal-pages.test.tsx` reads each key from its source file and fails if the Privacy Policy does not name it. Update that page and `docs/stage-share-privacy-inventory.md` whenever a store changes.
+
 ## Display settings and performance
 
 The Display menu stores two device-only choices under `muse.ui.prefs.v1`: theme (dark default, light available, both AA-checked in `src/lib/design-tokens.test.ts`) and Lite mode (auto, on, off). Everything decorative reads one effects level from `src/lib/ui-prefs.ts`: `none` under reduced motion, `lite` when Lite is on or auto detects Save-Data, a 2G class connection, or 2 GB of memory or less, else `full`. An inline script in `src/app/layout.tsx` stamps `data-theme` and `data-effects` on `<html>` before first paint.
@@ -71,6 +87,10 @@ Functions stay in Vercel's default `iad1` region because the database is in US E
 ## Payments (scaffold, off)
 
 `/plus` shows the Free and Plus plans and says Plus is not open. `POST /api/billing/checkout` and `POST /api/billing/webhook` answer 503 `PAYMENTS_DISABLED` until `PAYMENTS_ENABLED=true`, and checkout refuses with `PRICE_NOT_SET` until a Plus price exists in `src/lib/billing/plans.ts`. Paystack's hosted page would take payment in naira; the webhook is verified with HMAC SHA-512 of the raw body. What has to happen before the flag flips is in `docs/PAYMENTS.md`.
+
+## Feedback
+
+The footer and the Chat header link "Send feedback" as a `mailto:` to the operator contact in `src/lib/legal.ts`, with the subject `MUSE feedback`. There is no form, no analytics, and no tracking script on either page.
 
 ## Legal pages
 

@@ -24,6 +24,11 @@ import { HumanCheckCard } from '@/components/security/HumanCheckCard';
 import { ChatPreferenceControls } from '@/components/chat/ChatPreferenceControls';
 import { VibeChips } from '@/components/chat/VibeChips';
 import { TasteHint } from '@/components/chat/TasteHint';
+import {
+  SavedOnDeviceButton,
+  SavedOnDevicePanel,
+} from '@/components/chat/SavedOnDevice';
+import { SendFeedbackLink } from '@/components/support/SendFeedbackLink';
 import { Button } from '@/components/ui/Button';
 import { BackToTop } from '@/components/ui/BackToTop';
 import { cn } from '@/lib/utils';
@@ -168,6 +173,7 @@ export default function ChatPage() {
   const {
     messages,
     isGuest,
+    isAuthenticated,
     preferences,
     setPreferences,
     sendMessage,
@@ -185,6 +191,7 @@ export default function ChatPage() {
   } = useChat();
 
   const [historyOpen, setHistoryOpen] = React.useState(false);
+  const [savedOpen, setSavedOpen] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -197,16 +204,22 @@ export default function ChatPage() {
     <div className="h-full flex flex-col relative">
       {/* Top conversation history bar */}
       <div className="px-4 sm:px-6 py-3 border-b border-border-subtle flex flex-wrap items-center justify-between gap-x-4 gap-y-2 bg-background">
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           {isGuest ? (
-            <span
-              data-testid="chat-on-device-note"
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary border border-border-subtle"
-            >
-              <Smartphone size={14} aria-hidden="true" />
-              <span>Saved on this device only</span>
-            </span>
-          ) : (
+            <>
+              <span
+                data-testid="chat-on-device-note"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-semibold text-text-secondary border border-border-subtle"
+              >
+                <Smartphone size={14} aria-hidden="true" />
+                <span>Saved on this device only</span>
+              </span>
+              <SavedOnDeviceButton
+                open={savedOpen}
+                onToggle={() => setSavedOpen((prev) => !prev)}
+              />
+            </>
+          ) : isAuthenticated ? (
             <button
               type="button"
               onClick={() => setHistoryOpen((prev) => !prev)}
@@ -217,7 +230,10 @@ export default function ChatPage() {
               <History size={14} />
               <span>History ({conversations.length})</span>
             </button>
-          )}
+          ) : null}
+          {/* While the session is still unknown, neither the tester history
+              control nor the guest device controls are drawn, so a guest is
+              never shown a button that would do nothing. */}
           {activeConversationId && (
             <span className="text-xs text-text-muted truncate">
               {conversations.find((c) => c.id === activeConversationId)
@@ -226,7 +242,7 @@ export default function ChatPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <ChatPreferenceControls
             preferences={preferences}
             onChange={setPreferences}
@@ -244,7 +260,20 @@ export default function ChatPage() {
               <span>New chat</span>
             </button>
           )}
+          <SendFeedbackLink className="px-2 text-xs font-semibold" />
         </div>
+      </div>
+
+      {/* The saved lists of a visitor without an account. Same shape as the
+          history drawer above: in flow under the header, so nothing overlaps
+          the composer on a phone. */}
+      <div
+        id="saved-on-device-panel"
+        data-testid="saved-on-device-panel"
+        hidden={!savedOpen || !isGuest}
+        className="max-h-80 overflow-y-auto border-b border-border-subtle bg-surface/60 px-4 py-4 sm:px-6"
+      >
+        <SavedOnDevicePanel />
       </div>
 
       {/* Collapsible conversation history drawer */}
