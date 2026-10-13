@@ -1,19 +1,18 @@
-import type { Metadata } from 'next';
+import { publicPageMetadata } from '@/lib/site-metadata';
 import {
   LEGAL_DRAFT_DATE,
   LegalDocument,
   LegalLink,
   LegalList,
   LegalParagraph,
-  Placeholder,
 } from '@/components/legal/LegalDocument';
 import { LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR } from '@/lib/legal';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy | MUSE',
-  description:
-    'What MUSE keeps in your browser, what it sends to the AI provider and the music catalogues, what the server stores, and how to remove all of it.',
-};
+export const metadata = publicPageMetadata(
+  '/privacy',
+  'Privacy Policy | MUSE',
+  'What MUSE keeps in your browser, what it sends to the AI provider and the music catalogues, what the server stores, and how to remove all of it.',
+);
 
 /**
  * Every statement below is tied to a code path:
@@ -408,11 +407,9 @@ export default function PrivacyPage() {
                   'Last.fm, which receives the username you type, only when you use that feature.',
                   'Cloudflare, which runs the Turnstile check when the operator has turned it on.',
                   <>
-                    <Placeholder>hosting provider and region</Placeholder>, and{' '}
-                    <Placeholder>database provider</Placeholder>, which hosts
-                    the MUSE database in{' '}
-                    <Placeholder>database region</Placeholder>. The rate-limit
-                    store is Upstash Redis when it is configured.
+                    Vercel, which hosts MUSE, and Neon, which hosts the MUSE
+                    database. The rate-limit store is Upstash Redis when it is
+                    configured.
                   </>,
                   'Open-in destinations and WhatsApp receive navigation or shared-list data when used. Catalogue and image providers also receive the requests described above.',
                   'Spotify AB, for testers who sign in, under its own privacy policy.',

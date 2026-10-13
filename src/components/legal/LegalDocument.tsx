@@ -4,7 +4,7 @@ import { ExternalLink } from 'lucide-react';
 
 /** Layout for public legal pages. Editorial review notes live in docs/legal-todo.md. */
 
-/** The date all three drafts were written. Update it when the text changes. */
+/** The date all three legal pages were last updated. */
 export const LEGAL_DRAFT_DATE = '13 October 2026';
 
 export interface LegalSection {
@@ -22,7 +22,7 @@ export interface LegalDocumentProps {
   title: string;
   /** One plain-language paragraph about what the page covers. */
   summary: string;
-  /** Human readable date of the draft, for example "7 October 2026". */
+  /** Human readable date of the latest legal update. */
   draftDate: string;
   sections: LegalSection[];
   references?: LegalReference[];
@@ -109,7 +109,7 @@ export function LegalDocument({
           <p className="max-w-2xl text-sm leading-relaxed text-text-secondary">
             {summary}
           </p>
-          <p className="text-xs text-text-muted">Updated {draftDate}</p>
+          <p className="text-xs text-text-muted">Last updated: {draftDate}</p>
         </header>
 
         <nav

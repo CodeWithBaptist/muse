@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import { publicPageMetadata } from '@/lib/site-metadata';
 import {
   LEGAL_DRAFT_DATE,
   LegalDocument,
@@ -8,11 +8,11 @@ import {
 } from '@/components/legal/LegalDocument';
 import { LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR } from '@/lib/legal';
 
-export const metadata: Metadata = {
-  title: 'Spotify Attribution | MUSE',
-  description:
-    'Where Spotify still appears in MUSE, how the Spotify brand is used, and which other services MUSE names.',
-};
+export const metadata = publicPageMetadata(
+  '/spotify-attribution',
+  'Spotify Attribution | MUSE',
+  'Where Spotify still appears in MUSE, how the Spotify brand is used, and which other services MUSE names.',
+);
 
 /**
  * Spotify is no longer where the music comes from: the public product reads

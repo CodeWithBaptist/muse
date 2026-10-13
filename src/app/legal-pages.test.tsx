@@ -42,7 +42,7 @@ describe('legal pages', () => {
       ).toBeNull();
     });
 
-    it(`${name}: contains no unfilled prompts beyond the marked placeholders`, () => {
+    it(`${name}: renders no legal placeholder or unfilled prompt`, () => {
       render(<Page />);
       const text = document.body.textContent ?? '';
       const marked = document.querySelectorAll(
@@ -51,6 +51,10 @@ describe('legal pages', () => {
       const brackets = (text.match(/\[/g) ?? []).length;
       // Every square bracket on the page belongs to a marked placeholder.
       expect(brackets).toBe(marked);
+      expect(marked).toBe(0);
+      expect(
+        screen.getByText(/Last updated: 13 October 2026/),
+      ).toBeInTheDocument();
       expect(text).not.toContain('Placeholder for review');
       expect(text).not.toContain('Lorem');
     });
@@ -61,6 +65,37 @@ describe('legal pages', () => {
       expect(contents).not.toMatch(/\p{Extended_Pictographic}/u);
     });
   }
+
+  it('uses the owner-supplied provider and jurisdiction without duplicate law or court wording', () => {
+    render(<PrivacyPage />);
+    expect(document.body.textContent).toContain('Neon');
+    expect(document.body.textContent).toContain('Vercel');
+    document.body.innerHTML = '';
+    render(<TermsPage />);
+    expect(document.body.textContent).toContain(
+      'the laws of the Federal Republic of Nigeria',
+    );
+    expect(document.body.textContent).toContain(
+      'the courts of Lagos State, Nigeria',
+    );
+    expect(document.body.textContent).not.toContain('laws of the laws');
+    expect(document.body.textContent).not.toContain('courts of the courts');
+  });
+
+  it('keeps the owner report synchronized with every rendered Privacy statement', () => {
+    const { container } = render(<PrivacyPage />);
+    const report = read('docs/stage-share-privacy-inventory.md').replace(
+      /\s+/g,
+      ' ',
+    );
+    for (const node of container.querySelectorAll(
+      'section[id] p, section[id] li',
+    )) {
+      expect(report).toContain(
+        (node.textContent ?? '').replace(/\s+/g, ' ').trim(),
+      );
+    }
+  });
 
   it('privacy policy lists every Spotify scope the app requests', () => {
     const scopesSource = read('src/lib/spotify.ts');

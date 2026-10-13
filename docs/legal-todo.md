@@ -35,9 +35,9 @@ This draft was written from how MUSE works today, by reading the code that handl
 'Confirm with the Last.fm API terms that the "Last.fm" name is enough or whether a logo is required.',
 'Verify every external link opens the intended page.',
 
-## Remaining rendered placeholders
+## Historical placeholder inventory, resolved in Stage 2
 
-No values were guessed. The existing operator and contact in `src/lib/legal.ts` were retained.
+No rendered placeholders remain after Stage 2. The table below preserves the previous inventory. Neon, Nigerian governing law and Lagos courts were supplied by the owner. Vercel is identified from the deployment context. Region assertions were removed rather than guessed; the actual hosting and database regions still need owner confirmation. The pre-existing README and docs contain no Neon hostname pattern, so Neon has not been independently verified. The existing operator and contact in `src/lib/legal.ts` were retained.
 
 | Page    | Placeholder                   | What the owner needs to supply                                                                                                     |
 | ------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |

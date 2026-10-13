@@ -1,6 +1,6 @@
 # MUSE design system
 
-The working rules for building MUSE screens. Tokens live in `src/app/globals.css` (source of truth for rendering) and are mirrored in `src/lib/design-tokens.ts` for TypeScript; a unit test keeps the two in step. In development, `/design-system` renders every token and primitive from the real components. The route returns 404 in production builds.
+The working rules for building MUSE screens. Tokens live in `src/app/globals.css` (source of truth for rendering) and are mirrored in `src/lib/design-tokens.ts` for TypeScript; a unit test keeps the two in step. In development, `/design-system` renders every token and primitive from the real components. The route returns 404 in production unless the operator explicitly sets `SHOW_DESIGN_SYSTEM=true`. It remains noindex and is excluded from the sitemap.
 
 ## Color
 

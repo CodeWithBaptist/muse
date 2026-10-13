@@ -5,12 +5,16 @@ import '@fontsource/bagel-fat-one/latin-400.css';
 import './globals.css';
 import { Providers } from './providers';
 import { UI_PREFS_BOOTSTRAP_SCRIPT } from '@/lib/ui-prefs';
+import {
+  siteUrl,
+  socialMetadata,
+  SHARE_DESCRIPTION,
+} from '@/lib/site-metadata';
 import { colors } from '@/lib/design-tokens';
 
 export const metadata: Metadata = {
-  title: 'MUSE | Music by conversation',
-  description:
-    'Tell MUSE the mood. It answers with real songs, checked against Deezer and iTunes, Nigeria first.',
+  metadataBase: siteUrl(),
+  ...socialMetadata('MUSE | Music by conversation', SHARE_DESCRIPTION),
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },

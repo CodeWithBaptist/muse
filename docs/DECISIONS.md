@@ -4,6 +4,28 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-13: Stage 2 adds local share cards, explicit crawl scope and owner-supplied legal values
+
+**Decision**
+Public pages get explicit canonical, Open Graph and Twitter metadata from `NEXT_PUBLIC_SITE_URL`, falling back to the owner-supplied Vercel production origin. `robots.ts` and `sitemap.ts` use a single list of five public routes. The app route group defaults to noindex, with chat explicitly opting into indexing. Login and the design reference remain noindex; Plus remains excluded while its entitlements are not live. The production design page calls `notFound()` unless `SHOW_DESIGN_SYSTEM` is exactly `true`.
+
+Share images use Next ImageResponse at 1200x630, the current Logo outlines copied into image code, the token colors and a committed local Fredoka weight 500 font instance derived from the existing UI font package. Wordmark paths are tested against Logo; no font is used to draw them. No dependency is added and no font download occurs at build time. The existing apple touch icon already supplies the required 180px icon.
+
+**Why**
+Explicit URLs prevent preview hosts from becoming canonical production URLs. Local images and font assets make build and image rendering independent of third-party font servers. A noindex app default protects tester pages without rewriting their client components. The exact override value makes an accidental production design-page exposure less likely. Noindex and robots directives are indexing hints, not access control.
+
+**Alternatives considered**
+
+- Remote font requests: rejected because share rendering must work without network access.
+- Font-rendered brand letters: rejected because the card must match the existing SVG wordmark.
+- Invented hosting regions: rejected. Vercel comes from the deployment context; regions remain unconfirmed.
+- A second stage branch: unavailable in this fixed-branch session. Stage 2 is a separate commit on the existing head, and PR #12 is updated rather than falsely presented as an independent Stage 2 PR.
+
+**Impact**
+The owner should set public variable `NEXT_PUBLIC_SITE_URL=https://muse-six-pink.vercel.app` in Vercel and leave `SHOW_DESIGN_SYSTEM` unset or `false` in production. Rebuild after changing the public origin. The Privacy provider is Neon as supplied by the owner; existing README and docs contain no Neon hostname pattern, so this was not independently verified and no connection secret was read. Terms use the owner-supplied Nigerian law and Lagos courts. All legal pages display Last updated: 13 October 2026. Remaining hosting-region editorial blanks are removed from the page and preserved as operational questions in the legal notes. The complete rendered Privacy claim inventory is in `docs/stage-share-privacy-inventory.md`. Stage 3 remains deferred.
+
+---
+
 ## 2026-10-13: Stage 1 restores lime with separate accessible light-theme colors
 
 **Decision**

@@ -1,19 +1,18 @@
-import type { Metadata } from 'next';
+import { publicPageMetadata } from '@/lib/site-metadata';
 import {
   LEGAL_DRAFT_DATE,
   LegalDocument,
   LegalLink,
   LegalList,
   LegalParagraph,
-  Placeholder,
 } from '@/components/legal/LegalDocument';
 import { LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR } from '@/lib/legal';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service | MUSE',
-  description:
-    'The terms for using MUSE, an AI music companion that recommends songs from a few words, with no account needed.',
-};
+export const metadata = publicPageMetadata(
+  '/terms',
+  'Terms of Service | MUSE',
+  'The terms for using MUSE, an AI music companion that recommends songs from a few words, with no account needed.',
+);
 
 export default function TermsPage() {
   return (
@@ -231,10 +230,10 @@ export default function TermsPage() {
           title: 'Governing law',
           body: (
             <LegalParagraph>
-              These terms are governed by the laws of{' '}
-              <Placeholder>governing law</Placeholder>, and disputes go to the
-              courts of <Placeholder>jurisdiction</Placeholder>, without taking
-              away protections you have as a consumer where you live.
+              These terms are governed by the laws of the Federal Republic of
+              Nigeria, and disputes go to the courts of Lagos State, Nigeria,
+              without taking away protections you have as a consumer where you
+              live.
             </LegalParagraph>
           ),
         },
