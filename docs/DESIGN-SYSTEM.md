@@ -14,10 +14,22 @@ The working rules for building MUSE screens. Tokens live in `src/app/globals.css
 | `--color-text-secondary`  | `#A1A1A8`                       | Supporting copy, meta                                                           |
 | `--color-text-muted`      | `#85858C`                       | Labels, placeholders, hints. The darkest tone allowed for small text (5.4:1)    |
 | `--color-text-faint`      | `#6B6B73`                       | Large text (24px, or 19px bold), disabled text, decorative details only (3.7:1) |
-| `--color-accent`          | `#5B9BFF` dark, `#174CB4` light | Links, highlights, focus, playing state                                         |
-| `--color-accent-primary`  | `#2F5BEA`                       | Primary action fills                                                            |
-| `--color-accent-contrast` | `#FFFFFF`                       | Text and icons on primary action fills                                          |
+| `--color-accent`          | `#A8E85C` dark, `#375B0D` light | Links, highlights, focus, playing state                                         |
+| `--color-accent-primary`  | `#A8E85C` dark, `#5A9315` light | Primary action fills                                                            |
+| `--color-accent-contrast` | `#0B0B0C`                       | Text and icons on primary action fills                                          |
 | `--color-danger`          | `#E8705F`                       | Error text, invalid field edges, destructive confirmation. Never decorative     |
+
+The brand accent is lime. Light-theme links deepen along the lime hue to `#375B0D` so the existing 80% text opacity and tinted badges remain readable. Primary fills use `#A8E85C` on dark surfaces and `#5A9315` on light surfaces, with `#0B0B0C` text in both themes. The light primary fill is darkened enough to retain the existing 3:1 control contrast assertion, including its 90% hover state. Undarkened lime on white fails that assertion and is not used for light-theme control fills.
+
+| Pair                                       | Contrast          |
+| ------------------------------------------ | ----------------- |
+| Dark lime on background / surface          | 13.46:1 / 12.90:1 |
+| Light accent on background / surface       | 7.29:1 / 7.88:1   |
+| Light primary fill on background / surface | 3.46:1 / 3.74:1   |
+| Near-black text on light primary fill      | 5.26:1            |
+| Light primary hover fill on background     | 3.00:1            |
+
+Vibe washes use the lime and green tokens, not ad hoc colors. Landing canvases, focus rings, logo dots, charts, highlights and metadata already consume the shared tokens. Static SVGs and the manifest are synchronized by `node scripts/generate-icons.js`; that script also regenerates all favicon PNG sizes, the ICO and both opaque maskable sizes without changing glyph geometry. Asset tests prevent token drift. Accent contrast tests cover both base surfaces, primary hover, selection, tinted badges, the 80% accent label and the full-effects vibe wash. Decorative faint borders and disabled controls are not text contrast claims.
 
 Rules:
 

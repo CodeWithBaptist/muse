@@ -366,7 +366,7 @@ describe('landing quality checklist', () => {
     const normalizedTheme = theme.toLowerCase();
     expect(normalizedTheme).toContain('#0b0b0c');
     expect(normalizedTheme).toContain('#f2f1ed');
-    expect(normalizedTheme).toContain('#5b9bff');
+    expect(normalizedTheme).toContain('#a8e85c');
 
     // The canvas fallback palette is the token values, and it is the only
     // landing source allowed to spell a colour out.

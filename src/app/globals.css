@@ -20,28 +20,28 @@
   /* Large text (24px, or 19px bold), disabled states, and non-text details
    * only: 3.7:1 on the background, which is below AA for small text. */
   --color-text-faint: #6B6B73;
-  /* Azure is for links, highlights, and focus on dark surfaces. */
-  --color-accent: #5B9BFF;
-  /* Cobalt fills primary actions; white text clears AA on the fill. */
-  --color-accent-primary: #2F5BEA;
-  --color-accent-contrast: #FFFFFF;
+  /* Lime is for links, highlights, and focus on dark surfaces. */
+  --color-accent: #A8E85C;
+  /* Lime fills primary actions; near-black text clears AA on the fill. */
+  --color-accent-primary: #A8E85C;
+  --color-accent-contrast: #0B0B0C;
   /* Pinned wordmarks need both theme shades at once. */
-  --color-accent-dark: #5B9BFF;
-  --color-accent-light: #174CB4;
-  /* Vibe tints stay within the cobalt and azure family. */
-  --color-vibe-muse: #5B9BFF;
-  --color-vibe-carnival: #3B6FEA;
-  --color-vibe-heartbreak: #5182EE;
-  --color-vibe-owambe: #4B78EB;
-  --color-vibe-traffic: #4771E2;
-  --color-vibe-night-drive: #2F5BEA;
-  --color-vibe-study: #3F75EA;
-  --color-vibe-devotion: #638CFF;
-  --color-vibe-sunday: #4B7AF0;
-  --color-vibe-grind: #335FD8;
-  --color-vibe-piano: #426CDF;
-  --color-vibe-classics: #4D78DF;
-  --color-vibe-calm: #5B9BFF;
+  --color-accent-dark: #A8E85C;
+  --color-accent-light: #375B0D;
+  /* Vibe tints stay within the lime and green family. */
+  --color-vibe-muse: #A8E85C;
+  --color-vibe-carnival: #9DDB50;
+  --color-vibe-heartbreak: #B0DD82;
+  --color-vibe-owambe: #A0D65E;
+  --color-vibe-traffic: #91C94B;
+  --color-vibe-night-drive: #A8E85C;
+  --color-vibe-study: #96CE55;
+  --color-vibe-devotion: #B4E67B;
+  --color-vibe-sunday: #ADDA75;
+  --color-vibe-grind: #85BD40;
+  --color-vibe-piano: #98D04C;
+  --color-vibe-classics: #9CCB65;
+  --color-vibe-calm: #A8E85C;
   /* Errors and destructive confirmation only. Never decorative. */
   --color-danger: #E8705F;
 
@@ -87,7 +87,7 @@
 /*
  * Light theme. A choice the visitor makes (dark stays the default and is
  * never swapped for the OS setting). Same roles, re-tuned for paper: every
- * text token clears AA on both the page and the surface, and azure deepens
+ * text token clears AA on both the page and the surface, and lime deepens
  * so it still reads as text.
  */
 html[data-theme="light"] {
@@ -99,11 +99,11 @@ html[data-theme="light"] {
   --color-text-secondary: #4A4A50;
   --color-text-muted: #5F5F66;
   --color-text-faint: #80808A;
-  --color-accent: #174CB4;
-  --color-accent-primary: #2F5BEA;
-  --color-accent-contrast: #FFFFFF;
-  --color-accent-dark: #5B9BFF;
-  --color-accent-light: #174CB4;
+  --color-accent: #375B0D;
+  --color-accent-primary: #5A9315;
+  --color-accent-contrast: #0B0B0C;
+  --color-accent-dark: #A8E85C;
+  --color-accent-light: #375B0D;
   --color-danger: #B93A28;
   color-scheme: light;
 }

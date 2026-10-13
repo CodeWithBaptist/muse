@@ -4,6 +4,26 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+## 2026-10-13: Stage 1 restores lime with separate accessible light-theme colors
+
+**Decision**
+Use the owner's `#A8E85C` brand accent and `#0B0B0C` on-accent text on dark surfaces. Light-theme accents use `#375B0D`, and primary fills use `#5A9315` with the same near-black label. CSS and TypeScript tokens stay mirrored. Vibe tint tokens move to lime and green. The existing icon generator now synchronizes static brand SVG fills and manifest colors from the TypeScript tokens, and generates maskable PNGs alongside favicon sizes and ICO. No icon path, corner radius, landing animation logic, neutral, theme setting or Lite behavior changes.
+
+**Why**
+Undarkened lime fails the light-surface control contrast requirement. The light shades retain the lime hue and saturation while reducing lightness. The text shade accounts for existing 80% opacity labels and tinted badges, rather than stopping at the 4.5:1 threshold for plain links. The primary shade meets 3:1 against the light background even at 90% hover, and exceeds 4.5:1 for near-black labels. Existing assertions remain intact; additional state and generated-asset tests extend coverage.
+
+**Alternatives considered**
+
+- Lime on white everywhere: fails text and control contrast.
+- White labels on the lime accent: fails text contrast.
+- Removing the existing light control contrast assertion: rejected; a color change must not weaken accessibility tests.
+- New icon or palette dependencies: unnecessary; the existing Sharp and icon tools suffice.
+
+**Impact**
+No environment variables or Vercel settings change. Run `node scripts/generate-icons.js` after changing brand tokens. The session remains on `arena/f36706d9-muse` by owner confirmation. Earlier guest, legal and copy work is preserved in its own commit, so the branch PR includes that work before the Stage 1 brand commit. Stage 2 and Stage 3 remain deferred. Chromium could not be downloaded in this environment because the browser CDN is outside the available network; the responsive Playwright checks must run where the existing Playwright browser can be installed.
+
+---
+
 ## 2026-10-09: The interface is quiet: no celebration effects, no sounds, one flat vibe tint, plain loading lines
 
 **Decision**

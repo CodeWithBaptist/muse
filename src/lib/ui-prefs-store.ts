@@ -107,7 +107,7 @@ export function applyUiPrefsToDocument(): void {
   root.setAttribute('data-theme', prefs.theme);
   root.style.colorScheme = prefs.theme;
   root.setAttribute('data-effects', getEffectsLevel());
-  // The browser chrome uses the cobalt primary token in both themes.
+  // The browser chrome uses the brand primary token in both themes.
   document
     .querySelector('meta[name="theme-color"]')
     ?.setAttribute('content', colors.accentPrimary);
