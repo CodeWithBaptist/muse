@@ -20,7 +20,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 };
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'bg-accent-primary text-accent-contrast hover:bg-accent-primary/90',
+  primary: 'border border-accent-boundary bg-accent-primary text-accent-contrast hover:bg-accent-primary/90',
   secondary:
     'bg-surface text-text-primary border border-border-subtle hover:border-border-strong',
   ghost:

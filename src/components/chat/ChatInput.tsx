@@ -73,7 +73,7 @@ export function ChatInput({ onSend, disabled, placeholder }: ChatInputProps) {
           className={cn(
             'absolute bottom-2 right-2 flex h-11 w-11 items-center justify-center rounded-lg transition-colors disabled:cursor-not-allowed',
             value.trim() && !disabled
-              ? 'bg-accent-primary text-accent-contrast'
+              ? 'border border-accent-boundary bg-accent-primary text-accent-contrast'
               : 'border border-border-strong bg-surface text-text-muted',
           )}
         >

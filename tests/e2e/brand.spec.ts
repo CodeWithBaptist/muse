@@ -33,6 +33,24 @@ for (const width of [375, 1440]) {
         expect(accent.toUpperCase()).toBe(
           theme === 'dark' ? '#A8E85C' : '#375B0D',
         );
+        const control = page.locator('[class~="bg-accent-primary"]').first();
+        if (route === '/') {
+          const appearance = await control.evaluate((element) => {
+            const style = getComputedStyle(element);
+            return {
+              border: style.borderTopWidth,
+              color: style.borderTopColor,
+              fill: style.backgroundColor,
+              text: style.color,
+            };
+          });
+          expect(appearance.border).toBe('1px');
+          expect(appearance.color).toBe(
+            theme === 'light' ? 'rgb(55, 91, 13)' : 'rgb(168, 232, 92)',
+          );
+          expect(appearance.fill).toBe('rgb(168, 232, 92)');
+          expect(appearance.text).toBe('rgb(11, 11, 12)');
+        }
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= window.innerWidth,

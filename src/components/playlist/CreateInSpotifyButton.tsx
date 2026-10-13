@@ -31,7 +31,7 @@ const BASE_CLASSES =
   'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-semibold transition-[color,background-color,border-color,transform] duration-150 active:scale-[0.98] focus-ring';
 
 const VARIANT_CLASSES = {
-  primary: 'bg-accent-primary text-accent-contrast hover:bg-accent-primary/90',
+  primary: 'border border-accent-boundary bg-accent-primary text-accent-contrast hover:bg-accent-primary/90',
   outline: 'border border-border-strong text-text-primary hover:bg-surface',
   danger: 'border border-danger/50 text-danger',
 } as const;

@@ -2,6 +2,21 @@
 
 Meaningful architectural and product decisions, newest first. Each entry records the decision, why it was made, the alternatives considered, the impact, and the date. Add an entry before making a change that would be expensive to reverse.
 
+
+## 2026-10-13: Authorized Stage 2 uses lime fills with explicit light-theme boundaries
+
+**Decision**
+Use the existing dark lime `#A8E85C` for light primary fills too. Preserve near-black `#0B0B0C` labels and olive `#375B0D` light text. Introduce a mirrored `accentBoundary` token and apply a one-pixel border to shared and standalone primary controls. The dark boundary remains lime; the light boundary is olive.
+
+**Why**
+The proposed olive `#4D6B00` fails 4.5:1 at an existing 80%-opacity text state. The retained shade passes. Bright lime is only 1.35:1 against cream and 1.46:1 against white, so a visible olive perimeter supplies the 3:1 component boundary requirement. Tests update the old fill-edge assertions to the actual border role, without lowering thresholds or dropping label, hover, focus or tint assertions.
+
+**Alternatives considered**
+Retaining the darkened green primary fill would miss the requested bright lime treatment. Bright lime without a border would lose the control edge on paper. Replacing typography or regenerating wordmark geometry is unnecessary and prohibited.
+
+**Impact**
+No dependencies or service settings change. Existing icons, manifest and metadata already meet the lime requirements; running the existing generator produces identical assets. The session cannot create `accent-lime`, so this stage uses a separate commit on the fixed branch and the same draft PR, transparently retaining its earlier work. No merge is authorized. Browser and physical-phone validation remain limited by missing Chromium and test hardware.
+
 ---
 
 

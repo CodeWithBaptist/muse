@@ -15,19 +15,19 @@ The working rules for building MUSE screens. Tokens live in `src/app/globals.css
 | `--color-text-muted`      | `#85858C`                       | Labels, placeholders, hints. The darkest tone allowed for small text (5.4:1)    |
 | `--color-text-faint`      | `#6B6B73`                       | Large text (24px, or 19px bold), disabled text, decorative details only (3.7:1) |
 | `--color-accent`          | `#A8E85C` dark, `#375B0D` light | Links, highlights, focus, playing state                                         |
-| `--color-accent-primary`  | `#A8E85C` dark, `#5A9315` light | Primary action fills                                                            |
+| `--color-accent-primary`  | `#A8E85C` in both themes | Primary action fills                                                            |
 | `--color-accent-contrast` | `#0B0B0C`                       | Text and icons on primary action fills                                          |
 | `--color-danger`          | `#E8705F`                       | Error text, invalid field edges, destructive confirmation. Never decorative     |
 
-The brand accent is lime. Light-theme links deepen along the lime hue to `#375B0D` so the existing 80% text opacity and tinted badges remain readable. Primary fills use `#A8E85C` on dark surfaces and `#5A9315` on light surfaces, with `#0B0B0C` text in both themes. The light primary fill is darkened enough to retain the existing 3:1 control contrast assertion, including its 90% hover state. Undarkened lime on white fails that assertion and is not used for light-theme control fills.
+The brand accent is lime. Light-theme links deepen to `#375B0D` so existing 80% text opacity and tinted badges remain readable. Primary fills use `#A8E85C` with `#0B0B0C` labels in both themes. The new `--color-accent-boundary` is lime on dark surfaces and olive on light surfaces. Every primary control has a one-pixel border, including standalone send, playback and playlist controls.
 
-| Pair                                       | Contrast          |
-| ------------------------------------------ | ----------------- |
-| Dark lime on background / surface          | 13.46:1 / 12.90:1 |
-| Light accent on background / surface       | 7.29:1 / 7.88:1   |
-| Light primary fill on background / surface | 3.46:1 / 3.74:1   |
-| Near-black text on light primary fill      | 5.26:1            |
-| Light primary hover fill on background     | 3.00:1            |
+| Pair | Contrast |
+| --- | --- |
+| Dark lime on background / surface | 13.46:1 / 12.90:1 |
+| Light olive text or border on background / surface | 7.29:1 / 7.88:1 |
+| Near-black text on lime fill | 13.46:1 |
+| Olive border against lime fill | 5.39:1 |
+| Lime fill against cream / white | 1.35:1 / 1.46:1, requires the olive border |
 
 Vibe washes use the lime and green tokens, not ad hoc colors. Landing canvases, focus rings, logo dots, charts, highlights and metadata already consume the shared tokens. Static SVGs and the manifest are synchronized by `node scripts/generate-icons.js`; that script also regenerates all favicon PNG sizes, the ICO and both opaque maskable sizes without changing glyph geometry. Asset tests prevent token drift. Accent contrast tests cover both base surfaces, primary hover, selection, tinted badges, the 80% accent label and the full-effects vibe wash. Decorative faint borders and disabled controls are not text contrast claims.
 
@@ -118,3 +118,12 @@ Before a screen is called done: desktop, tablet, and mobile widths; keyboard onl
 - Missing configuration never becomes visitor setup instructions. Preserve response codes and legacy classification, but use plain Chat and Discover availability messages. The visitor-copy guard checks JSX and legacy error sanitation; API tests check missing-AI response bodies.
 
 Browser layout, native top-layer focus isolation and physical phone keyboard behavior still require preview review. Unit tests use a test-only native-dialog shim, which does not simulate a browser top layer. No palette, icon, manifest or accent change belongs to this mobile stage.
+
+
+## Stage 2 lime fill and boundary contract
+
+Primary fills use `#A8E85C` in both themes, with `#0B0B0C` labels. Light-theme text, icons, focus rings and small accents use `#375B0D`, never bright lime on paper. The suggested `#4D6B00` fails the existing 80%-opacity text state, so the darker existing olive is retained.
+
+Every primary control has a one-pixel `border-accent-boundary`: lime in dark mode, olive in light mode. Apply this to standalone controls as well as the shared Button. The light fill itself does not meet 3:1 against white; the visible perimeter does. Contrast tests therefore check the actual boundary token at normal and opacity-hover states, rather than incorrectly requiring a decorative fill to supply the boundary. Label, focus, tinted-state and opacity checks remain in place.
+
+The icon generator was rerun for all sizes, ICO and maskable icons. Output was identical because those assets already use the required lime square and near-black lowercase m. Metadata and manifest already use the correct accent. No font, weight, import or wordmark geometry changed. Earlier dated palette entries describe historical decisions; this section supersedes the former light primary fill.
