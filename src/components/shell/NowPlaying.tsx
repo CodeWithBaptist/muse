@@ -1,46 +1,46 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Disc, ExternalLink, X } from "lucide-react";
-import { Surface } from "@/components/ui/Surface";
-import { Logo } from "@/components/ui/Logo";
+import * as React from 'react';
+import { Disc, ExternalLink, X } from 'lucide-react';
+import { Surface } from '@/components/ui/Surface';
+import { Logo } from '@/components/ui/Logo';
 import {
   formatTrackDuration,
   getSpotifyTrackUrl,
   useNowPlaying,
-} from "@/hooks/use-now-playing";
-import { PlaybackButton } from "./PlaybackButton";
-import { TrackArtwork } from "./TrackArtwork";
+} from '@/hooks/use-now-playing';
+import { PlaybackButton } from './PlaybackButton';
+import { TrackArtwork } from './TrackArtwork';
 
 function artistLabel(track: { artists: { name: string }[] | string }) {
   return Array.isArray(track.artists)
-    ? track.artists.map((artist) => artist.name).join(", ")
+    ? track.artists.map((artist) => artist.name).join(', ')
     : track.artists;
 }
 
 function availabilityMessage(
-  availability: ReturnType<typeof useNowPlaying>["availability"],
+  availability: ReturnType<typeof useNowPlaying>['availability'],
 ) {
-  if (availability === "checking") return "Checking Spotify playback access.";
-  if (availability === "disconnected") {
-    return "Link Spotify for testing to use playback in MUSE.";
+  if (availability === 'checking') return 'Checking Spotify playback access.';
+  if (availability === 'disconnected') {
+    return 'Link Spotify for testing to use playback in MUSE.';
   }
-  if (availability === "reconnect-required") {
-    return "Reconnect Spotify to enable playback in MUSE.";
+  if (availability === 'reconnect-required') {
+    return 'Reconnect Spotify to enable playback in MUSE.';
   }
-  if (availability === "premium-required") {
-    return "An eligible Spotify Premium subscription is required for full playback in MUSE.";
+  if (availability === 'premium-required') {
+    return 'An eligible Spotify Premium subscription is required for full playback in MUSE.';
   }
-  if (availability === "unavailable") {
-    return "Playback is unavailable here. Open this track in Spotify.";
+  if (availability === 'unavailable') {
+    return 'Playback is unavailable here. Open this track in Spotify.';
   }
-  if (availability === "ready") {
-    return "Open Spotify on an active device to start playback from MUSE.";
+  if (availability === 'ready') {
+    return 'Open Spotify on an active device to start playback from MUSE.';
   }
   return null;
 }
 
-export function NowPlaying() {
+export function NowPlaying({ embedded = false }: { embedded?: boolean }) {
   const {
     selectedTrack,
     activeTrack,
@@ -68,7 +68,11 @@ export function NowPlaying() {
       <aside
         aria-label="Now playing"
         data-testid="now-playing-panel"
-        className="hidden w-[var(--muse-now-playing-width)] shrink-0 flex-col border-l border-border-subtle bg-background xl:flex"
+        className={
+          embedded
+            ? 'flex min-w-0 flex-col bg-background'
+            : 'hidden w-[var(--muse-now-playing-width)] shrink-0 flex-col border-l border-border-subtle bg-background xl:flex'
+        }
       >
         <div className="flex flex-1 flex-col items-center justify-center space-y-6 p-6 text-center">
           <Surface
@@ -105,11 +109,11 @@ export function NowPlaying() {
   const busy = isTrackBuffering(track.id);
   const isActiveTrack = activeTrack?.id === track.id && playbackMode !== null;
   const actionLabel =
-    action === "spotify" ? `Play ${track.name} on Spotify` : "";
+    action === 'spotify' ? `Play ${track.name} on Spotify` : '';
   const notice =
     playbackNotice ??
-    (playbackPreference === "spotify" && !isActiveTrack
-      ? "Your playback preference is Spotify. Open this track there to listen."
+    (playbackPreference === 'spotify' && !isActiveTrack
+      ? 'Your playback preference is Spotify. Open this track there to listen.'
       : availabilityMessage(availability));
 
   const handlePlayback = () => {
@@ -124,13 +128,17 @@ export function NowPlaying() {
     <aside
       aria-label="Now playing"
       data-testid="now-playing-panel"
-      className="hidden w-[var(--muse-now-playing-width)] shrink-0 flex-col border-l border-border-subtle bg-background xl:flex"
+      className={
+        embedded
+          ? 'flex min-w-0 flex-col bg-background'
+          : 'hidden w-[var(--muse-now-playing-width)] shrink-0 flex-col border-l border-border-subtle bg-background xl:flex'
+      }
     >
       <div className="flex flex-1 flex-col justify-between space-y-6 overflow-y-auto p-6">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="type-section-label">
-              {playing ? "Now Playing" : "Selected Track"}
+              {playing ? 'Now Playing' : 'Selected Track'}
             </span>
             {selectedTrack && !playing && (
               <button
@@ -203,7 +211,7 @@ export function NowPlaying() {
                 busy={busy}
                 label={
                   busy
-                    ? "Starting playback"
+                    ? 'Starting playback'
                     : playing
                       ? `Pause ${track.name} on Spotify`
                       : actionLabel
@@ -223,7 +231,7 @@ export function NowPlaying() {
                 <ExternalLink size={14} />
               </a>
             )}
-            {availability === "reconnect-required" && (
+            {availability === 'reconnect-required' && (
               <a
                 href="/api/auth/spotify"
                 className="inline-flex min-h-10 w-full items-center justify-center rounded-md px-4 text-xs font-semibold text-accent hover:bg-surface focus-ring"

@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { ExternalLink, Info, X, Disc } from "lucide-react";
-import { transitions, fadeIn, trackRowReveal } from "@/lib/motion";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ExternalLink, Info, X, Disc } from 'lucide-react';
+import { transitions, fadeIn, trackRowReveal } from '@/lib/motion';
+import { cn } from '@/lib/utils';
 import {
   useNowPlaying,
   formatTrackDuration,
   getSpotifyTrackUrl,
-} from "@/hooks/use-now-playing";
-import { PlaybackButton } from "@/components/shell/PlaybackButton";
-import { EqualizerBars } from "@/components/motion/EqualizerBars";
+} from '@/hooks/use-now-playing';
+import { PlaybackButton } from '@/components/shell/PlaybackButton';
+import { EqualizerBars } from '@/components/motion/EqualizerBars';
 
 export interface Track {
   id: string;
@@ -67,7 +67,7 @@ export function TrackRow({
   } = useNowPlaying();
 
   const artistName = Array.isArray(track.artists)
-    ? track.artists.map((artist) => artist.name).join(", ")
+    ? track.artists.map((artist) => artist.name).join(', ')
     : track.artists;
   const artUrl = track.album?.images?.[0]?.url || track.albumArtUrl;
   const durationLabel = formatTrackDuration(track.duration_ms);
@@ -85,7 +85,7 @@ export function TrackRow({
   const showEqualizer = canPlayNow && (playingNow || pausedNow);
   const showPlayingTitle = showEqualizer;
   const actionLabel =
-    action === "spotify"
+    action === 'spotify'
       ? `Play ${track.name} on Spotify`
       : `Play ${track.name}`;
 
@@ -103,14 +103,14 @@ export function TrackRow({
 
   return (
     <motion.div
-      role={listItem ? "listitem" : undefined}
+      role={listItem ? 'listitem' : undefined}
       variants={trackRowReveal}
       custom={index}
       initial="initial"
       animate="animate"
       className={cn(
-        "group border-b border-border-subtle last:border-0",
-        isSelected && "rounded-md bg-surface/60",
+        'group border-b border-border-subtle last:border-0',
+        isSelected && 'rounded-md bg-surface/60',
       )}
     >
       <div className="flex items-center gap-4 rounded-md px-2 py-3 transition-colors hover:bg-surface">
@@ -138,7 +138,7 @@ export function TrackRow({
                 <PlaybackButton
                   playing={playingNow}
                   busy={busy}
-                  label={busy ? "Starting playback" : actionLabel}
+                  label={busy ? 'Starting playback' : actionLabel}
                   onClick={handlePlayback}
                   className="absolute inset-0 h-8 w-8 opacity-100 transition-opacity duration-[140ms] sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
                 />
@@ -161,7 +161,10 @@ export function TrackRow({
 
         <button
           type="button"
-          onClick={() => selectTrack(track)}
+          onClick={(event) => {
+            event.currentTarget.focus();
+            selectTrack(track);
+          }}
           className="h-10 w-10 shrink-0 overflow-hidden rounded border border-border-strong bg-surface text-left"
           aria-label={`Select ${track.name}`}
         >
@@ -180,14 +183,17 @@ export function TrackRow({
 
         <button
           type="button"
-          onClick={() => selectTrack(track)}
+          onClick={(event) => {
+            event.currentTarget.focus();
+            selectTrack(track);
+          }}
           className="min-w-0 flex-1 text-left"
           aria-label={`Inspect ${track.name}`}
         >
           <div
             className={cn(
-              "truncate text-sm font-semibold",
-              showPlayingTitle ? "text-accent" : "text-text-primary",
+              'truncate text-sm font-semibold',
+              showPlayingTitle ? 'text-accent' : 'text-text-primary',
             )}
           >
             {track.name}
@@ -211,10 +217,10 @@ export function TrackRow({
             aria-label={`Why this track: ${track.name}`}
             onClick={() => setIsExpanded((previous) => !previous)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors",
+              'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors',
               isExpanded
-                ? "bg-accent/15 text-accent"
-                : "text-text-muted hover:bg-surface hover:text-text-primary",
+                ? 'bg-accent/15 text-accent'
+                : 'text-text-muted hover:bg-surface hover:text-text-primary',
             )}
             title="Why this?"
           >
@@ -265,7 +271,7 @@ export function TrackRow({
                 MUSE Reasoning
               </span>
               {track.reason ||
-                "Selected to match the sonic texture, pacing, and mood of your request."}
+                'Selected to match the sonic texture, pacing, and mood of your request.'}
             </div>
           </motion.div>
         )}

@@ -131,7 +131,7 @@ describe('GET /api/auth/spotify', () => {
     );
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({
-      error: 'Spotify login is not configured yet.',
+      error: 'Spotify sign-in is unavailable right now. Try again later.',
     });
   });
 

@@ -182,7 +182,10 @@ function RecommendationRow({ track, index, onSelect }: RecommendationRowProps) {
         </span>
         <button
           type="button"
-          onClick={onSelect}
+          onClick={(event) => {
+            event.currentTarget.focus();
+            onSelect();
+          }}
           aria-label={`View artwork and details for ${track.title}`}
           className="self-start rounded-sm focus-ring"
         >
@@ -196,7 +199,10 @@ function RecommendationRow({ track, index, onSelect }: RecommendationRowProps) {
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <button
               type="button"
-              onClick={onSelect}
+              onClick={(event) => {
+                event.currentTarget.focus();
+                onSelect();
+              }}
               aria-label={`Show details for ${track.title} by ${track.artist}`}
               className="text-left text-sm font-semibold text-text-primary focus-ring"
             >

@@ -51,6 +51,7 @@ export function shortPlaybackNotice({
 
 export function NowPlayingStrip() {
   const {
+    openDetails,
     selectedTrack,
     activeTrack,
     availability,
@@ -99,11 +100,11 @@ export function NowPlayingStrip() {
     <aside
       aria-label="Now playing"
       data-testid="now-playing-strip"
-      className="flex shrink-0 items-center gap-3 border-t border-border-subtle bg-background px-4 py-2 xl:hidden"
+      className="flex shrink-0 items-center gap-3 border-t border-border-subtle bg-background px-4 py-2 md:pb-[max(0.5rem,env(safe-area-inset-bottom))] xl:hidden"
     >
       <div
         aria-hidden={artUrl ? undefined : true}
-        className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-strong bg-surface"
+        className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-strong bg-surface"
       >
         {artUrl ? (
           <TrackArtwork src={artUrl} alt="" className="h-full w-full" />
@@ -112,7 +113,16 @@ export function NowPlayingStrip() {
         )}
       </div>
 
-      <div className="min-w-0 flex-1">
+      <button
+        type="button"
+        onClick={(event) => {
+          event.currentTarget.focus();
+          openDetails();
+        }}
+        aria-label={`Show details for ${track.name}`}
+        aria-haspopup="dialog"
+        className="min-h-11 min-w-0 flex-1 rounded-md text-left focus-ring"
+      >
         <div className="truncate text-xs font-semibold text-text-primary">
           {track.name}
         </div>
@@ -129,7 +139,7 @@ export function NowPlayingStrip() {
             {notice}
           </div>
         ) : null}
-      </div>
+      </button>
 
       {action ? (
         <PlaybackButton
@@ -143,7 +153,7 @@ export function NowPlayingStrip() {
                 : `Play ${track.name} on Spotify`
           }
           onClick={handlePlayback}
-          className="h-10 w-10 shrink-0"
+          className="h-11 w-11 shrink-0"
         />
       ) : null}
 
@@ -153,7 +163,7 @@ export function NowPlayingStrip() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={`Open ${track.name} in Spotify`}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface hover:text-text-primary focus-ring"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface hover:text-text-primary focus-ring"
         >
           <ExternalLink size={16} aria-hidden="true" />
         </a>

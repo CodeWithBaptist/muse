@@ -1,6 +1,8 @@
 'use client';
 
 import * as React from 'react';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import { usePathname } from 'next/navigation';
 import type { ListedTrack } from '@/lib/catalogue/types';
 import { openLinksFor } from '@/lib/catalogue/search-links';
@@ -22,6 +24,7 @@ export function TrackDetailsProvider({
   const pathname = usePathname();
   const [previousPath, setPreviousPath] = React.useState(pathname);
   const [selection, setSelection] = React.useState<Selection | null>(null);
+  const close = React.useCallback(() => setSelection(null), []);
   if (previousPath !== pathname) {
     setPreviousPath(pathname);
     setSelection(null);
@@ -31,7 +34,7 @@ export function TrackDetailsProvider({
       value={{
         selection,
         select: setSelection,
-        close: () => setSelection(null),
+        close,
       }}
     >
       {children}
@@ -85,21 +88,7 @@ function Details({ selection }: { selection: Selection }) {
 
 export function TrackDetailsPanel() {
   const { selection, close } = useTrackDetails();
-  const dialog = React.useRef<HTMLDialogElement>(null);
-  React.useEffect(() => {
-    if (!selection) {
-      if (dialog.current?.open) dialog.current.close();
-      return;
-    }
-    const media = window.matchMedia('(max-width: 1279px)');
-    const update = () => {
-      if (selection && media.matches) dialog.current?.showModal();
-      else dialog.current?.close();
-    };
-    update();
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, [selection]);
+  const smallScreen = useMediaQuery('(max-width: 1279px)');
   return (
     <>
       <aside
@@ -117,24 +106,13 @@ export function TrackDetailsPanel() {
           </div>
         )}
       </aside>
-      <dialog
-        ref={dialog}
-        aria-label="Track details"
-        onCancel={close}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) close();
-        }}
-        className="fixed inset-x-0 bottom-0 top-auto m-0 max-h-[85dvh] w-full max-w-none overflow-y-auto rounded-t-xl border border-border-subtle bg-background text-text-primary backdrop:bg-black/50 xl:hidden"
+      <BottomSheet
+        open={!!selection && smallScreen}
+        onClose={close}
+        title="Track details"
       >
-        <button
-          type="button"
-          onClick={close}
-          className="m-4 rounded px-3 py-2 focus-ring"
-        >
-          Close track details
-        </button>
         {selection ? <Details selection={selection} /> : null}
-      </dialog>
+      </BottomSheet>
     </>
   );
 }

@@ -153,26 +153,25 @@ test('mobile tabs fit standard phone widths, expose all routes, and clear the ch
       'form[aria-label="Send a message to MUSE"]',
     );
     const shellRect = shell?.getBoundingClientRect();
-    const tabsRect = tabs?.getBoundingClientRect();
     const formRect = form?.getBoundingClientRect();
     return {
       keyboardVisible: document.documentElement.dataset.keyboardVisible,
       shellPosition: shell && getComputedStyle(shell).position,
       shellHeight: shellRect?.height,
-      tabsTop: tabsRect?.top,
-      tabsBottom: tabsRect?.bottom,
+      tabsDisplay: tabs && getComputedStyle(tabs).display,
       composerBottom: formRect?.bottom,
     };
   });
   expect(keyboardLayout.keyboardVisible).toBe('true');
   expect(keyboardLayout.shellPosition).toBe('fixed');
   expect(keyboardLayout.shellHeight).toBe(500);
-  expect(keyboardLayout.tabsBottom).toBe(500);
-  expect(keyboardLayout.composerBottom).toBeLessThan(keyboardLayout.tabsTop!);
+  expect(keyboardLayout.tabsDisplay).toBe('none');
+  expect(keyboardLayout.composerBottom).toBeLessThanOrEqual(500);
   await page.evaluate(() => {
     const windowWithViewportControl = window as Window & {
       __setVisualViewportHeight?: (height: number) => void;
     };
+    (document.activeElement as HTMLElement)?.blur();
     windowWithViewportControl.__setVisualViewportHeight?.(844);
   });
   await expect(page.locator('html')).not.toHaveAttribute(
@@ -186,7 +185,9 @@ test('mobile tabs fit standard phone widths, expose all routes, and clear the ch
   const displaySheet = page.getByRole('dialog', { name: 'Display settings' });
   await expect(displaySheet).toBeVisible();
   const sheetLayout = await displaySheet.evaluate((sheet) => {
-    const rect = sheet.getBoundingClientRect();
+    const rect = sheet
+      .querySelector('.muse-sheet-panel')!
+      .getBoundingClientRect();
     return {
       position: getComputedStyle(sheet).position,
       modal: sheet.getAttribute('aria-modal'),

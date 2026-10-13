@@ -41,11 +41,12 @@ describe('TopBar', () => {
     expect(settings.className).toContain('focus-ring');
   });
 
-  it('has no navigation menu button, only Display, stays in flow, and respects the top safe area', () => {
+  it('has no navigation menu button, Display and Account, stays in flow, and respects the top safe area', () => {
     render(<TopBar />);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map((button) => button.getAttribute('aria-label'))).toEqual([
       'Display settings',
+      'Account',
     ]);
     const header = screen.getByRole('banner', { name: 'App header' });
     expect(header.className).not.toContain('fixed');

@@ -12,7 +12,14 @@ import { Sidebar } from './Sidebar';
 import { VibeBackdrop } from '@/components/motion/VibeBackdrop';
 import { TopBar } from './TopBar';
 import { BottomTabs } from './BottomTabs';
-import { TrackDetailsPanel } from '@/components/chat/TrackDetails';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { useNowPlaying } from '@/hooks/use-now-playing';
+import { useChatViewport } from '@/hooks/use-chat-viewport';
+import {
+  TrackDetailsPanel,
+  useTrackDetails,
+} from '@/components/chat/TrackDetails';
 import { NowPlaying } from './NowPlaying';
 import { NowPlayingStrip } from './NowPlayingStrip';
 import { BackToTop } from '@/components/ui/BackToTop';
@@ -21,10 +28,9 @@ import { BackToTop } from '@/components/ui/BackToTop';
  * The app shell.
  *
  * One row that fills the visible viewport: the sidebar (md and up), the page
- * column, and the now-playing rail (xl and up). The page column stacks the
- * phone header, the scrolling page, and the compact now-playing strip (below
- * xl). The fixed bottom tabs (below md) reserve space in the shell and follow
- * the safe area and visible viewport when the on-screen keyboard opens.
+ * column, and the now-playing rail (xl and up). A single measured bottom
+ * space reserves the compact strip and fixed phone tabs in the page column.
+ * Touch chat focus hides that chrome and follows the visual viewport.
  *
  * Pages cross fade on route change with the shared page transition, and focus
  * moves to the main landmark so keyboard and screen reader users land on the
@@ -32,6 +38,14 @@ import { BackToTop } from '@/components/ui/BackToTop';
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { authenticated, isLoading } = useAuth();
+  const { selection } = useTrackDetails();
+  const { detailsOpen, closeDetails, selectedTrack, activeTrack } =
+    useNowPlaying();
+  const compact = useMediaQuery('(max-width: 1279px)');
+  useChatViewport();
+  React.useEffect(() => {
+    if (selection) closeDetails();
+  }, [selection, closeDetails]);
   const router = useRouter();
   const pathname = usePathname();
   const shouldReduceMotion = useReducedMotion() ?? false;
@@ -41,58 +55,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // never move this one, and their own control takes over there.
   const pageScrollRef = React.useRef<HTMLDivElement | null>(null);
 
-  React.useEffect(() => {
-    const viewport = window.visualViewport;
-    if (!viewport) return;
-
-    const root = document.documentElement;
-    const clearViewportState = () => {
-      root.removeAttribute('data-keyboard-visible');
-      root.style.removeProperty('--muse-visual-viewport-top');
-      root.style.removeProperty('--muse-visual-viewport-height');
-      root.style.removeProperty('--muse-visual-viewport-bottom-offset');
-    };
-    const updateViewportState = () => {
-      const isMobile = window.matchMedia('(max-width: 767px)').matches;
-      const bottomOffset = Math.max(
-        0,
-        window.innerHeight - viewport.offsetTop - viewport.height,
+  const shellRef = React.useRef<HTMLDivElement>(null);
+  const stripRef = React.useRef<HTMLDivElement>(null);
+  React.useLayoutEffect(() => {
+    const strip = stripRef.current;
+    const shell = shellRef.current;
+    if (!shell) return;
+    const update = () =>
+      shell.style.setProperty(
+        '--muse-mini-player-space',
+        `${strip?.getBoundingClientRect().height ?? 0}px`,
       );
-      const keyboardVisible =
-        isMobile && viewport.scale === 1 && bottomOffset > 120;
-
-      if (!keyboardVisible) {
-        clearViewportState();
-        return;
-      }
-
-      root.setAttribute('data-keyboard-visible', 'true');
-      root.style.setProperty(
-        '--muse-visual-viewport-top',
-        `${Math.max(0, viewport.offsetTop)}px`,
-      );
-      root.style.setProperty(
-        '--muse-visual-viewport-height',
-        `${viewport.height}px`,
-      );
-      root.style.setProperty(
-        '--muse-visual-viewport-bottom-offset',
-        `${bottomOffset}px`,
-      );
-    };
-
-    viewport.addEventListener('resize', updateViewportState);
-    viewport.addEventListener('scroll', updateViewportState);
-    window.addEventListener('resize', updateViewportState);
-    updateViewportState();
-
-    return () => {
-      viewport.removeEventListener('resize', updateViewportState);
-      viewport.removeEventListener('scroll', updateViewportState);
-      window.removeEventListener('resize', updateViewportState);
-      clearViewportState();
-    };
-  }, []);
+    update();
+    if (!strip || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(update);
+    observer.observe(strip);
+    return () => observer.disconnect();
+  }, [authenticated, isLoading, selectedTrack, activeTrack]);
 
   // Chat is open to everyone. Signed out visitors on the account-only pages
   // go to the login page, which brings them back once connected. replace()
@@ -108,11 +87,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (previousPathname.current === pathname) return;
     previousPathname.current = pathname;
+    closeDetails();
     const frame = window.requestAnimationFrame(() => {
       document.getElementById('main-content')?.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [pathname]);
+  }, [pathname, closeDetails]);
 
   // Open pages paint straight away; the session only changes what the
   // sidebar offers, and waiting for it would cost a round trip on every visit.
@@ -132,7 +112,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     : pageTransition;
 
   return (
-    <div className="muse-shell flex overflow-hidden bg-background text-text-primary">
+    <div
+      ref={shellRef}
+      className="muse-shell flex overflow-hidden bg-background text-text-primary"
+    >
       <a
         href="#main-content"
         className="sr-only fixed left-4 top-4 z-50 rounded-md bg-surface px-4 py-3 text-sm font-semibold text-text-primary focus:not-sr-only"
@@ -142,7 +125,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <Sidebar />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="muse-page-column relative flex min-w-0 flex-1 flex-col">
         <TopBar />
 
         <main
@@ -173,11 +156,31 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           />
         </main>
 
-        {authenticated ? <NowPlayingStrip /> : null}
+        {authenticated ? (
+          <div
+            ref={stripRef}
+            className="muse-mini-player absolute inset-x-0 bottom-[var(--muse-tabs-space)] xl:hidden"
+          >
+            <NowPlayingStrip />
+          </div>
+        ) : null}
         <BottomTabs />
       </div>
 
-      {authenticated ? <NowPlaying /> : <TrackDetailsPanel />}
+      {authenticated && !selection ? <NowPlaying /> : <TrackDetailsPanel />}
+      <BottomSheet
+        open={
+          authenticated &&
+          !selection &&
+          !!(selectedTrack || activeTrack) &&
+          detailsOpen &&
+          compact
+        }
+        onClose={closeDetails}
+        title="Track details"
+      >
+        <NowPlaying embedded />
+      </BottomSheet>
     </div>
   );
 }

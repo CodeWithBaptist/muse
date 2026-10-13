@@ -1,5 +1,6 @@
 'use client';
 
+import { DISCOVER_UNAVAILABLE, visitorMessage } from '@/lib/visitor-copy';
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { DiscoverSection } from '@/components/discover/DiscoverSection';
@@ -24,7 +25,7 @@ export default function DiscoverPage() {
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
         const err: ApiError = new Error(
-          errBody.error || 'Failed to fetch discover content'
+          errBody.error || 'Failed to fetch discover content',
         );
         err.code = errBody.code;
         err.status = res.status;
@@ -74,15 +75,8 @@ export default function DiscoverPage() {
             <KeyRound size={18} className="text-accent" />
           </div>
           <h2 className="text-lg font-bold text-text-primary">
-            AI is not connected yet
+            Discover is unavailable right now. Try again later.
           </h2>
-          <p className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed">
-            Set{' '}
-            <code className="font-mono text-xs text-text-primary">
-              OPENAI_API_KEY
-            </code>{' '}
-            in the environment. Discover needs it to write these sections.
-          </p>
         </Surface>
       </div>
     );
@@ -136,10 +130,10 @@ export default function DiscoverPage() {
           className="max-w-2xl space-y-4 rounded-2xl border-dashed border-border-strong bg-transparent p-6 sm:p-12 text-center"
         >
           <h2 className="font-semibold text-text-primary">
-            Discover could not load
+            Discover is unavailable right now. Try again later.
           </h2>
           <p className="text-xs text-text-muted">
-            {(error as Error).message}
+            {visitorMessage((error as Error).message, DISCOVER_UNAVAILABLE)}
           </p>
           <div className="pt-2">
             <Button variant="outline" onClick={() => refetch()}>
@@ -158,7 +152,7 @@ export default function DiscoverPage() {
     tracks: SpotifyTrackItem[];
   }> = (data?.sections || []).filter(
     (s: { tracks?: SpotifyTrackItem[] }) =>
-      Array.isArray(s.tracks) && s.tracks.length > 0
+      Array.isArray(s.tracks) && s.tracks.length > 0,
   );
 
   if (sections.length === 0) {

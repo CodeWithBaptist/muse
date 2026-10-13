@@ -111,7 +111,7 @@ export function Sidebar() {
                 ? (user?.displayName ?? 'Spotify account')
                 : 'Guest'}
             </div>
-            <div className="type-section-label truncate">
+            <div className="text-xs leading-relaxed break-words">
               {authenticated
                 ? 'Spotify connected'
                 : 'Chat stays on this device'}

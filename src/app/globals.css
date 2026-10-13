@@ -394,25 +394,25 @@ html[data-theme="light"] .muse-vibe-layer {
    * the browser chrome on phones. The CSS pipeline strips vh fallbacks for
    * the project's browser targets, so none is written here. */
   .muse-shell {
+    --muse-tabs-space: 0px;
+    --muse-mini-player-space: 0px;
+    --muse-bottom-space: calc(
+      var(--muse-tabs-space) + var(--muse-mini-player-space)
+    );
     height: var(--muse-visual-viewport-height, 100dvh);
+  }
+  .muse-page-column {
+    padding-bottom: var(--muse-bottom-space);
+  }
+  .muse-shell :is(.overflow-y-auto, .overflow-auto) {
+    scroll-padding-bottom: var(--muse-bottom-space);
   }
 
   @media (max-width: 767px) {
     .muse-shell {
-      padding-bottom: calc(
-        var(--muse-bottom-nav-height) + var(--muse-safe-bottom)
+      --muse-tabs-space: calc(
+        var(--muse-bottom-nav-height) + var(--muse-safe-bottom) + 1px
       );
-    }
-
-    html[data-keyboard-visible="true"] .muse-shell {
-      position: fixed;
-      inset-inline: 0;
-      top: var(--muse-visual-viewport-top, 0px);
-      height: var(--muse-visual-viewport-height, 100dvh);
-    }
-
-    html[data-keyboard-visible="true"] .muse-bottom-tabs {
-      bottom: var(--muse-visual-viewport-bottom-offset, 0px);
     }
   }
 }
@@ -718,5 +718,74 @@ html[data-theme="light"] .muse-vibe-layer {
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation-duration: 1ms !important;
+  }
+}
+
+/* Shared modal sheets animate only opacity and transform. */
+.muse-sheet {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  width: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+}
+.muse-sheet[open] {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.muse-sheet::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
+.muse-sheet-panel {
+  display: flex;
+  flex-direction: column;
+  width: calc(100vw - 2rem);
+  max-width: 40rem;
+  max-height: 85dvh;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--color-surface);
+  animation: muse-sheet-enter var(--duration-base) var(--ease-standard);
+}
+.muse-sheet-content {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+@keyframes muse-sheet-enter {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.muse-sheet[data-sheet-effects='lite'] .muse-sheet-panel,
+.muse-sheet[data-sheet-effects='none'] .muse-sheet-panel {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .muse-sheet-panel {
+    animation: none;
+  }
+}
+
+@media (max-width: 1279px) {
+  html[data-keyboard-visible='true'] .muse-shell {
+    --muse-bottom-space: 0px;
+    padding-bottom: 0;
+    position: fixed;
+    inset-inline: 0;
+    top: var(--muse-visual-viewport-top, 0px);
+  }
+  html[data-keyboard-visible='true'] :is(.muse-bottom-tabs, .muse-mini-player) {
+    display: none;
   }
 }

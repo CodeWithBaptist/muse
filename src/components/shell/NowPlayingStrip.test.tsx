@@ -71,7 +71,7 @@ describe('NowPlayingStrip', () => {
     expect(open?.getAttribute('href')).toBe(
       'https://open.spotify.com/track/3n3Ppam7vgaVa1iaRUc9Lp',
     );
-    expect(open?.className).toContain('h-10 w-10');
+    expect(open?.className).toContain('h-11 w-11');
     expect(open?.className).toContain('focus-ring');
   });
 });

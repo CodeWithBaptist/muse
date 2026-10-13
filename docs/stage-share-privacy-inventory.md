@@ -56,7 +56,7 @@ Neon is the owner-supplied database provider. The pre-existing README and docs c
 
 * For every visitor:
 
-* Rate-limit counters use a one-way hash of the proxy-reported IP address for guests, or a user ID for signed-in requests. The hash uses ENCRYPTION_KEY as a pepper when configured. Missing IPs share an anonymous bucket. Counters live in Upstash Redis or Postgres; limits and windows vary by route.
+* Rate-limit counters use a one-way hash of the proxy-reported IP address for guests, or a user ID for signed-in requests. The hash uses a server-side secret as a pepper when configured. Missing IPs share an anonymous bucket. Counters live in Upstash Redis or Postgres; limits and windows vary by route.
 
 * A shared daily usage total for the whole service, with no per-visitor detail.
 

@@ -15,7 +15,7 @@ import {
   Shield,
   Sliders,
   Trash2,
-  User
+  User,
 } from 'lucide-react';
 import type { UserPreferencesData } from '@/lib/validation/api-schemas';
 import {
@@ -51,7 +51,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/ai/status');
       return res.json();
     },
-    retry: false
+    retry: false,
   });
 
   const { data: preferencesData, isLoading: isLoadingPrefs } =
@@ -62,7 +62,7 @@ export default function SettingsPage() {
         if (!res.ok) throw new Error('Unable to load preferences');
         return res.json();
       },
-      retry: false
+      retry: false,
     });
 
   const discoveryStyle =
@@ -105,8 +105,8 @@ export default function SettingsPage() {
           playlistLength,
           explicitContent,
           favoriteGenres: favoriteGenres.trim(),
-          playbackPreference
-        })
+          playbackPreference,
+        }),
       });
       if (!res.ok) throw new Error('Failed to save preferences');
       setSaveState('saved');
@@ -161,7 +161,7 @@ export default function SettingsPage() {
                     'px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider border',
                     aiStatus?.connected
                       ? 'bg-accent/10 border-accent/30 text-accent'
-                      : 'bg-surface border-border-strong text-text-muted'
+                      : 'bg-surface border-border-strong text-text-muted',
                   )}
                 >
                   {aiStatus?.connected ? 'Connected' : 'Not connected yet'}
@@ -169,8 +169,8 @@ export default function SettingsPage() {
               </div>
               <p className="text-xs text-text-secondary">
                 {aiStatus?.connected
-                  ? 'OpenAI provider is configured for natural language curation.'
-                  : 'Set OPENAI_API_KEY in your environment variables to enable AI curation.'}
+                  ? 'MUSE is ready to help you discover music.'
+                  : 'MUSE is unavailable right now. Try again later.'}
               </p>
             </div>
           </div>
@@ -197,18 +197,18 @@ export default function SettingsPage() {
                   {
                     id: 'balanced' as const,
                     label: 'Balanced',
-                    desc: 'Mix of familiar artists and new discoveries'
+                    desc: 'Mix of familiar artists and new discoveries',
                   },
                   {
                     id: 'deep_cuts' as const,
                     label: 'Deep cuts',
-                    desc: 'Prioritize lesser-known tracks and B-sides'
+                    desc: 'Prioritize lesser-known tracks and B-sides',
                   },
                   {
                     id: 'familiar' as const,
                     label: 'Familiar taste',
-                    desc: 'Stay close to your top artists and genres'
-                  }
+                    desc: 'Stay close to your top artists and genres',
+                  },
                 ].map((opt) => (
                   <button
                     key={opt.id}
@@ -222,7 +222,7 @@ export default function SettingsPage() {
                       'p-3 rounded-lg border text-left transition-colors space-y-1',
                       discoveryStyle === opt.id
                         ? 'border-accent bg-accent/[0.06]'
-                        : 'border-border-subtle bg-background hover:border-border-strong'
+                        : 'border-border-subtle bg-background hover:border-border-strong',
                     )}
                   >
                     <div className="text-xs font-semibold text-text-primary">
@@ -255,7 +255,7 @@ export default function SettingsPage() {
                         'flex-1 min-w-[4.5rem] py-2 px-3 rounded-md border text-xs font-semibold transition-colors',
                         playlistLength === len
                           ? 'border-accent bg-accent/[0.08] text-accent'
-                          : 'border-border-subtle bg-background text-text-secondary hover:text-text-primary'
+                          : 'border-border-subtle bg-background text-text-secondary hover:text-text-primary',
                       )}
                     >
                       {len} tracks
@@ -271,7 +271,7 @@ export default function SettingsPage() {
                 <div className="flex gap-2">
                   {[
                     { id: 'allow' as const, label: 'Allow explicit' },
-                    { id: 'clean' as const, label: 'Prefer clean' }
+                    { id: 'clean' as const, label: 'Prefer clean' },
                   ].map((opt) => (
                     <button
                       key={opt.id}
@@ -285,7 +285,7 @@ export default function SettingsPage() {
                         'flex-1 py-2 px-3 rounded-md border text-xs font-semibold transition-colors',
                         explicitContent === opt.id
                           ? 'border-accent bg-accent/[0.08] text-accent'
-                          : 'border-border-subtle bg-background text-text-secondary hover:text-text-primary'
+                          : 'border-border-subtle bg-background text-text-secondary hover:text-text-primary',
                       )}
                     >
                       {opt.label}
@@ -305,14 +305,14 @@ export default function SettingsPage() {
                     id: 'muse' as const,
                     label: 'Control Spotify from MUSE',
                     description:
-                      'Use MUSE controls to play on your active Spotify device. Spotify Premium may be required.'
+                      'Use MUSE controls to play on your active Spotify device. Spotify Premium may be required.',
                   },
                   {
                     id: 'spotify' as const,
                     label: 'Open in Spotify',
                     description:
-                      'Use Spotify links instead of starting playback in MUSE.'
-                  }
+                      'Use Spotify links instead of starting playback in MUSE.',
+                  },
                 ].map((option) => (
                   <button
                     key={option.id}
@@ -326,7 +326,7 @@ export default function SettingsPage() {
                       'p-3 rounded-md border text-left transition-colors space-y-1',
                       playbackPreference === option.id
                         ? 'border-accent bg-accent/[0.06]'
-                        : 'border-border-subtle bg-background hover:border-border-strong'
+                        : 'border-border-subtle bg-background hover:border-border-strong',
                     )}
                   >
                     <span className="block text-xs font-semibold text-text-primary">
@@ -415,10 +415,10 @@ export default function SettingsPage() {
               OpenAI. For conversational replies, MUSE also sends up to nine
               earlier messages from that conversation, for up to ten messages
               total. Recommendation, Discover, and Profile Insights requests
-              also send selected Spotify data, including top artists, top tracks, artist genres,
-              recently played track names, and track metadata returned by
-              Spotify search. Saved explicit memory preferences may also be
-              included in MUSE AI requests.
+              also send selected Spotify data, including top artists, top
+              tracks, artist genres, recently played track names, and track
+              metadata returned by Spotify search. Saved explicit memory
+              preferences may also be included in MUSE AI requests.
             </p>
             <div className="space-y-2 rounded-md border border-border-strong bg-background p-4">
               <p className="font-semibold text-text-primary">
@@ -430,9 +430,8 @@ export default function SettingsPage() {
                 Spotify Content into a machine-learning or AI model. It also
                 says not to analyze Spotify Content or the Spotify Service for
                 any purpose, including building user profiles. MUSE sends
-                listening-derived data to OpenAI
-                and uses listening history for Profile Insights and personalized
-                recommendations, so these
+                listening-derived data to OpenAI and uses listening history for
+                Profile Insights and personalized recommendations, so these
                 flows appear to conflict with those restrictions. A disclosure
                 or user consent does not resolve the policy issue. The Developer
                 Terms also contain a separate AI restriction and a conditional
@@ -492,7 +491,11 @@ export default function SettingsPage() {
               <div className="text-sm font-semibold text-text-primary">
                 Conversation History
               </div>
-              <p role="status" aria-live="polite" className="text-xs text-text-secondary">
+              <p
+                role="status"
+                aria-live="polite"
+                className="text-xs text-text-secondary"
+              >
                 {clearState === 'clearing'
                   ? 'Clearing saved conversation history.'
                   : clearState === 'cleared'

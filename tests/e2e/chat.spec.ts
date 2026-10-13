@@ -66,7 +66,9 @@ test('Discover shows a retry action when recommendations fail to load', async ({
   await page.goto('/discover');
 
   await expect(
-    page.getByRole('heading', { name: 'Unable to curate recommendations right now' }),
+    page.getByRole('heading', {
+      name: 'Discover is unavailable right now. Try again later.',
+    }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Try again' })).toBeVisible();
 });

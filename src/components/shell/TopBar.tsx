@@ -6,10 +6,11 @@ import { cn } from '@/lib/utils';
 import { Logo } from '@/components/ui/Logo';
 import { useAuth } from '@/hooks/use-auth';
 import { SETTINGS_NAV, isActivePath } from './shell-nav';
+import { AccountSheet } from './AccountSheet';
 import { DisplayMenu } from './DisplayMenu';
 
 /**
- * The phone header: wordmark on the left, Display and Settings on the right.
+ * The phone header: wordmark on the left, Display, Account and Settings on the right.
  * Everything else lives in the bottom tabs, so this bar never needs a menu
  * button.
  * It is in normal flow inside the shell column, not fixed, so it respects the
@@ -36,6 +37,7 @@ export function TopBar() {
       </div>
       <div className="flex items-center gap-1">
         <DisplayMenu />
+        <AccountSheet />
         {authenticated ? (
           <Link
             href={SETTINGS_NAV.href}

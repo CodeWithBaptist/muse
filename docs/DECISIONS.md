@@ -4,6 +4,29 @@ Meaningful architectural and product decisions, newest first. Each entry records
 
 ---
 
+
+## 2026-10-13: Mobile-layout Stage 1 reuses navigation and shares modal sheets
+
+**Decision**
+Keep the existing navigation source and 768px sidebar switch. Below 1280px, track inspection uses the shared `BottomSheet`; the desktop content is reused rather than maintained as a separate mobile detail view. Display menus switch from Floating UI collision-aware popovers to that same sheet below 640px. The phone account sheet uses the existing auth logout function and display preferences. Guests have no account-only settings or logout.
+
+The page column reserves `--muse-bottom-space`, the sum of safe-area-aware tab space and measured mini-player height. Scroll containers inherit the same scroll-padding value. Touch chat focus below 1280px hides the tabs and player, with dynamic and visual viewport sizing and latest-message positioning. The native modal dialog provides top-layer isolation; explicit focus cycling, body locking, return focus, Close, Escape, backdrop and handle swipe dismissal are shared. Motion uses existing transform/opacity tokens and is instant in Lite or reduced mode.
+
+**Why**
+The navigation already worked; rebuilding it would introduce avoidable divergence. Logout was available inside Settings, but not directly from the phone header. The former tester rail was hidden below 1280px without a matching sheet, while guest details used a separate dialog. A shared sheet fixes those gaps without a third column on tablets.
+
+**Alternatives considered**
+
+- Independent sheets for each feature: rejected because focus and touch behavior would diverge.
+- Viewport shrink alone as keyboard detection: rejected because it misses focus intent and mistakes browser chrome changes for keyboards.
+- New modal dependency: unnecessary with native dialog and the installed React and Floating UI tools.
+- Separate `mobile-layout` branch and PR: unavailable in this fixed-branch session. Use a distinct commit on `arena/f36706d9-muse` and keep the existing draft PR unmerged. Its diff still contains earlier work.
+
+**Impact**
+No new dependency, environment setting or color change. Visitor-facing setup instructions are replaced by plain availability messages; legacy missing-AI classification and response codes remain intact. Privacy retains its hashing disclosure without naming a configuration variable. Its claim inventory stays synchronized. Native browser layout, axe and real phone keyboards are not verified because Chromium is unavailable here. See `docs/mobile-layout-checks.md` for results and browser-only review steps. The new request's accent Stage 2 is not authorized and has not started.
+
+---
+
 ## 2026-10-13: Stage 2 adds local share cards, explicit crawl scope and owner-supplied legal values
 
 **Decision**

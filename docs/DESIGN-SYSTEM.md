@@ -104,3 +104,17 @@ Mobile layouts are composed for the phone, not shrunk from the desktop.
 ## Checking a screen
 
 Before a screen is called done: desktop, tablet, and mobile widths; keyboard only; reduced motion on; loading, empty, and error states; and the anti-vibecode questions in the master specification. Every number shown comes from real data.
+
+
+## Mobile-layout Stage 1 contract
+
+- Below 768px: existing TopBar and BottomTabs. Account opens shared identity, display and tester account actions. Logout also remains available in Settings.
+- At 768px and above: existing Sidebar. Status text wraps rather than truncating the connection state.
+- Below 1280px: track detail sheets and the tester's collapsed mini player. At 1280px and above: the same detail content in the right rail. Catalogue recommendations work for guests and testers.
+- `--muse-bottom-space` combines tabs, safe area and measured player height. The page column reserves that space for every page, including chat; nested scroll containers inherit it as scroll padding. No per-page bottom offsets are needed.
+- `BottomSheet` owns modal semantics, initial and return focus, keyboard cycling, scroll lock, Escape, Close, backdrop and downward handle swipe dismissal. Its content scrolls within 85dvh, with bottom safe-area padding. The panel uses existing base-duration and standard-easing tokens for opacity and translation only; Lite and reduced motion disable animation.
+- Display is the sole floating menu. Below 640px it uses `BottomSheet`; otherwise Floating UI flips, shifts and sizes within 16px viewport margins. Inline disclosure, history and segmented controls remain inline, not floating menus.
+- Touch focus in the chat composer hides tabs and the mini player below 1280px, restores them on blur and follows the visual viewport where supported. This is focus intent, not proof that a physical keyboard is open. Composer text is 16px to avoid small-input auto-zoom on phones.
+- Missing configuration never becomes visitor setup instructions. Preserve response codes and legacy classification, but use plain Chat and Discover availability messages. The visitor-copy guard checks JSX and legacy error sanitation; API tests check missing-AI response bodies.
+
+Browser layout, native top-layer focus isolation and physical phone keyboard behavior still require preview review. Unit tests use a test-only native-dialog shim, which does not simulate a browser top layer. No palette, icon, manifest or accent change belongs to this mobile stage.

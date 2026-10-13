@@ -1,4 +1,5 @@
 import React from 'react';
+import { DISCOVER_UNAVAILABLE } from '@/lib/visitor-copy';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,7 +44,7 @@ function renderWithQueryClient(ui: React.ReactElement) {
     },
   });
   return render(
-    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
   );
 }
 
@@ -77,19 +78,19 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
 
   it('throws AINotConnectedError (never fake responses) from provider and engines', async () => {
     await expect(
-      chatCompletion([{ role: 'user', content: 'Hello' }])
+      chatCompletion([{ role: 'user', content: 'Hello' }]),
     ).rejects.toThrow(AINotConnectedError);
 
-    await expect(
-      structuredCompletion('Test prompt', {})
-    ).rejects.toThrow(AI_NOT_CONNECTED_MESSAGE);
+    await expect(structuredCompletion('Test prompt', {})).rejects.toThrow(
+      AI_NOT_CONNECTED_MESSAGE,
+    );
 
     await expect(orchestrateDiscover('user-123')).rejects.toThrow(
-      AI_NOT_CONNECTED_MESSAGE
+      AI_NOT_CONNECTED_MESSAGE,
     );
 
     await expect(orchestrateProfileInsights('user-123')).rejects.toThrow(
-      AI_NOT_CONNECTED_MESSAGE
+      AI_NOT_CONNECTED_MESSAGE,
     );
 
     expect(isAINotConnectedError(new AINotConnectedError())).toBe(true);
@@ -109,9 +110,12 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: 'Recommend some Afrobeats' }),
-      })
+      }),
     );
     expect(chatRes.status).toBe(503);
+    expect(await chatRes.clone().text()).not.toMatch(
+      /\b[A-Z][A-Z0-9_]*_(KEY|SECRET|URL|ID|TOKEN)\b|\.env|dashboard/,
+    );
     await expect(chatRes.json()).resolves.toEqual({
       error: AI_NOT_CONNECTED_MESSAGE,
       code: AI_NOT_CONNECTED_CODE,
@@ -120,14 +124,20 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
 
     const discoverRes = await getDiscover();
     expect(discoverRes.status).toBe(503);
+    expect(await discoverRes.clone().text()).not.toMatch(
+      /\b[A-Z][A-Z0-9_]*_(KEY|SECRET|URL|ID|TOKEN)\b|\.env|dashboard/,
+    );
     await expect(discoverRes.json()).resolves.toEqual({
-      error: AI_NOT_CONNECTED_MESSAGE,
+      error: DISCOVER_UNAVAILABLE,
       code: AI_NOT_CONNECTED_CODE,
       aiConnected: false,
     });
 
     const profileRes = await getProfile();
     expect(profileRes.status).toBe(503);
+    expect(await profileRes.clone().text()).not.toMatch(
+      /\b[A-Z][A-Z0-9_]*_(KEY|SECRET|URL|ID|TOKEN)\b|\.env|dashboard/,
+    );
     await expect(profileRes.json()).resolves.toEqual({
       error: AI_NOT_CONNECTED_MESSAGE,
       code: AI_NOT_CONNECTED_CODE,
@@ -145,7 +155,7 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
             code: AI_NOT_CONNECTED_CODE,
             message: AI_NOT_CONNECTED_MESSAGE,
           }),
-          { status: 200 }
+          { status: 200 },
         );
       }
       if (url.includes('/api/chat')) {
@@ -155,7 +165,7 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
             code: AI_NOT_CONNECTED_CODE,
             aiConnected: false,
           }),
-          { status: 503 }
+          { status: 503 },
         );
       }
       return new Response('{}', { status: 200 });
@@ -164,13 +174,13 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
     renderWithQueryClient(<ChatPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('AI is not connected yet')).toBeDefined();
+      expect(screen.getByText(AI_NOT_CONNECTED_MESSAGE)).toBeDefined();
     });
 
     fireEvent.click(screen.getByText('Lagos traffic'));
 
     await waitFor(() => {
-      expect(screen.getByText('AI is not connected yet')).toBeDefined();
+      expect(screen.getByText(AI_NOT_CONNECTED_MESSAGE)).toBeDefined();
     });
     expect(screen.queryByText('MUSE')).toBeNull();
   });
@@ -183,13 +193,13 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
           code: AI_NOT_CONNECTED_CODE,
           aiConnected: false,
         }),
-        { status: 503 }
+        { status: 503 },
       );
     });
 
     renderWithQueryClient(<DiscoverPage />);
     await waitFor(() => {
-      expect(screen.getByText('AI is not connected yet')).toBeDefined();
+      expect(screen.getByText(DISCOVER_UNAVAILABLE)).toBeDefined();
     });
 
     // The profile page spends nothing on load; the state appears once the
@@ -206,8 +216,10 @@ describe('AI graceful state when OPENAI_API_KEY is not set', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Write my profile' }));
     await waitFor(() => {
       expect(
-        screen.getAllByText('AI is not connected yet').length
-      ).toBeGreaterThanOrEqual(2);
+        screen.getByText(
+          'Profiles are unavailable right now. Try again later.',
+        ),
+      ).toBeDefined();
     });
     clearTasteSnapshot();
   });
